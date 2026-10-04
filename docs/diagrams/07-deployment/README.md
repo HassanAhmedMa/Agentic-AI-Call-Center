@@ -2,49 +2,19 @@
 
 This directory contains the conceptual deployment topology for **Agentic Clinic**.
 
+Rendered with an **opaque solid white canvas** for high-contrast viewing on both dark and light modes.
+
 ---
 
 ## Diagram Preview
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
-flowchart TB
-    subgraph ClientDevice [" [Node] User / Client Device (Desktop / Laptop / Mobile) "]
-        Browser["Modern Web Browser\n- Web Audio API (Microphone Ingress & Audio Egress)\n- React / Next.js Web UI & Conversational Widget"]
-    end
+![Conceptual Deployment Diagram](deployment-diagram.svg)
 
-    subgraph HostEnvironment [" [Node] Application Server Host (Local Dev / Single VPS Node) "]
-        subgraph DockerNetwork [" Docker Bridge Network (agentic-clinic-net) "]
-            VoiceContainer["[Container] voice-service\n- WebSockets Audio Gateway\n- Audio Chunk Buffering & VAD"]
-            AgentContainer["[Container] ai-agent-service\n- LangGraph / State Machine Core\n- Tool Calling Dispatcher"]
-            RAGContainer["[Container] rag-service\n- Retrieval Engine & Embedder Adapter"]
-            BackendContainer["[Container] clinic-backend-service\n- FastAPI Application\n- Pydantic DTOs & Business Rules"]
-            
-            DBContainer[("[Container] postgres-database\n- PostgreSQL 16 Alpine\n- Relational Tables & Indexes\n- pgvector Vector Index")]
-            RedisContainer[("[Container] redis-cache\n- Ephemeral Session & Memory Store")]
-        end
-    end
+---
 
-    subgraph ExternalCloudServices [" [External Cloud Services] Managed Cloud APIs "]
-        LLM_API["Managed LLM Provider\n(OpenAI / Anthropic / Gemini API)"]
-        Voice_API["Managed Speech Provider\n(Groq Whisper STT / ElevenLabs TTS)"]
-    end
+## Specifications
 
-    Browser <-->|"WebSocket Audio Stream (WSS)"| VoiceContainer
-    Browser <-->|"HTTPS REST / WSS (Chat UI)"| AgentContainer
-    Browser <-->|"HTTPS REST (Admin / Staff UI)"| BackendContainer
-
-    VoiceContainer <-->|"Internal HTTP / WS"| AgentContainer
-    AgentContainer <-->|"Internal HTTP REST (/api/v1/rag)"| RAGContainer
-    AgentContainer -->|"Internal HTTP REST (/api/v1)"| BackendContainer
-    AgentContainer <-->|"Redis Protocol (TCP 6379)"| RedisContainer
-    
-    BackendContainer <-->|"PostgreSQL Wire Protocol (TCP 5432)"| DBContainer
-    RAGContainer <-->|"pgvector Queries (TCP 5432)"| DBContainer
-
-    AgentContainer <-->|"HTTPS REST (Token Streams)"| LLM_API
-    VoiceContainer <-->|"HTTPS / WSS Audio Streaming"| Voice_API
-```
-
+- **Vector Image:** [`deployment-diagram.svg`](deployment-diagram.svg)
+- **High-Res PNG:** [`deployment-diagram.png`](deployment-diagram.png)
 - **Source File:** [`deployment-diagram.mmd`](deployment-diagram.mmd)
 - **Feasibility Rationale:** Per [ADR-002](../../decisions/ADR-002-technology-candidates-and-scope-simplification.md), this topology avoids multi-cloud Kubernetes clusters and telecom PBX hardware. All micro-services run cleanly within a single Docker Compose network on a developer laptop or a simple cloud Linux virtual machine.

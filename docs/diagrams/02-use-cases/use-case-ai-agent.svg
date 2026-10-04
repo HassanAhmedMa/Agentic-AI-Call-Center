@@ -37,7 +37,7 @@
 <text x="350" y="277" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Engage in Voice / Text Dialogue</text>
 <text x="350" y="293" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Arabic / Egyptian / English)</text>
 <ellipse cx="350" cy="100" rx="120" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
-<text x="350" y="97" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Clarify Intent & Missing Slots</text>
+<text x="350" y="97" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Clarify Intent &amp; Missing Slots</text>
 <text x="350" y="113" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Doctor, Specialty, Date)</text>
 <ellipse cx="630" cy="120" rx="115" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="630" y="117" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Query Knowledge (RAG)</text>
@@ -52,7 +52,7 @@
 <text x="460" y="537" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Escalate via Safety Rules</text>
 <text x="460" y="553" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Urgent Indicators / Request)</text>
 <ellipse cx="930" cy="160" rx="115" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
-<text x="930" y="157" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Validate Slot & Rules</text>
+<text x="930" y="157" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Validate Slot &amp; Rules</text>
 <text x="930" y="173" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Conflict Prevention)</text>
 <ellipse cx="930" cy="280" rx="115" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="930" y="277" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Execute Atomic Mutation</text>

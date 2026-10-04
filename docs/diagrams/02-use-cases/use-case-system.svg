@@ -15,14 +15,14 @@
 <line x1="110" y1="442" x2="94" y2="470" stroke="#000000" stroke-width="2"/>
 <line x1="110" y1="442" x2="126" y2="470" stroke="#000000" stroke-width="2"/>
 <text x="110" y="490" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#000000">Patient / Caller</text>
-<text x="110" y="506" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">(Web & Voice)</text>
+<text x="110" y="506" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">(Web &amp; Voice)</text>
 <circle cx="980" cy="260" r="12" fill="#ffffff" stroke="#000000" stroke-width="2"/>
 <line x1="980" y1="272" x2="980" y2="302" stroke="#000000" stroke-width="2"/>
 <line x1="960" y1="282" x2="1000" y2="282" stroke="#000000" stroke-width="2"/>
 <line x1="980" y1="302" x2="964" y2="330" stroke="#000000" stroke-width="2"/>
 <line x1="980" y1="302" x2="996" y2="330" stroke="#000000" stroke-width="2"/>
 <text x="980" y="350" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#000000">Clinic Staff</text>
-<text x="980" y="366" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">(Reception & Care)</text>
+<text x="980" y="366" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">(Reception &amp; Care)</text>
 <circle cx="980" cy="680" r="12" fill="#ffffff" stroke="#000000" stroke-width="2"/>
 <line x1="980" y1="692" x2="980" y2="722" stroke="#000000" stroke-width="2"/>
 <line x1="960" y1="702" x2="1000" y2="702" stroke="#000000" stroke-width="2"/>
@@ -31,7 +31,7 @@
 <text x="980" y="770" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#000000">Administrator</text>
 <text x="980" y="786" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">(Operations)</text>
 <ellipse cx="400" cy="100" rx="110" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
-<text x="400" y="105" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Find Doctor & Specialty</text>
+<text x="400" y="105" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Find Doctor &amp; Specialty</text>
 <ellipse cx="400" cy="175" rx="115" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="400" y="180" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Check Doctor Availability</text>
 <ellipse cx="400" cy="250" rx="100" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
@@ -42,10 +42,10 @@
 <text x="400" y="405" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Reschedule Appointment</text>
 <ellipse cx="400" cy="480" rx="120" ry="25" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="400" y="477" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">View Patient Appointments</text>
-<text x="400" y="493" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(History & Details)</text>
+<text x="400" y="493" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(History &amp; Details)</text>
 <ellipse cx="400" cy="560" rx="125" ry="25" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="400" y="557" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">View Service Catalog</text>
-<text x="400" y="573" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">& Pricing Details</text>
+<text x="400" y="573" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">&amp; Pricing Details</text>
 <ellipse cx="400" cy="640" rx="105" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="400" y="645" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Create Support Ticket</text>
 <ellipse cx="400" cy="715" rx="115" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
@@ -55,16 +55,16 @@
 <text x="400" y="808" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Escalation)</text>
 <ellipse cx="700" cy="200" rx="125" ry="26" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="700" y="197" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Answer Escalated Calls</text>
-<text x="700" y="213" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">& Inquiries</text>
+<text x="700" y="213" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">&amp; Inquiries</text>
 <ellipse cx="700" cy="330" rx="125" ry="26" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
-<text x="700" y="327" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Update & Resolve</text>
+<text x="700" y="327" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Update &amp; Resolve</text>
 <text x="700" y="343" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Support Tickets</text>
 <ellipse cx="700" cy="650" rx="130" ry="26" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="700" y="647" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Manage Doctor Rosters</text>
-<text x="700" y="663" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">& Clinic Shifts</text>
+<text x="700" y="663" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">&amp; Clinic Shifts</text>
 <ellipse cx="700" cy="780" rx="130" ry="26" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
 <text x="700" y="777" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Manage Services Catalog</text>
-<text x="700" y="793" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">& Pricing Tables</text>
+<text x="700" y="793" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">&amp; Pricing Tables</text>
 <line x1="135" y1="430" x2="290" y2="100" class="edge"/>
 <line x1="135" y1="430" x2="285" y2="175" class="edge"/>
 <line x1="135" y1="430" x2="300" y2="250" class="edge"/>

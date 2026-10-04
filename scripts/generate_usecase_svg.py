@@ -1,6 +1,12 @@
 """
 Generates clean, precise black-and-white SVG diagrams for standard UML Use Cases.
+Strictly escapes XML entities (&amp;, &lt;, &gt;) to prevent XML parsing errors.
 """
+import html
+import os
+
+def esc(text):
+    return html.escape(str(text))
 
 def generate_stickman(x, y, name, subtext=None):
     svg = []
@@ -14,9 +20,9 @@ def generate_stickman(x, y, name, subtext=None):
     svg.append(f'<line x1="{x}" y1="{y+42}" x2="{x-16}" y2="{y+70}" stroke="#000000" stroke-width="2"/>')
     svg.append(f'<line x1="{x}" y1="{y+42}" x2="{x+16}" y2="{y+70}" stroke="#000000" stroke-width="2"/>')
     # Label
-    svg.append(f'<text x="{x}" y="{y+90}" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#000000">{name}</text>')
+    svg.append(f'<text x="{x}" y="{y+90}" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#000000">{esc(name)}</text>')
     if subtext:
-        svg.append(f'<text x="{x}" y="{y+106}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">{subtext}</text>')
+        svg.append(f'<text x="{x}" y="{y+106}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">{esc(subtext)}</text>')
     return "\n".join(svg)
 
 def generate_usecase(cx, cy, rx, ry, lines):
@@ -24,14 +30,14 @@ def generate_usecase(cx, cy, rx, ry, lines):
     svg.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>')
     n = len(lines)
     if n == 1:
-        svg.append(f'<text x="{cx}" y="{cy+5}" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">{lines[0]}</text>')
+        svg.append(f'<text x="{cx}" y="{cy+5}" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">{esc(lines[0])}</text>')
     elif n == 2:
-        svg.append(f'<text x="{cx}" y="{cy-3}" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">{lines[0]}</text>')
-        svg.append(f'<text x="{cx}" y="{cy+13}" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">{lines[1]}</text>')
+        svg.append(f'<text x="{cx}" y="{cy-3}" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">{esc(lines[0])}</text>')
+        svg.append(f'<text x="{cx}" y="{cy+13}" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">{esc(lines[1])}</text>')
     elif n == 3:
-        svg.append(f'<text x="{cx}" y="{cy-11}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#000000">{lines[0]}</text>')
-        svg.append(f'<text x="{cx}" y="{cy+3}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#000000">{lines[1]}</text>')
-        svg.append(f'<text x="{cx}" y="{cy+17}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#000000">{lines[2]}</text>')
+        svg.append(f'<text x="{cx}" y="{cy-11}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#000000">{esc(lines[0])}</text>')
+        svg.append(f'<text x="{cx}" y="{cy+3}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#000000">{esc(lines[1])}</text>')
+        svg.append(f'<text x="{cx}" y="{cy+17}" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#000000">{esc(lines[2])}</text>')
     return "\n".join(svg)
 
 def build_system_usecase_svg():
@@ -69,7 +75,6 @@ def build_system_usecase_svg():
     svg.append(generate_stickman(admin_x, admin_y, "Administrator", "(Operations)"))
 
     # Use Cases inside boundary
-    # Column A (Patient core operations) cx=390
     col_a_x = 400
     col_b_x = 700
 
@@ -105,8 +110,6 @@ def build_system_usecase_svg():
         svg.append(f'<line x1="{pat_x+25}" y1="{pat_y+30}" x2="{cx-rx}" y2="{cy}" class="edge"/>')
 
     # Edges from Staff to Use Cases
-    # Staff connects to Answer Escalated Calls (col_b[0]), Update Tickets (col_b[1]),
-    # View Patient Appts (col_a[5]), Check Doctor Availability (col_a[1])
     svg.append(f'<line x1="{staff_x-25}" y1="{staff_y+30}" x2="{col_b_x+125}" y2="{200}" class="edge"/>')
     svg.append(f'<line x1="{staff_x-25}" y1="{staff_y+30}" x2="{col_b_x+125}" y2="{330}" class="edge"/>')
     svg.append(f'<line x1="{staff_x-25}" y1="{staff_y+30}" x2="{col_a_x+120}" y2="{480}" class="edge"/>')
@@ -161,7 +164,6 @@ def build_ai_agent_usecase_svg():
     svg.append(f'<text x="{b2_x+b2_w/2}" y="{b2_y+26}" class="title" text-anchor="middle">Clinic Backend API</text>')
 
     # Main Use Cases in Agent
-    # Center primary use case
     uc_main = (350, 280, 130, 34, ["Engage in Voice / Text Dialogue", "(Arabic / Egyptian / English)"])
     svg.append(generate_usecase(*uc_main))
 
@@ -185,7 +187,6 @@ def build_ai_agent_usecase_svg():
     svg.append(generate_usecase(*uc_mut))
 
     # Connections
-    # Patient -> Main
     svg.append(f'<line x1="{pat_x+25}" y1="{pat_y+30}" x2="{uc_main[0]-uc_main[2]}" y2="{uc_main[1]}" class="edge"/>')
 
     # Main ..> Clarify <<extend>>
@@ -221,7 +222,6 @@ def build_ai_agent_usecase_svg():
     return "\n".join(svg)
 
 # Write files
-import os
 base_path = r"c:\Users\hassa\Desktop\GraduationProjectClinic\docs\diagrams\02-use-cases"
 with open(os.path.join(base_path, "use-case-system.svg"), "w", encoding="utf-8") as f:
     f.write(build_system_usecase_svg())
@@ -229,4 +229,4 @@ with open(os.path.join(base_path, "use-case-system.svg"), "w", encoding="utf-8")
 with open(os.path.join(base_path, "use-case-ai-agent.svg"), "w", encoding="utf-8") as f:
     f.write(build_ai_agent_usecase_svg())
 
-print("SVG generation complete.")
+print("Clean SVG generation complete with proper XML entity escaping.")

@@ -1,69 +1,51 @@
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
-stateDiagram-v2
-    [*] --> Idle: Session Initialized
-    
-    Idle --> ReceivingInput: User Utterance Arrives (Voice/Text)
-    
-    state ReceivingInput {
-        [*] --> TranscribeAudio: If Voice Input
-        TranscribeAudio --> ExtractIntent: Text Ready
-        [*] --> ExtractIntent: If Direct Text
-    }
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'background': '#ffffff'}}}%%
+flowchart TD
+    subgraph WorkflowCanvas [" AI Agent Conversational Control Flow & Workflow "]
+        Start(["● Session Initialized"]) --> Idle["Idle: Awaiting Input"]
+        Idle --> Receive["Receive Inbound Utterance\n(Voice Stream / Chat Text)"]
+        
+        Receive --> SafetyCheck{"Safety Rule Check\n(Predefined Keywords?)"}
+        
+        SafetyCheck -->|Emergency / Urgent Match| Handoff["Trigger Predefined Safety Escalation\n(transfer_to_human)"]
+        Handoff --> Advisory["Play Non-Clinical Advisory & Alert Staff"]
+        Advisory --> EndHandoff(["Transferred to Human Staff"])
 
-    ReceivingInput --> EvaluatingSafety: Utterance Preprocessed
-    
-    state EvaluatingSafety <<choice>>
-    EvaluatingSafety --> HumanHandoff: Urgent Indicator / Emergency Pattern Matched
-    EvaluatingSafety --> UnderstandingIntent: Non-Urgent Operational Intent
+        SafetyCheck -->|Normal Operational Request| IntentClass{"Classify Intent Category"}
+        
+        IntentClass -->|Policy / FAQ / Hours| RAG["Invoke RAG Service\n(Retrieve Context Chunks)"]
+        RAG --> FormulateAnswer["Synthesize Grounded Answer"]
+        FormulateAnswer --> SendReply["Send Response to User\n(Voice Audio / Text)"]
+        
+        IntentClass -->|Out of Clinical Scope| Refuse["Formulate Boundary Refusal\n(Explain Scope Politely)"]
+        Refuse --> SendReply
 
-    state UnderstandingIntent {
-        [*] --> ClassifyCategory
-        ClassifyCategory --> InformationalQuery: Policy / Hours / FAQ Intent
-        ClassifyCategory --> ActionIntent: Booking / Cancel / Doctor Search
-        ClassifyCategory --> OutOfScope: Unsupported Request
-    }
+        IntentClass -->|Appointment / Ticket Action| SlotCheck{"Check Mandatory Slots\n(Date, Doctor, Specialty)"}
+        
+        SlotCheck -->|Missing Information| AskClarify["Prompt User for Missing Details\n('Which date do you prefer?')"]
+        AskClarify --> SendReply
+        
+        SlotCheck -->|All Slots Extracted| MutCheck{"State Mutation Action?\n(Book, Cancel, Reschedule)"}
+        
+        MutCheck -->|Yes: Requires Confirmation| AskConfirm["Ask User Explicit Confirmation\n('Confirm booking Dr. Sarah at 2 PM?')"]
+        AskConfirm --> UserConfirm{"User Decision"}
+        
+        UserConfirm -->|Declined / Cancel| AbortAction["Abort Mutation & Await Request"]
+        AbortAction --> SendReply
 
-    OutOfScope --> FormulatingResponse: Explain Scope Boundary Politely
+        UserConfirm -->|Confirmed| ExecTool["Dispatch Tool via REST API\n(Clinic Backend Verification)"]
+        MutCheck -->|No: Read-Only Tool| ExecTool
 
-    InformationalQuery --> RetrievingKnowledge: Invoke RAG Service
-    RetrievingKnowledge --> FormulatingResponse: Context Chunks Injected
+        ExecTool --> BackendResult{"Backend HTTP Status"}
+        
+        BackendResult -->|200 / 201 Success| FormatSuccess["Synthesize Confirmation Message\n(Include Booking Code)"]
+        FormatSuccess --> SendReply
 
-    ActionIntent --> CheckingSlots: Inspect Extracted Parameters
-    
-    state CheckingSlots <<choice>>
-    CheckingSlots --> RequestingClarification: Missing Mandatory Slots (Date/Doctor/Specialty)
-    CheckingSlots --> ConfirmationCheck: All Slots Present
+        BackendResult -->|409 Conflict / Error| HandleError["Catch Conflict (Slot Taken)\n& Query Next Available Slots"]
+        HandleError --> SuggestAlternative["Offer Alternative Slots to User"]
+        SuggestAlternative --> SendReply
 
-    RequestingClarification --> FormulatingResponse: Ask User Specific Clarification
-
-    state ConfirmationCheck <<choice>>
-    ConfirmationCheck --> AwaitingConfirmation: State-Altering Action (Book/Cancel/Reschedule)
-    ConfirmationCheck --> ExecutingTool: Read-Only Tool (find_doctors/get_availability)
-
-    AwaitingConfirmation --> ReceivingInput: User Responds
-    %% When user confirms:
-    AwaitingConfirmation --> ExecutingTool: User Confirmed ("نعم / تمام")
-    AwaitingConfirmation --> CancellingAction: User Declined ("لا / إلغاء")
-
-    CancellingAction --> FormulatingResponse: Confirm Action Aborted
-
-    state ExecutingTool {
-        [*] --> DispatchREST: Send HTTP to Clinic Backend
-        DispatchREST --> HandleBackendResponse
-    }
-
-    HandleBackendResponse --> InterpretingResult: HTTP 200/201 (Success)
-    HandleBackendResponse --> ToolFailureHandling: HTTP 409 / 422 / 500 (Conflict/Error)
-
-    ToolFailureHandling --> FormulatingResponse: Format Empathetic Recovery (e.g. Slot Taken)
-    InterpretingResult --> FormulatingResponse: Synthesize Natural Confirmation
-
-    FormulatingResponse --> RespondingToUser: Stream Audio / Send Text
-    
-    RespondingToUser --> Idle: Await Next Turn
-    RespondingToUser --> EndSession: User Explicitly Concludes ("شكراً مع السلامة")
-
-    HumanHandoff --> EmittingHandoffEvent: Notify Staff Queue & Play Advisory
-    EmittingHandoffEvent --> EndSession: Session Transferred to Human Staff
-
-    EndSession --> [*]
+        SendReply --> NextTurn{"User Continues?"}
+        NextTurn -->|Yes| Idle
+        NextTurn -->|No: Goodbye| SessionEnd(["● Conclude Session"])
+    end
+    style WorkflowCanvas fill:#ffffff,stroke:#000000,stroke-width:2px

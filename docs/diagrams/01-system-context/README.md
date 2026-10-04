@@ -1,9 +1,33 @@
 # 01 - System Context Diagram
 
-## Diagram Preview
+## Diagram Preview (Solid White Background)
+
+![System Context Diagram](context-diagram.svg)
+
+---
+
+## Technical Specifications
+
+- **Rendered Vector Image:** [`context-diagram.svg`](context-diagram.svg)
+- **High-Res PNG Image:** [`context-diagram.png`](context-diagram.png)
+- **Mermaid Source File:** [`context-diagram.mmd`](context-diagram.mmd)
+- **Purpose:** Establishes the outermost boundary of the Agentic Clinic platform and illustrates external actors, third-party services, and human users.
+- **What it Shows:**
+  - The central `Agentic Clinic System` boundary encompassing conversational AI, backend APIs, RAG, and database.
+  - Three human actor classes: `Patient / Caller`, `Clinic Staff / Receptionist`, and `Clinic Administrator`.
+  - External integration touchpoints: `External Voice / Speech Provider` and `Clinic Source Documents`.
+- **What it Intentionally Does Not Show:**
+  - Internal micro-routing, REST endpoint paths, database tables, or tool invocation chains (detailed in downstream architecture diagrams).
+- **Related Documentation:**
+  - [System Architecture Blueprint](../../architecture/system-architecture.md)
+  - [Product Requirements](../../product/requirements.md)
+
+---
+
+<details>
+<summary>Click to view Mermaid Source Code (context-diagram.mmd)</summary>
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
 flowchart TB
     Patient["Patient / Caller\n(Web & Voice Client)"]
     Staff["Clinic Staff / Receptionist\n(Management Workstation)"]
@@ -23,18 +47,4 @@ flowchart TB
     KnowledgeDocs -->|"Document Ingestion\n(Batch PDF / Markdown)"| CoreSystem
 ```
 
----
-
-## Technical Specifications
-
-- **Source File:** [`context-diagram.mmd`](context-diagram.mmd)
-- **Purpose:** Establishes the outermost boundary of the Agentic Clinic platform and illustrates external actors, third-party services, and human users.
-- **What it Shows:**
-  - The central `Agentic Clinic System` boundary encompassing conversational AI, backend APIs, RAG, and database.
-  - Three human actor classes: `Patient / Caller`, `Clinic Staff / Receptionist`, and `Clinic Administrator`.
-  - External integration touchpoints: `External Voice / Speech Provider` and `Clinic Source Documents`.
-- **What it Intentionally Does Not Show:**
-  - Internal micro-routing, REST endpoint paths, database tables, or tool invocation chains (detailed in downstream architecture diagrams).
-- **Related Documentation:**
-  - [System Architecture Blueprint](../../architecture/system-architecture.md)
-  - [Product Requirements](../../product/requirements.md)
+</details>
