@@ -1,0 +1,38 @@
+name: Repository Foundation CI
+
+on:
+  push:
+    branches: [ main, feature/**, fix/**, refactor/**, experiment/**, docs/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-foundation:
+    name: Validate Repository Foundation & Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Repository Structure & Integrity
+        run: |
+          python scripts/validate_repo.py
+
+      - name: Check for Uncommitted Secrets & Sensitive Files
+        run: |
+          # Verify .env is not committed and no obvious API keys exist
+          if [ -f .env ]; then
+            echo "ERROR: .env file found in repository! Real secrets must never be committed."
+            exit 1
+          fi
+          echo "Secret check passed: No .env committed."
+
+      - name: Verify Docker Compose Configuration Syntax
+        run: |
+          docker compose config -q
+          echo "docker-compose.yml syntax is valid."

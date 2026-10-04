@@ -1,0 +1,120 @@
+# ==============================================================================
+# Agentic Clinic - Docker Compose Foundation (Phase 0)
+#
+# ARCHITECTURAL NOTE:
+# During Phase 0 (Architecture & Foundation), application services (clinic-backend,
+# ai-agent, rag, voice) are defined as architecture contracts.
+#
+# Below, shared persistence infrastructure (PostgreSQL & Redis) is configured
+# for local development. Service containers are declared and documented as
+# blueprints to be un-commented as service implementations land in Phase 1+.
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # Shared Database: PostgreSQL (Relational persistence for Clinic Backend)
+  # ----------------------------------------------------------------------------
+  database:
+    image: postgres:16-alpine
+    container_name: agentic_clinic_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-clinic_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clinic_password}
+      POSTGRES_DB: ${POSTGRES_DB:-clinic_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic_user -d clinic_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # Shared Cache & Session Store: Redis
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: agentic_clinic_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================================
+  # FUTURE APPLICATION SERVICES (To be activated in Phase 1+)
+  # ============================================================================
+
+  # clinic-backend:
+  #   build:
+  #     context: .
+  #     dockerfile: services/clinic-backend/Dockerfile
+  #   container_name: agentic_clinic_backend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - DATABASE_URL=postgresql://clinic_user:clinic_password@database:5432/clinic_db
+  #     - REDIS_URL=redis://redis:6379/0
+  #   depends_on:
+  #     database:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+
+  # ai-agent:
+  #   build:
+  #     context: .
+  #     dockerfile: services/ai-agent/Dockerfile
+  #   container_name: agentic_clinic_ai_agent
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8001:8001"
+  #   environment:
+  #     - CLINIC_API_BASE_URL=http://clinic-backend:8000/api/v1
+  #     - RAG_SERVICE_URL=http://rag:8002/api/v1
+  #     - LLM_PROVIDER=${LLM_PROVIDER}
+  #     - LLM_API_KEY=${LLM_API_KEY}
+  #   depends_on:
+  #     - clinic-backend
+
+  # rag:
+  #   build:
+  #     context: .
+  #     dockerfile: services/rag/Dockerfile
+  #   container_name: agentic_clinic_rag
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8002:8002"
+  #   environment:
+  #     - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER}
+  #     - EMBEDDING_API_KEY=${EMBEDDING_API_KEY}
+
+  # voice:
+  #   build:
+  #     context: .
+  #     dockerfile: services/voice/Dockerfile
+  #   container_name: agentic_clinic_voice
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8003:8003"
+  #   environment:
+  #     - AI_AGENT_URL=http://ai-agent:8001
+  #     - VOICE_PROVIDER=${VOICE_PROVIDER}
+  #     - VOICE_API_KEY=${VOICE_API_KEY}
+
+volumes:
+  postgres_data:
+    name: agentic_clinic_postgres_data
+  redis_data:
+    name: agentic_clinic_redis_data

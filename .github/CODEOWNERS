@@ -1,0 +1,39 @@
+# ==============================================================================
+# Agentic Clinic - CODEOWNERS
+#
+# Lines starting with '#' are comments.
+# Format: <pattern> <team-or-username>...
+#
+# NOTE FOR TEAM:
+# Replace placeholders (@team-lead, @backend-dev, @ai-dev, etc.) with your
+# actual GitHub usernames. Team members should rotate review ownership
+# periodically to maintain shared architectural awareness.
+# ==============================================================================
+
+# Global repository fallbacks - All 5 student engineers
+* @student1-lead @student2-backend @student3-ai @student4-rag @student5-voice
+
+# Architecture, Contracts & ADRs (Require lead / cross-discipline consensus)
+/docs/architecture/   @student1-lead @student2-backend @student3-ai
+/docs/decisions/      @student1-lead @student2-backend @student3-ai @student4-rag @student5-voice
+/AGENTS.md            @student1-lead @student3-ai
+
+# Services
+/services/clinic-backend/   @student2-backend @student1-lead
+/services/ai-agent/         @student3-ai @student1-lead
+/services/rag/              @student4-rag @student3-ai
+/services/voice/            @student5-voice @student3-ai
+
+# Shared Packages & Schemas
+/packages/schemas/          @student2-backend @student3-ai
+/packages/shared/           @student1-lead @student2-backend
+/packages/config/           @student1-lead
+/packages/logging/          @student1-lead
+
+# Database Migrations & Seeds
+/database/                  @student2-backend
+
+# CI/CD & DevOps
+/.github/workflows/         @student1-lead
+/docker-compose.yml         @student1-lead
+/scripts/                   @student1-lead
