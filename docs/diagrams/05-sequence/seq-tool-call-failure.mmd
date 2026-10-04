@@ -1,0 +1,36 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff', 'actorBkg':'#ffffff', 'actorTextColor':'#000000', 'actorBorder':'#000000', 'signalColor':'#000000', 'signalTextColor':'#000000' }}}%%
+sequenceDiagram
+    autonumber
+    actor Caller as Patient / Caller
+    participant Interface as Voice / Chat Client
+    participant Agent as AI Agent Orchestrator
+    participant Tool as Tool Dispatcher
+    participant API as Clinic Backend API
+    participant DB as PostgreSQL Database
+
+    Caller->>Interface: "احجزلي الساعة 2:00" ("Book me at 2:00")
+    Interface->>Agent: "احجزلي الساعة 2:00"
+
+    Agent->>Tool: book_appointment(patient_id=101, doctor_id=12, date="2026-10-15", time="14:00")
+    Tool->>API: POST /api/v1/appointments {patient_id: 101, doctor_id: 12, date: "2026-10-15", time: "14:00"}
+    
+    API->>DB: BEGIN TRANSACTION
+    API->>DB: Check unique constraint: uq_doctor_slot_active
+    Note over DB: Collision: Another patient booked<br/>slot 14:00 seconds earlier!
+    DB-->>API: Unique constraint violation (SQLSTATE 23505)
+    API->>DB: ROLLBACK
+    
+    API-->>Tool: HTTP 409 Conflict {"error": {"code": "SLOT_UNAVAILABLE", "message": "Slot already taken"}}
+    Tool-->>Agent: Returns failure envelope: {success: false, error: "SLOT_UNAVAILABLE"}
+
+    Note over Agent: DETERMINISTIC ERROR RECOVERY:<br/>Agent catches 409 conflict.<br/>Immediately fetches remaining open slots for same date.
+
+    Agent->>Tool: get_doctor_availability(doctor_id=12, date="2026-10-15")
+    Tool->>API: GET /api/v1/doctors/12/availability?date=2026-10-15
+    API->>DB: SELECT available slots
+    DB-->>API: Open Slots: ["14:30", "15:00"]
+    API-->>Tool: HTTP 200 OK: ["14:30", "15:00"]
+    Tool-->>Agent: Open Slots: ["14:30", "15:00"]
+
+    Agent->>Interface: "للأسف ميعاد الساعة 2:00 اتحجز حالاً من مريض تاني.<br/>متاح عند الدكتورة سارة الساعة 2:30 والساعة 3:00 بعد الضهر.<br/>تحب أحجزلك 2:30؟"
+    Interface-->>Caller: Speaks Empathetic Recovery Prompt

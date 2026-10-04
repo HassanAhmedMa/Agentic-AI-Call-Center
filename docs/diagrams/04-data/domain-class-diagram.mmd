@@ -1,0 +1,79 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
+classDiagram
+    class Patient {
+        +int id
+        +string name
+        +string phone
+        +string email
+        +Date dateOfBirth
+        +string insuranceProvider
+        +getAppointmentHistory() List~Appointment~
+        +getActiveTickets() List~SupportTicket~
+    }
+
+    class Doctor {
+        +int id
+        +string name
+        +string specialty
+        +string title
+        +List~string~ languages
+        +float consultationFee
+        +List~string~ workingDays
+        +getAvailableSlots(Date date) List~TimeSlot~
+    }
+
+    class Appointment {
+        +int id
+        +int patientId
+        +int doctorId
+        +Date date
+        +Time startTime
+        +Time endTime
+        +AppointmentStatus status
+        +string notes
+        +cancel(string reason) void
+        +reschedule(Date newDate, Time newTime) void
+    }
+
+    class Service {
+        +int id
+        +string name
+        +string category
+        +float price
+        +int durationMinutes
+        +string prepInstructions
+    }
+
+    class SupportTicket {
+        +int id
+        +int patientId
+        +string subject
+        +string description
+        +TicketStatus status
+        +TicketPriority priority
+        +resolve(string notes) void
+    }
+
+    class AgentSession {
+        +string sessionId
+        +int patientId
+        +string language
+        +List~Turn~ turnHistory
+        +Intent currentIntent
+        +appendTurn(string role, string content) void
+    }
+
+    class ToolCall {
+        +string toolName
+        +Map parameters
+        +boolean confirmationRequired
+        +boolean userConfirmed
+        +execute() ToolResult
+    }
+
+    Patient "1" --> "*" Appointment : books
+    Doctor "1" --> "*" Appointment : attends
+    Patient "1" --> "*" SupportTicket : opens
+    AgentSession "1" --> "*" ToolCall : proposes
+    ToolCall ..> Appointment : mutates
+    ToolCall ..> SupportTicket : creates

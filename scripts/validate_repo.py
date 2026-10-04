@@ -27,7 +27,7 @@ REQUIRED_FILES = [
     ".github/PULL_REQUEST_TEMPLATE.md",
     ".github/CODEOWNERS",
 
-    # Architecture contracts
+    # Architecture contracts & feasibility
     "docs/architecture/system-architecture.md",
     "docs/architecture/api-contracts.md",
     "docs/architecture/tool-schemas.md",
@@ -35,10 +35,24 @@ REQUIRED_FILES = [
     "docs/architecture/database-schema.md",
     "docs/architecture/rag-contract.md",
     "docs/architecture/voice-architecture.md",
+    "docs/architecture/feasibility-audit.md",
 
     # Architectural Decisions
     "docs/decisions/README.md",
     "docs/decisions/ADR-001-monorepo.md",
+    "docs/decisions/ADR-002-technology-candidates-and-scope-simplification.md",
+
+    # Diagrams & Visualizations
+    "docs/diagrams/README.md",
+    "docs/diagrams/requirements-traceability.md",
+    "docs/diagrams/01-system-context/README.md",
+    "docs/diagrams/02-use-cases/README.md",
+    "docs/diagrams/03-architecture/README.md",
+    "docs/diagrams/04-data/README.md",
+    "docs/diagrams/05-sequence/README.md",
+    "docs/diagrams/06-component/README.md",
+    "docs/diagrams/07-deployment/README.md",
+    "docs/diagrams/08-ui/README.md",
 
     # Development guidelines
     "docs/development/setup.md",

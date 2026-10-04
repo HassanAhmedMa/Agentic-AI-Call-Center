@@ -1,0 +1,73 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
+erDiagram
+    PATIENTS {
+        bigint id PK
+        varchar name
+        varchar phone UK
+        varchar email UK
+        date date_of_birth
+        varchar gender
+        varchar insurance_provider
+        varchar insurance_policy_number
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    DOCTORS {
+        bigint id PK
+        varchar name
+        varchar specialty
+        varchar title
+        text description
+        text_array languages
+        numeric consultation_fee
+        varchar_array working_days
+        time shift_start
+        time shift_end
+        integer slot_duration_minutes
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    APPOINTMENTS {
+        bigint id PK
+        bigint patient_id FK
+        bigint doctor_id FK
+        date appointment_date
+        time start_time
+        time end_time
+        appointment_status status
+        text notes
+        text cancellation_reason
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    SERVICES {
+        bigint id PK
+        varchar name UK
+        varchar category
+        text description
+        numeric price
+        integer duration_minutes
+        text preparation_instructions
+        boolean is_available
+        timestamp created_at
+    }
+
+    SUPPORT_TICKETS {
+        bigint id PK
+        bigint patient_id FK
+        varchar subject
+        text description
+        ticket_status status
+        ticket_priority priority
+        text resolution_notes
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PATIENTS ||--o{ APPOINTMENTS : "places (1:N)"
+    DOCTORS ||--o{ APPOINTMENTS : "conducts (1:N)"
+    PATIENTS ||--o{ SUPPORT_TICKETS : "files (1:N)"

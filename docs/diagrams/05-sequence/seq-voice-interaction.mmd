@@ -1,0 +1,41 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff', 'actorBkg':'#ffffff', 'actorTextColor':'#000000', 'actorBorder':'#000000', 'signalColor':'#000000', 'signalTextColor':'#000000' }}}%%
+sequenceDiagram
+    autonumber
+    actor Caller as Patient / Caller
+    participant Mic as Browser Web Audio API
+    participant WS as Voice Gateway (WebSockets)
+    participant VAD as VAD & Barge-in Detector
+    participant VoiceAdapter as «interface» VoiceProvider
+    participant Agent as AI Agent Orchestrator
+
+    Note over Caller,Agent: Turn 1: Normal Audio Stream & Synthesis
+    Caller->>Mic: Speaks: "مساء الخير، عايز أعرف مواعيد العيادة"
+    Mic->>WS: Stream Binary PCM Audio Chunks (20ms frames)
+    WS->>VAD: Detect speech onset & offset
+    VAD->>VoiceAdapter: Process Audio Stream (STT / Realtime Candidate)
+    VoiceAdapter->>Agent: Emits Transcript: "مساء الخير، عايز أعرف مواعيد العيادة"
+
+    Agent->>VoiceAdapter: Request Speech Synthesis for Reply
+    VoiceAdapter-->>WS: Stream Synthesized Audio Chunks
+    WS-->>Mic: Stream Outbound Audio Playback
+    Mic-->>Caller: "مساء النور يا فندم! عيادتنا بتفتح كل يوم من..."
+
+    Note over Caller,Agent: Turn 2: User Interruption (Barge-in Cutoff)
+    Caller->>Mic: Interrupts: "تمام شكراً، عايز دكتور جلدية"
+    Mic->>WS: New Inbound Audio Chunks
+    WS->>VAD: Detect Inbound Speech while Playback Active!
+
+    critical Immediate Barge-in Truncation (< 50ms)
+        VAD->>WS: EMIT EVENT: INTERRUPT_DETECTED
+        WS->>WS: Truncate outbound audio playback queue immediately
+        WS-->>Mic: Flush client audio playback buffer (Silence output)
+        VAD->>VoiceAdapter: Cancel active TTS synthesis stream
+        VAD->>Agent: Notify barge-in & supply new inbound transcript
+    end
+
+    Note over Caller: Assistant instantly stops speaking.<br/>Listens attentively to new user turn.
+    VoiceAdapter->>Agent: New Transcript: "تمام شكراً، عايز دكتور جلدية"
+    Agent->>VoiceAdapter: Synthesize response for Dermatology doctor request
+    VoiceAdapter-->>WS: New Audio Stream
+    WS-->>Mic: Playback
+    Mic-->>Caller: "أهلاً بحضرتك، عندنا استشاري الجلدية دكتور..."

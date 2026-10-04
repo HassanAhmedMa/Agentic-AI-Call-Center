@@ -1,0 +1,30 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
+flowchart LR
+    Caller(("Patient / Caller\n(Voice / Chat)"))
+    Staff(("Clinic Human Staff\n(Escalation Queue)"))
+    
+    subgraph AgentBoundary [" AI Agent Conversational Boundary "]
+        UC_VoiceChat(["Engage in Voice / Text Dialogue\n(Arabic / Egyptian / English)"])
+        UC_Clarify(["Clarify Intent & Missing Slots\n(Specialty, Date, Time)"])
+        UC_QueryRAG(["Query Clinic Knowledge (RAG)\n(Hours, Policies, Prep Rules)"])
+        UC_ExecTools(["Invoke Controlled Operation Tools"])
+        UC_ConfirmAction(["Solicit Confirmation for State Changes\n(Booking, Cancellation, Rescheduling)"])
+        UC_SafetyEscalate(["Escalate via Predefined Safety Rules\n(Urgent Indicators / Frustration)"])
+    end
+
+    subgraph BackendBoundary [" Clinic Backend API Enforcement "]
+        API_ValidateSlot(["Validate Slot & Prevent Overlap"])
+        API_MutateDB(["Execute Atomic DB Booking / Update"])
+    end
+
+    Caller --> UC_VoiceChat
+    UC_VoiceChat --> UC_Clarify
+    UC_VoiceChat --> UC_QueryRAG
+    UC_VoiceChat --> UC_ExecTools
+    UC_VoiceChat --> UC_SafetyEscalate
+
+    UC_ExecTools -.->|"«include»"| UC_ConfirmAction
+    UC_ExecTools --> API_ValidateSlot
+    API_ValidateSlot --> API_MutateDB
+
+    UC_SafetyEscalate --> Staff

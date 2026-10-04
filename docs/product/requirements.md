@@ -52,3 +52,4 @@
 - **REQ-AI-06 (RAG for Information):** Automatically route informational queries (hours, policies, directions) to the RAG knowledge retriever.
 - **REQ-AI-07 (Boundary Refusal):** Politely and firmly refuse unauthorized requests, medical diagnosis demands, or attempts to execute arbitrary commands.
 - **REQ-AI-08 (Zero Hallucination Constraint):** Prohibit inventing doctor availability or confirming bookings without actual backend API verification.
+- **REQ-AI-09 (Predefined Safety Escalation):** Potentially urgent situations trigger immediate escalation to human personnel according to predefined safety rules and pattern matchers, without attempting clinical diagnosis or symptom triage.

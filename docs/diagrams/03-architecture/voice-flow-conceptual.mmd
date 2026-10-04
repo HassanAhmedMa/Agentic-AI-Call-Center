@@ -1,0 +1,54 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
+flowchart TB
+    subgraph ClientBoundary [" Client Audio Ingress "]
+        Caller["Caller / Browser Microphone & Speaker"]
+    end
+
+    subgraph VoiceGatewayLayer [" Voice Gateway (services/voice) "]
+        WS_Handler["WebSocket Duplex Audio Stream Handler"]
+        BargeInDetector["Barge-in / Interruption Detector (VAD)"]
+        PlaybackBuffer["Outbound Audio Playback Buffer"]
+    end
+
+    subgraph ProviderAbstraction [" «interface» VoiceProvider Adapter "]
+        Router{"Voice Strategy Router\n(Benchmarking Option)"}
+        
+        subgraph OptionA [" Implementation Candidate A: Realtime Voice Engine "]
+            RealtimeEngine["Managed Realtime Voice Gateway\n(e.g., OpenAI Realtime / Gemini Live)\n- Native Token-Audio Stream\n- Integrated Turn Detection"]
+        end
+
+        subgraph OptionB [" Implementation Candidate B: Cascaded Pipeline (Baseline) "]
+            STT["Speech-to-Text (STT)\n(Whisper Arabic / Groq)\nChunked Audio ➔ Text"]
+            TTS["Text-to-Speech (TTS)\n(ElevenLabs / Azure Neural)\nText ➔ Synthesized Chunks"]
+        end
+    end
+
+    subgraph OrchestrationLayer [" AI Agent Core (services/ai-agent) "]
+        AgentCore["Agent Dialogue & Tool Engine\n- Intent Processing\n- Controlled Tool Invocation\n- Backend Mutation"]
+    end
+
+    %% Audio Inflow
+    Caller -->|"1. Audio Stream (PCM Chunks)"| WS_Handler
+    WS_Handler --> BargeInDetector
+    BargeInDetector --> Router
+
+    %% Routing
+    Router -->|"Option A Stream"| RealtimeEngine
+    Router -->|"Option B Audio"| STT
+
+    %% Cascaded Flow
+    STT -->|"2. Arabic / English Transcript"| AgentCore
+    AgentCore -->|"3. Synthesized Text Response"| TTS
+    TTS -->|"4. Audio Chunks"| PlaybackBuffer
+
+    %% Realtime Flow
+    RealtimeEngine <-->|"Direct Bidirectional Events"| AgentCore
+    RealtimeEngine -->|"Synthesized Chunks"| PlaybackBuffer
+
+    %% Audio Outflow
+    PlaybackBuffer -->|"5. Outbound Audio Stream"| WS_Handler
+    WS_Handler -->|"6. Audio Playback"| Caller
+
+    %% Interruption / Barge-in Cutoff Flow
+    Caller -.->|"Interruption: Caller speaks while assistant plays"| BargeInDetector
+    BargeInDetector ==x|"IMMEDIATE FLUSH & TRUNCATE (< 50ms)"| PlaybackBuffer

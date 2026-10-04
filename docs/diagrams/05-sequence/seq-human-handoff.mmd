@@ -1,0 +1,27 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff', 'actorBkg':'#ffffff', 'actorTextColor':'#000000', 'actorBorder':'#000000', 'signalColor':'#000000', 'signalTextColor':'#000000' }}}%%
+sequenceDiagram
+    autonumber
+    actor Caller as Patient / Caller
+    participant Interface as Voice / Chat Client
+    participant Agent as AI Agent Orchestrator
+    participant Tool as Tool Dispatcher
+    participant StaffUI as Clinic Staff Dashboard
+    actor Staff as Human Receptionist
+
+    Caller->>Interface: "I have sudden severe chest pain and need a human right now!"
+    Interface->>Agent: Streamed Utterance
+
+    Note over Agent: SAFETY RULE TRIGGERED:<br/>Matches predefined acute symptom keywords.<br/>System does NOT diagnose.<br/>Immediately initiates escalation.
+
+    Agent->>Tool: transfer_to_human(urgency="emergency", reason="Reported chest pain", conversation_summary="Caller stated acute chest pain.")
+    Tool->>StaffUI: Emit WebSocket Event: ESCALATION_QUEUE_NEW_ITEM {queue_id: "ESC-901", urgency: "emergency"}
+    StaffUI-->>Tool: Ack {queue_id: "ESC-901", wait_sec: 15}
+    Tool-->>Agent: Handoff Initiated
+
+    Agent->>Interface: Deliver Non-Clinical Safety Advisory:<br/>"I am transferring you to human clinic staff immediately.<br/>If this is an acute life emergency, please dial 123 (Ambulance) right away."
+    Interface-->>Caller: Speaks Advisory Message
+
+    Note over StaffUI,Staff: Staff dashboard rings with red badge
+    Staff->>StaffUI: Click "Accept Call / Chat" (Queue ID: ESC-901)
+    StaffUI->>Interface: Route Audio / Chat Stream to Staff Workstation
+    Staff-->>Caller: "Hello, this is Nurse Laila at the front desk. How can I help you right now?"

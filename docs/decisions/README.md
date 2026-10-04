@@ -30,3 +30,4 @@ All ADRs follow the standard format:
 | ADR | Title | Status | Date |
 | :--- | :--- | :--- | :--- |
 | [ADR-001](ADR-001-monorepo.md) | Adoption of a Modular Monorepo Architecture | Accepted | 2026-10-04 |
+| [ADR-002](ADR-002-technology-candidates-and-scope-simplification.md) | Technology Candidates, Scope Simplification & Feasibility | Accepted | 2026-10-05 |

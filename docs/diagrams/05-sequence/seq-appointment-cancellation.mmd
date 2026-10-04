@@ -1,0 +1,38 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff', 'actorBkg':'#ffffff', 'actorTextColor':'#000000', 'actorBorder':'#000000', 'signalColor':'#000000', 'signalTextColor':'#000000' }}}%%
+sequenceDiagram
+    autonumber
+    actor Caller as Patient / Caller
+    participant Voice as Voice Layer
+    participant Agent as AI Agent Orchestrator
+    participant Tool as Tool Dispatcher
+    participant API as Clinic Backend API
+    participant DB as PostgreSQL Database
+
+    Caller->>Voice: "عايز ألغي ميعادي بكرة" ("Cancel my appointment tomorrow")
+    Voice->>Agent: Text Transcript + Session Patient ID (101)
+
+    Agent->>Tool: get_patient_appointments(patient_id=101, status_filter="scheduled")
+    Tool->>API: GET /api/v1/patients/101/appointments?status=scheduled
+    API->>DB: SELECT * FROM appointments WHERE patient_id = 101 AND status = 'scheduled'
+    DB-->>API: 1 Record: [Appt #501 with Dr. Sarah Farouk, Tomorrow at 14:00]
+    API-->>Tool: HTTP 200 OK (Appointments List)
+    Tool-->>Agent: Returns Active Appointment
+
+    Note over Agent: MANDATORY CONFIRMATION GUARDRAIL:<br/>Must confirm before calling cancel_appointment.
+
+    Agent->>Voice: Synthesize: "عند حضرتك ميعاد مع دكتورة سارة فاروق بكرة الساعة 2:00 بعد الضهر. متأكد إنك تحب تلغيه؟"
+    Voice-->>Caller: Speaks Arabic Confirmation Prompt
+
+    Caller->>Voice: "أيوه، إلغيه لو سمحت" ("Yes, cancel it please")
+    Voice->>Agent: Confirmed Cancellation
+
+    Agent->>Tool: cancel_appointment(appointment_id=501, reason="Patient request via voice")
+    Tool->>API: DELETE /api/v1/appointments/501 {cancellation_reason: "Patient request via voice"}
+    
+    API->>DB: UPDATE appointments SET status = 'cancelled', cancellation_reason = '...', updated_at = NOW() WHERE id = 501
+    DB-->>API: Rows Affected: 1
+    API-->>Tool: HTTP 200 OK {id: 501, status: "cancelled"}
+    Tool-->>Agent: Tool Success Envelope
+
+    Agent->>Voice: Synthesize: "تم إلغاء ميعاد حضرتك بنجاح. تحب أساعدك في أي حاجة تانية؟"
+    Voice-->>Caller: Speaks Cancellation Confirmation

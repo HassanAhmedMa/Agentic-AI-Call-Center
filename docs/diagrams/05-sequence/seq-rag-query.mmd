@@ -1,0 +1,26 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff', 'actorBkg':'#ffffff', 'actorTextColor':'#000000', 'actorBorder':'#000000', 'signalColor':'#000000', 'signalTextColor':'#000000' }}}%%
+sequenceDiagram
+    autonumber
+    actor Caller as Patient / Caller
+    participant Interface as Voice / Chat Client
+    participant Agent as AI Agent Orchestrator
+    participant RAG as RAG Service (services/rag)
+    participant Store as Vector Knowledge Store
+
+    Caller->>Interface: "What is your appointment cancellation policy?"
+    Interface->>Agent: Text Query: "What is your appointment cancellation policy?"
+
+    Note over Agent: Intent: INFORMATIONAL_FAQ<br/>No database mutation required.<br/>Route to Knowledge Base.
+
+    Agent->>RAG: POST /api/v1/rag/retrieve {query: "cancellation policy", top_k: 2}
+    
+    RAG->>RAG: Compute Query Embedding Vector
+    RAG->>Store: Semantic Similarity Search (Cosine distance against doc embeddings)
+    Store-->>RAG: Retrieved Chunks: [Doc: "clinic_policies.pdf", chunk_03, score: 0.89]
+    
+    RAG-->>Agent: HTTP 200 OK {retrieved_chunks: [...], context_summary: "Free cancellation up to 4 hours prior"}
+
+    Note over Agent: Inject grounded text into LLM prompt.<br/>Synthesize factual answer without hallucination.
+
+    Agent->>Interface: "Our policy allows free cancellation up to 4 hours prior to your scheduled visit."
+    Interface-->>Caller: Display / Speak Grounded Response

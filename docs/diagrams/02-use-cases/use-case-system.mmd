@@ -1,0 +1,47 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
+flowchart LR
+    subgraph Actors [" Primary Actors "]
+        Patient(("Patient / Caller"))
+        Staff(("Clinic Staff"))
+        Admin(("Administrator"))
+    end
+
+    subgraph ClinicBoundary [" Agentic Clinic Operations Boundary "]
+        UC_FindDoc(["Find Doctor & Specialty"])
+        UC_CheckAvail(["Check Doctor Availability"])
+        UC_BookAppt(["Book Appointment"])
+        UC_CancelAppt(["Cancel Appointment"])
+        UC_RescheduleAppt(["Reschedule Appointment"])
+        UC_ViewHistory(["View Patient Appointments"])
+        UC_ViewServices(["View Service Catalog & Pricing"])
+        UC_CreateTicket(["Create Support Ticket"])
+        UC_TrackTicket(["Track Support Ticket Status"])
+        UC_RequestHandoff(["Request Human Assistance"])
+        
+        UC_ManageRoster(["Manage Doctor Rosters & Shifts"])
+        UC_ManageCatalog(["Manage Clinic Services & Pricing"])
+        UC_HandleHandoff(["Answer Escalated Calls / Cases"])
+        UC_ResolveTicket(["Update & Resolve Support Tickets"])
+    end
+
+    %% Patient Associations
+    Patient --> UC_FindDoc
+    Patient --> UC_CheckAvail
+    Patient --> UC_BookAppt
+    Patient --> UC_CancelAppt
+    Patient --> UC_RescheduleAppt
+    Patient --> UC_ViewHistory
+    Patient --> UC_ViewServices
+    Patient --> UC_CreateTicket
+    Patient --> UC_TrackTicket
+    Patient --> UC_RequestHandoff
+
+    %% Staff Associations
+    Staff --> UC_HandleHandoff
+    Staff --> UC_ResolveTicket
+    Staff --> UC_ViewHistory
+    Staff --> UC_CheckAvail
+
+    %% Administrator Associations
+    Admin --> UC_ManageRoster
+    Admin --> UC_ManageCatalog

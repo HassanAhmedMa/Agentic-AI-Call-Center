@@ -116,15 +116,20 @@ Caller         Voice Layer         AI Agent            Tools          Backend AP
 
 ---
 
-## Flow 4: Escalation to Human Agent (Barge-in / Complex / Emergency)
+## Flow 4: Escalation to Human Agent (Barge-in / Complex / Predefined Safety Trigger)
+
+### Important Clarification:
+> ⚠️ The AI Agent is **NOT** a medical diagnostic or clinical triage system.  
+> Escalations are triggered by **predefined safety rules, pattern matchers, and explicit human requests**, ensuring the agent never attempts to assess symptoms or provide medical advice.
 
 ### User Utterance:
 > *"I have severe chest pain and dizziness, I need to talk to someone right now!"*
 
 ### Execution Steps:
-1. **Safety Triage:** AI Agent identifies red-flag medical emergency keywords ("severe chest pain", "dizziness").
-2. **Immediate Escalation:** Agent bypasses regular booking flows.
-3. **Tool Invocation:** Agent immediately triggers `transfer_to_human(urgency="emergency", reason="Reported severe chest pain", conversation_summary="...")`.
-4. **Caller Advisory:** Agent delivers prompt safety disclaimer:
-   *"I am transferring you to an emergency clinic operator immediately. If you are in immediate life danger, please dial 123 (Emergency Ambulance) right away."*
-5. **Session Handoff:** Voice layer switches audio routing to human reception queue.
+1. **Predefined Safety Rule Trigger:** The incoming utterance matches predefined critical keyword patterns ("severe chest pain", "emergency", "dizziness").
+2. **Immediate Escalation:** The agent bypasses standard administrative and booking dialogue paths.
+3. **Escalation Tool Invocation:** The agent invokes `transfer_to_human(urgency="emergency", reason="Reported critical keyword indicator: chest pain", conversation_summary="Caller stated chest pain and dizziness; requested immediate assistance.")`.
+4. **Immediate Caller Safety Advisory:** The agent delivers a non-clinical safety disclaimer:
+   *"I am escalating you to clinic human staff immediately. If you are experiencing an acute medical emergency, please call 123 (Emergency Ambulance Services) immediately."*
+5. **Session Handoff Event:** The voice/session layer emits a handoff event, flagging the conversation in the clinic staff dashboard queue.
+

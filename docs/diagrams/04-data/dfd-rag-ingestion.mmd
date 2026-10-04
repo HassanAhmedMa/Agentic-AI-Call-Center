@@ -1,0 +1,31 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
+flowchart TB
+    subgraph IngestionFlow [" Offline / Batch Knowledge Ingestion Flow "]
+        Docs["Raw Clinic Documents\n(Policies, Prep Guidelines, FAQs, Biographies)"]
+        Parser["Document Parser & Text Cleaner\n(Markdown / PDF / Text)"]
+        Chunker["Semantic Text Chunker\n(Chunk size: 400 tokens, 10% overlap)"]
+        Embedder["Embedding Generator\n(text-embedding-3-small or Vertex)"]
+        
+        Docs --> Parser
+        Parser --> Chunker
+        Chunker -->|"Text Chunks with Metadata"| Embedder
+    end
+
+    subgraph StorageTier [" Vector Knowledge Storage "]
+        VectorDB[("Vector Knowledge Store\n(pgvector in PostgreSQL OR Embedded Vector Store)\n- Embeddings Vectors\n- Source Chunks & Metadata")]
+    end
+
+    Embedder -->|"Store Vectors & Text Payloads"| VectorDB
+
+    subgraph RuntimeQueryFlow [" Online / Runtime RAG Retrieval Flow "]
+        Agent["AI Agent Orchestrator\n(services/ai-agent)"]
+        QueryEmbedder["Runtime Query Embedder\n(Same Embedding Model)"]
+        Retriever["Similarity Search Engine\n(Cosine Similarity / Top-K = 3)"]
+        Assembler["Context Synthesizer & Citation Builder"]
+
+        Agent -->|"1. User Policy/FAQ Query"| QueryEmbedder
+        QueryEmbedder -->|"2. Query Vector"| Retriever
+        VectorDB <-->|"3. Semantic Similarity Match"| Retriever
+        Retriever -->|"4. Top-K Chunks + Scores"| Assembler
+        Assembler -->|"5. Grounded Context + Citations"| Agent
+    end

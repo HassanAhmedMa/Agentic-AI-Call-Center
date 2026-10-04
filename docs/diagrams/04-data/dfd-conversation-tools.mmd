@@ -1,0 +1,38 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
+flowchart LR
+    Caller(("Caller / Patient"))
+    
+    subgraph P1 [" Process 1.0 "]
+        P1_Voice["Audio Stream Ingestion\n& Transcription (STT)"]
+    end
+
+    subgraph P2 [" Process 2.0 "]
+        P2_NLU["Conversational Orchestration,\nIntent Classification & Tool Selection"]
+    end
+
+    subgraph P3 [" Process 3.0 "]
+        P3_Backend["Clinic API Business Validation\n& Conflict Checking"]
+    end
+
+    subgraph DataStores [" Persistent Data Stores "]
+        D1[("D1: PostgreSQL Database\n(patients, doctors, appointments)")]
+        D2[("D2: Session Store (Redis / Memory)\n(Active Turns & Dialogue State)")]
+    end
+
+    subgraph P4 [" Process 4.0 "]
+        P4_TTS["Response Formulation\n& Audio Synthesis (TTS)"]
+    end
+
+    Caller -->|"1. Audio Stream / Text"| P1_Voice
+    P1_Voice -->|"2. Text Transcript"| P2_NLU
+
+    P2_NLU <-->|"Dialogue State & History"| D2
+
+    P2_NLU -->|"3. Controlled Tool Invocations\n(Typed JSON Arguments)"| P3_Backend
+    
+    P3_Backend <-->|"4. Validated Read / Mutate\n(Atomic SQL Transactions)"| D1
+    
+    P3_Backend -->|"5. Structured API Result / Error"| P2_NLU
+
+    P2_NLU -->|"6. Natural Language Response Text"| P4_TTS
+    P4_TTS -->|"7. Audio Chunks / Text Message"| Caller
