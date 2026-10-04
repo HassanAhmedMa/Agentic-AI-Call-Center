@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 680" width="100%" height="100%">
+<defs>
+  <style>
+    .title { font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #000000; }
+    .edge { stroke: #000000; stroke-width: 1.5; fill: none; }
+    .include { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 6,4; fill: none; }
+    .annot { font-family: Arial, sans-serif; font-size: 11px; fill: #000000; text-anchor: middle; }
+  </style>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
+  </marker>
+  <marker id="open_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#000000" stroke-width="1.5"/>
+  </marker>
+</defs>
+<!-- Background -->
+<rect width="1180" height="680" fill="#ffffff"/>
+<circle cx="90" cy="240" r="12" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+<line x1="90" y1="252" x2="90" y2="282" stroke="#000000" stroke-width="2"/>
+<line x1="70" y1="262" x2="110" y2="262" stroke="#000000" stroke-width="2"/>
+<line x1="90" y1="282" x2="74" y2="310" stroke="#000000" stroke-width="2"/>
+<line x1="90" y1="282" x2="106" y2="310" stroke="#000000" stroke-width="2"/>
+<text x="90" y="330" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#000000">Patient / Caller</text>
+<text x="90" y="346" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">(Voice / Chat)</text>
+<circle cx="1090" cy="480" r="12" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+<line x1="1090" y1="492" x2="1090" y2="522" stroke="#000000" stroke-width="2"/>
+<line x1="1070" y1="502" x2="1110" y2="502" stroke="#000000" stroke-width="2"/>
+<line x1="1090" y1="522" x2="1074" y2="550" stroke="#000000" stroke-width="2"/>
+<line x1="1090" y1="522" x2="1106" y2="550" stroke="#000000" stroke-width="2"/>
+<text x="1090" y="570" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#000000">Clinic Human Staff</text>
+<text x="1090" y="586" font-family="Arial, Helvetica, sans-serif" font-size="11" text-anchor="middle" fill="#333333">(Escalation Desk)</text>
+<rect x="200" y="30" width="560" height="620" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+<text x="480.0" y="56" class="title" text-anchor="middle">AI Agent Conversational Boundary</text>
+<rect x="800" y="80" width="260" height="320" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+<text x="930.0" y="106" class="title" text-anchor="middle">Clinic Backend API</text>
+<ellipse cx="350" cy="280" rx="130" ry="34" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="350" y="277" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Engage in Voice / Text Dialogue</text>
+<text x="350" y="293" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Arabic / Egyptian / English)</text>
+<ellipse cx="350" cy="100" rx="120" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="350" y="97" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Clarify Intent & Missing Slots</text>
+<text x="350" y="113" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Doctor, Specialty, Date)</text>
+<ellipse cx="630" cy="120" rx="115" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="630" y="117" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Query Knowledge (RAG)</text>
+<text x="630" y="133" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Policies, Hours, Prep)</text>
+<ellipse cx="630" cy="280" rx="115" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="630" y="277" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Invoke Controlled Tools</text>
+<text x="630" y="293" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(13 Typed Schemas)</text>
+<ellipse cx="630" cy="420" rx="120" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="630" y="417" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Solicit User Confirmation</text>
+<text x="630" y="433" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">for State Mutations</text>
+<ellipse cx="460" cy="540" rx="130" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="460" y="537" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Escalate via Safety Rules</text>
+<text x="460" y="553" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Urgent Indicators / Request)</text>
+<ellipse cx="930" cy="160" rx="115" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="930" y="157" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Validate Slot & Rules</text>
+<text x="930" y="173" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(Conflict Prevention)</text>
+<ellipse cx="930" cy="280" rx="115" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.8"/>
+<text x="930" y="277" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">Execute Atomic Mutation</text>
+<text x="930" y="293" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#000000">(DB Commit / Lock)</text>
+<line x1="115" y1="270" x2="220" y2="280" class="edge"/>
+<path d="M 350 246 L 350 128" class="include" marker-end="url(#open_arrow)"/>
+<text x="350" y="180" class="annot">&lt;&lt;extend&gt;&gt;</text>
+<path d="M 450 260 L 570 140" class="include" marker-end="url(#open_arrow)"/>
+<text x="490" y="180" class="annot">&lt;&lt;extend&gt;&gt;</text>
+<path d="M 480 280 L 515 280" class="include" marker-end="url(#open_arrow)"/>
+<text x="495" y="272" class="annot">&lt;&lt;include&gt;&gt;</text>
+<path d="M 390 314 L 400 510" class="include" marker-end="url(#open_arrow)"/>
+<text x="360" y="440" class="annot">&lt;&lt;extend&gt;&gt;</text>
+<path d="M 630 308 L 630 390" class="include" marker-end="url(#open_arrow)"/>
+<text x="630" y="360" class="annot">&lt;&lt;include&gt;&gt;</text>
+<path d="M 745 270 L 815 170" class="edge" marker-end="url(#arrow)"/>
+<path d="M 930 188 L 930 252" class="edge" marker-end="url(#arrow)"/>
+<line x1="590" y1="540" x2="1065" y2="510" class="edge"/>
+</svg>

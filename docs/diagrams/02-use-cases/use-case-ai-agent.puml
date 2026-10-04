@@ -1,0 +1,43 @@
+@startuml
+' ==============================================================================
+' Agentic Clinic - AI Agent Conversational Interaction UML Use Case Diagram
+' Style: Pure Black & White / Monochrome UML Standard
+' ==============================================================================
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+
+left to right direction
+
+actor "Patient / Caller" as Patient
+actor "Clinic Human Staff" as Staff
+
+rectangle "AI Agent Conversational Boundary" {
+  usecase "Engage in Voice / Text Dialogue\n(Arabic / Egyptian / English)" as UC_Dialogue
+  usecase "Clarify Intent & Missing Slots\n(Specialty, Date, Time)" as UC_Clarify
+  usecase "Query Clinic Knowledge (RAG)\n(Hours, Policies, Prep Rules)" as UC_RAG
+  usecase "Invoke Controlled Operation Tools" as UC_Tools
+  usecase "Solicit Confirmation for State Changes\n(Booking, Cancellation, Rescheduling)" as UC_Confirm
+  usecase "Escalate via Predefined Safety Rules\n(Urgent Indicators / Frustration)" as UC_Escalate
+}
+
+rectangle "Clinic Backend API Enforcement" {
+  usecase "Validate Slot & Prevent Overlap" as UC_Validate
+  usecase "Execute Atomic DB Booking / Update" as UC_Mutate
+}
+
+Patient -- UC_Dialogue
+UC_Dialogue ..> UC_Clarify : <<extend>>
+UC_Dialogue ..> UC_RAG : <<extend>>
+UC_Dialogue ..> UC_Tools : <<include>>
+UC_Dialogue ..> UC_Escalate : <<extend>>
+
+UC_Tools ..> UC_Confirm : <<include>>
+UC_Tools --> UC_Validate
+UC_Validate --> UC_Mutate
+
+UC_Escalate -- Staff
+
+@enduml

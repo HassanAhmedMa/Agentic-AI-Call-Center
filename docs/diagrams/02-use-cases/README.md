@@ -1,110 +1,152 @@
-# 02 - Use Case Diagrams
+# 02 - UML Use Case Diagrams
 
-This folder contains the complete UML Use Case documentation for **Agentic Clinic**, structured into a high-level system operations diagram and an AI agent interaction diagram.
-
----
-
-## 1. High-Level System Use Case Diagram
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
-flowchart LR
-    subgraph Actors [" Primary Actors "]
-        Patient(("Patient / Caller"))
-        Staff(("Clinic Staff"))
-        Admin(("Administrator"))
-    end
-
-    subgraph ClinicBoundary [" Agentic Clinic Operations Boundary "]
-        UC_FindDoc(["Find Doctor & Specialty"])
-        UC_CheckAvail(["Check Doctor Availability"])
-        UC_BookAppt(["Book Appointment"])
-        UC_CancelAppt(["Cancel Appointment"])
-        UC_RescheduleAppt(["Reschedule Appointment"])
-        UC_ViewHistory(["View Patient Appointments"])
-        UC_ViewServices(["View Service Catalog & Pricing"])
-        UC_CreateTicket(["Create Support Ticket"])
-        UC_TrackTicket(["Track Support Ticket Status"])
-        UC_RequestHandoff(["Request Human Assistance"])
-        
-        UC_ManageRoster(["Manage Doctor Rosters & Shifts"])
-        UC_ManageCatalog(["Manage Clinic Services & Pricing"])
-        UC_HandleHandoff(["Answer Escalated Calls / Cases"])
-        UC_ResolveTicket(["Update & Resolve Support Tickets"])
-    end
-
-    Patient --> UC_FindDoc
-    Patient --> UC_CheckAvail
-    Patient --> UC_BookAppt
-    Patient --> UC_CancelAppt
-    Patient --> UC_RescheduleAppt
-    Patient --> UC_ViewHistory
-    Patient --> UC_ViewServices
-    Patient --> UC_CreateTicket
-    Patient --> UC_TrackTicket
-    Patient --> UC_RequestHandoff
-
-    Staff --> UC_HandleHandoff
-    Staff --> UC_ResolveTicket
-    Staff --> UC_ViewHistory
-    Staff --> UC_CheckAvail
-
-    Admin --> UC_ManageRoster
-    Admin --> UC_ManageCatalog
-```
-
-- **Source File:** [`use-case-system.mmd`](use-case-system.mmd)
-- **Purpose:** Maps functional capabilities across the three principal human actors.
-- **What it Shows:**
-  - Patient operations (finding doctors, availability, booking, rescheduling, cancellation, service checks, support ticketing).
-  - Staff operations (handling human handoffs, resolving tickets, viewing patient appointments).
-  - Admin operations (maintaining rosters, shifts, and medical catalogs).
-- **What it Intentionally Does Not Show:** Internal software layers or database schemas.
+This directory contains the official UML Use Case models for **Agentic Clinic**, adhering strictly to the **standard UML Use Case notation**:
+- **Actors:** Represented as standard UML stick figures.
+- **Use Cases:** Represented as standard UML horizontal ovals / ellipses.
+- **System Boundaries:** Represented as clean enclosing rectangles.
+- **Visual Style:** Pure black-and-white monochrome (high-contrast, professional, suitable for university thesis, academic reports, and printed documentation).
 
 ---
 
-## 2. AI Agent Interaction Use Case Diagram
+## 1. High-Level System Operations Use Case Diagram
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
-flowchart LR
-    Caller(("Patient / Caller\n(Voice / Chat)"))
-    Staff(("Clinic Human Staff\n(Escalation Queue)"))
-    
-    subgraph AgentBoundary [" AI Agent Conversational Boundary "]
-        UC_VoiceChat(["Engage in Voice / Text Dialogue\n(Arabic / Egyptian / English)"])
-        UC_Clarify(["Clarify Intent & Missing Slots\n(Specialty, Date, Time)"])
-        UC_QueryRAG(["Query Clinic Knowledge (RAG)\n(Hours, Policies, Prep Rules)"])
-        UC_ExecTools(["Invoke Controlled Operation Tools"])
-        UC_ConfirmAction(["Solicit Confirmation for State Changes\n(Booking, Cancellation, Rescheduling)"])
-        UC_SafetyEscalate(["Escalate via Predefined Safety Rules\n(Urgent Indicators / Frustration)"])
-    end
+### Visual Render (Standard UML: Stickman & Ovals)
+![System Use Case Diagram](use-case-system.svg)
 
-    subgraph BackendBoundary [" Clinic Backend API Enforcement "]
-        API_ValidateSlot(["Validate Slot & Prevent Overlap"])
-        API_MutateDB(["Execute Atomic DB Booking / Update"])
-    end
+### Source Specifications
+- **Rendered SVG:** [`use-case-system.svg`](use-case-system.svg)
+- **PlantUML Source:** [`use-case-system.puml`](use-case-system.puml)
+- **Mermaid Source:** [`use-case-system.mmd`](use-case-system.mmd)
 
-    Caller --> UC_VoiceChat
-    UC_VoiceChat --> UC_Clarify
-    UC_VoiceChat --> UC_QueryRAG
-    UC_VoiceChat --> UC_ExecTools
-    UC_VoiceChat --> UC_SafetyEscalate
+### Description & Boundaries:
+- **Actors:**
+  - `Patient / Caller`: Interacts via text chat and voice streams to discover doctors, inspect availability, manage appointments, query service fees, open support tickets, and request human assistance.
+  - `Clinic Staff`: Receptionists and clinic coordinators who answer escalated calls, resolve customer tickets, view patient histories, and verify doctor schedules.
+  - `Administrator`: Maintains doctor rosters, shifts, and the clinic service/pricing catalog.
+- **Boundary:** Encloses core clinic functional operations within the `Agentic Clinic Operations Boundary`.
 
-    UC_ExecTools -.->|"«include»"| UC_ConfirmAction
-    UC_ExecTools --> API_ValidateSlot
-    API_ValidateSlot --> API_MutateDB
+---
 
-    UC_SafetyEscalate --> Staff
+## 2. AI Agent Conversational Interaction Use Case Diagram
+
+### Visual Render (Standard UML: Stickman & Ovals)
+![AI Agent Use Case Diagram](use-case-ai-agent.svg)
+
+### Source Specifications
+- **Rendered SVG:** [`use-case-ai-agent.svg`](use-case-ai-agent.svg)
+- **PlantUML Source:** [`use-case-ai-agent.puml`](use-case-ai-agent.puml)
+- **Mermaid Source:** [`use-case-ai-agent.mmd`](use-case-ai-agent.mmd)
+
+### Description & Relationships:
+- **Primary Actor:** `Patient / Caller` interacts with the primary use case `Engage in Voice / Text Dialogue`.
+- **Secondary Actor:** `Clinic Human Staff` receives escalated sessions via the `Escalate via Predefined Safety Rules` use case.
+- **UML Stereotypes:**
+  - `«extend»`: Clarification of missing slots, RAG informational querying, and predefined safety escalation conditionally extend the dialogue.
+  - `«include»`: Invoking controlled tools always includes mandatory user confirmation before executing state-altering actions (`book_appointment`, `cancel_appointment`, `reschedule_appointment`).
+- **Backend Boundary:** Controlled tools invoke `Validate Slot & Rules` on the Clinic Backend REST API, which deterministically enforces constraints before `Execute Atomic Mutation` in PostgreSQL.
+
+---
+
+## 3. PlantUML Source Code
+
+<details>
+<summary>Click to view System Use Case PlantUML Source (use-case-system.puml)</summary>
+
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+
+left to right direction
+
+actor "Patient / Caller" as Patient
+actor "Clinic Staff" as Staff
+actor "Administrator" as Admin
+
+rectangle "Agentic Clinic Operations Boundary" {
+  usecase "Find Doctor & Specialty" as UC_FindDoc
+  usecase "Check Doctor Availability" as UC_CheckAvail
+  usecase "Book Appointment" as UC_BookAppt
+  usecase "Cancel Appointment" as UC_CancelAppt
+  usecase "Reschedule Appointment" as UC_ReschedAppt
+  usecase "View Patient Appointments" as UC_ViewAppts
+  usecase "View Service Catalog & Pricing" as UC_ViewServices
+  usecase "Create Support Ticket" as UC_CreateTicket
+  usecase "Track Support Ticket Status" as UC_TrackTicket
+  usecase "Request Human Assistance" as UC_RequestHandoff
+  
+  usecase "Manage Doctor Rosters & Shifts" as UC_ManageRoster
+  usecase "Manage Services Catalog & Pricing" as UC_ManageCatalog
+  usecase "Answer Escalated Calls / Cases" as UC_HandleHandoff
+  usecase "Update & Resolve Support Tickets" as UC_ResolveTicket
+}
+
+Patient -- UC_FindDoc
+Patient -- UC_CheckAvail
+Patient -- UC_BookAppt
+Patient -- UC_CancelAppt
+Patient -- UC_ReschedAppt
+Patient -- UC_ViewAppts
+Patient -- UC_ViewServices
+Patient -- UC_CreateTicket
+Patient -- UC_TrackTicket
+Patient -- UC_RequestHandoff
+
+Staff -- UC_HandleHandoff
+Staff -- UC_ResolveTicket
+Staff -- UC_ViewAppts
+Staff -- UC_CheckAvail
+
+Admin -- UC_ManageRoster
+Admin -- UC_ManageCatalog
+@enduml
 ```
 
-- **Source File:** [`use-case-ai-agent.mmd`](use-case-ai-agent.mmd)
-- **Purpose:** Illustrates how the AI Agent orchestrator mediates conversational intent, guardrails, confirmation checks, and backend execution.
-- **What it Shows:**
-  - Conversational understanding in Arabic, Egyptian dialect, and English.
-  - Mandatory confirmation solicitation (`«include»`) prior to state-altering tool execution.
-  - Escalation to human staff based on predefined safety rules and patient request.
-  - Backend validation boundary ensuring zero unvalidated database writes.
-- **Related Documentation:**
-  - [Product Requirements](../../product/requirements.md)
-  - [Tool Schemas Contract](../../architecture/tool-schemas.md)
+</details>
+
+<details>
+<summary>Click to view AI Agent Interaction PlantUML Source (use-case-ai-agent.puml)</summary>
+
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+
+left to right direction
+
+actor "Patient / Caller" as Patient
+actor "Clinic Human Staff" as Staff
+
+rectangle "AI Agent Conversational Boundary" {
+  usecase "Engage in Voice / Text Dialogue\n(Arabic / Egyptian / English)" as UC_Dialogue
+  usecase "Clarify Intent & Missing Slots\n(Specialty, Date, Time)" as UC_Clarify
+  usecase "Query Clinic Knowledge (RAG)\n(Hours, Policies, Prep Rules)" as UC_RAG
+  usecase "Invoke Controlled Operation Tools" as UC_Tools
+  usecase "Solicit Confirmation for State Changes\n(Booking, Cancellation, Rescheduling)" as UC_Confirm
+  usecase "Escalate via Predefined Safety Rules\n(Urgent Indicators / Frustration)" as UC_Escalate
+}
+
+rectangle "Clinic Backend API Enforcement" {
+  usecase "Validate Slot & Prevent Overlap" as UC_Validate
+  usecase "Execute Atomic DB Booking / Update" as UC_Mutate
+}
+
+Patient -- UC_Dialogue
+UC_Dialogue ..> UC_Clarify : <<extend>>
+UC_Dialogue ..> UC_RAG : <<extend>>
+UC_Dialogue ..> UC_Tools : <<include>>
+UC_Dialogue ..> UC_Escalate : <<extend>>
+
+UC_Tools ..> UC_Confirm : <<include>>
+UC_Tools --> UC_Validate
+UC_Validate --> UC_Mutate
+
+UC_Escalate -- Staff
+@enduml
+```
+
+</details>

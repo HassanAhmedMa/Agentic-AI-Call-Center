@@ -1,0 +1,58 @@
+@startuml
+' ==============================================================================
+' Agentic Clinic - System Operations UML Use Case Diagram
+' Style: Pure Black & White / Monochrome UML Standard
+' ==============================================================================
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+
+left to right direction
+
+actor "Patient / Caller" as Patient
+actor "Clinic Staff" as Staff
+actor "Administrator" as Admin
+
+rectangle "Agentic Clinic Operations Boundary" {
+  usecase "Find Doctor & Specialty" as UC_FindDoc
+  usecase "Check Doctor Availability" as UC_CheckAvail
+  usecase "Book Appointment" as UC_BookAppt
+  usecase "Cancel Appointment" as UC_CancelAppt
+  usecase "Reschedule Appointment" as UC_ReschedAppt
+  usecase "View Patient Appointments" as UC_ViewAppts
+  usecase "View Service Catalog & Pricing" as UC_ViewServices
+  usecase "Create Support Ticket" as UC_CreateTicket
+  usecase "Track Support Ticket Status" as UC_TrackTicket
+  usecase "Request Human Assistance" as UC_RequestHandoff
+  
+  usecase "Manage Doctor Rosters & Shifts" as UC_ManageRoster
+  usecase "Manage Services Catalog & Pricing" as UC_ManageCatalog
+  usecase "Answer Escalated Calls / Cases" as UC_HandleHandoff
+  usecase "Update & Resolve Support Tickets" as UC_ResolveTicket
+}
+
+' Patient Associations
+Patient -- UC_FindDoc
+Patient -- UC_CheckAvail
+Patient -- UC_BookAppt
+Patient -- UC_CancelAppt
+Patient -- UC_ReschedAppt
+Patient -- UC_ViewAppts
+Patient -- UC_ViewServices
+Patient -- UC_CreateTicket
+Patient -- UC_TrackTicket
+Patient -- UC_RequestHandoff
+
+' Clinic Staff Associations
+Staff -- UC_HandleHandoff
+Staff -- UC_ResolveTicket
+Staff -- UC_ViewAppts
+Staff -- UC_CheckAvail
+
+' Administrator Associations
+Admin -- UC_ManageRoster
+Admin -- UC_ManageCatalog
+
+@enduml
