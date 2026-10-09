@@ -1,7 +1,7 @@
 # ADR-003: Patient Identity Verification, Booking Rules, Bilingual Catalog & Browser Call Channel
 
 - **Status:** Proposed (acceptance conditions in §7)
-- **Date:** 2026-10-09 (revision 2)
+- **Date:** 2026-10-09 (revision 3)
 - **Deciders:** Agentic Clinic Team (5 Software Engineering Students)
 - **Consulted:** Academic Supervisor (pending — see §6)
 - **Related:** [ADR-002](ADR-002-technology-candidates-and-scope-simplification.md), [feasibility-audit.md](../architecture/feasibility-audit.md), [api-contracts.md](../architecture/api-contracts.md), [tool-schemas.md](../architecture/tool-schemas.md), [database-schema.md](../architecture/database-schema.md)
@@ -64,8 +64,9 @@ There is **no unverified guest role**.
 - The customer number is an identifier, not a secret, and on its own grants nothing.
 
 **The OTP never passes through the LLM**
-- The agent calls `request_verification_code(customer_number)`. The backend creates a **verification challenge** and emails the code. The agent receives only `{challenge_status: "sent", masked_email: "a***@gmail.com"}`, never the code.
-- The **browser code box is the only supported way to enter the code** in the MVP. The page submits it **directly to the backend** verification endpoint, together with the challenge id and the conversation session id. It never travels through the voice service, speech recognition or the agent.
+- The agent calls `request_verification_code(customer_number)`. The backend creates a **verification challenge** and emails the code. The agent receives only `{state: "pending", delivery: "email_on_file"}`, never the code.
+- The response is **identical for known and unknown customer numbers** and contains **no masked email**: a masked address exists only for real accounts, so returning it would reveal which numbers are valid. The agent says: "If this number is registered, we've sent a code to the email on file. Please type it in the box on your screen."
+- The **browser code box is the only supported way to enter the code** in the MVP. The page submits it **directly to the backend** verification endpoint with the conversation token and the purpose. There is at most one pending challenge per conversation and purpose, so no challenge id ever passes through the agent or the page. The code never travels through the voice service, speech recognition or the agent.
 - **Spoken codes are not accepted.** If a caller reads the code aloud anyway, the agent says "please type it in the box on your screen". While a challenge is open, the voice service **redacts digit sequences** from transcripts before they reach the agent or logs (best effort).
 - The code value is **never logged** anywhere: request logging excludes the verification endpoint's body.
 - On success, the backend creates the patient session, binds it to the conversation session, and notifies the agent with an event: `{verified: true}`. The agent then continues.
@@ -129,7 +130,7 @@ There is **no unverified guest role**.
 4. When the code is correct, the backend creates the patient, assigns a customer number, emails it, creates the patient session and binds it to the conversation session. The caller can book right away.
 
 **Duplicates and linking**
-- **Email** is required and **unique**. If it is already registered, the response is generic ("We could not complete registration with these details. If you already have an account, please verify with your customer number.") and does not reveal which detail matched.
+- **Email** is required and **unique**. If it is already registered, the response is **the same as for a new email** ("code sent"), so the form cannot be used to discover registered addresses. No usable code is created; instead the existing owner receives an email: "Someone tried to register with this address. If it was you, use your customer number to sign in."
 - **Phone** is a contact field only. It is **not unique**, so family members can share a number. It is not verified and not used for authentication.
 - A new registration is **never automatically linked** to an existing patient based on matching name, phone or date of birth. Merging records is a manual `clinic_staff` task.
 - Max **3 registrations per client IP per day**, plus the code rate limits from §3.2.
