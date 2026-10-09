@@ -1,7 +1,7 @@
 # ADR-003: Patient Identity Verification, Booking Rules, Bilingual Catalog & Browser Call Channel
 
-- **Status:** Proposed
-- **Date:** 2026-10-09
+- **Status:** Proposed (acceptance conditions in §7)
+- **Date:** 2026-10-09 (revision 2)
 - **Deciders:** Agentic Clinic Team (5 Software Engineering Students)
 - **Consulted:** Academic Supervisor (pending — see §6)
 - **Related:** [ADR-002](ADR-002-technology-candidates-and-scope-simplification.md), [feasibility-audit.md](../architecture/feasibility-audit.md), [api-contracts.md](../architecture/api-contracts.md), [tool-schemas.md](../architecture/tool-schemas.md), [database-schema.md](../architecture/database-schema.md)
@@ -26,33 +26,53 @@ A review of the Phase 0 contracts before starting Phase 1 found gaps that would 
 
 ## 2. Decisions
 
-### Decision 3.1: The patient identity always comes from the verified session, never from the LLM
+### Decision 3.1: Identity model and authorization boundary
 
-- The backend issues a **signed, short-lived session token (JWT)** after verification. Claims: `sub` (patient id), `role`, `verification_level`, `session_id`, `exp` (30 minutes, renewable during an active conversation).
-- Every patient-scoped endpoint reads the patient from the token. Patient ids in paths or bodies are removed from patient-facing endpoints (`/patients/me/...`).
-- **No LLM-facing tool accepts `patient_id`.** The tool layer in `services/ai-agent` attaches the session token to backend calls. The token is never placed in the LLM context.
-- The agent service also authenticates itself to the backend with a **service credential** (`AGENT_SERVICE_TOKEN`), so only our agent can act on behalf of patients.
-- **Roles:**
+**Identifiers** — each has one job:
+
+| Identifier | Purpose | Who sees it |
+|---|---|---|
+| `patients.id` | Internal database primary key | Backend only. Never shown to the caller or the LLM |
+| `customer_number` | Patient-facing account identifier, used only to **start** verification | Caller, agent |
+| `email` | Required, unique, verified contact address and destination for verification codes | Backend; shown to the caller only masked |
+| Patient session | Establishes **which patient the current operation may access** | Backend only (server-side) |
+
+**Rules**
+- The LLM can never select a patient. No patient-data tool accepts `patient_id`, `customer_number` or `email`. The only tool that takes a `customer_number` is `request_verification_code`, which starts a challenge and returns no patient data.
+- The backend derives the patient **only from the verified patient session** and enforces ownership on every patient-specific operation. Patient-facing endpoints use `/patients/me/...`; ids supplied in a body or path never override the session.
+- **Server-side sessions.** After successful verification, the backend creates a patient session (an opaque random id stored server-side) and binds it to the **conversation session** (created by the backend when the call starts, also an opaque random id). Server-side storage makes revocation immediate. Neither id is ever placed in the LLM context.
+- **Two independent checks on every agent request** to the backend:
+  1. **Service authentication:** the `AGENT_SERVICE_TOKEN` proves the request comes from our agent service. It grants **no** patient permissions by itself.
+  2. **Patient authorization:** the backend looks up the patient session bound to the given conversation session. It must exist, be verified, and not be expired or revoked. The patient comes from that binding.
+
+  A valid service token with no valid patient session can only reach public endpoints.
+
+**Roles**
 
 | Role | Who | Can do |
 |---|---|---|
 | (none) | Anyone | Public info: doctors, specialties, availability, services, opening hours |
-| `patient` | Verified registered customer (existing, or newly registered during the call, §3.3) | View, book, reschedule, cancel own appointments; create/view own tickets |
+| `patient` | Verified registered account (existing, or newly registered during the call, §3.4) | View, book, reschedule, cancel own appointments; create/view own tickets |
 | `clinic_staff` | Reception / support staff | Update tickets, view escalations |
 
-There is **no unverified guest role**. Every booking belongs to a patient whose email has been verified.
+There is **no unverified guest role**.
 
-### Decision 3.2: Verification = customer number + one-time code sent by email
+### Decision 3.2: Verification = customer number + one-time code (OTP) by email, entered only in the browser
 
 **Customer number**
-- Every registered patient gets a **6-digit customer number**: 5 digits + 1 **Luhn check digit** (e.g. `48213` + check digit `3` → `482133`).
-- The check digit catches a misheard digit from speech recognition **before** any lookup. The agent then asks the caller to repeat instead of looking up the wrong customer.
-- The customer number is an identifier, not a secret.
+- **6 digits**: 5 digits + 1 **Luhn check digit** (e.g. `48213` + check digit `3` → `482133`). The check digit catches a misheard digit before any lookup; the agent asks the caller to repeat it.
+- The customer number is an identifier, not a secret, and on its own grants nothing.
 
-**One-time code (OTP) by email**
-- The agent calls `request_verification_code(customer_number)`. The **backend** generates the code and emails it to the address on file. The agent never receives the correct code.
-- The agent tells the caller where it was sent, with the email masked: "I sent a code to a\*\*\*@gmail.com".
-- The caller **types the code into the code box on the call page** (primary path) or says it aloud (fallback). Typing avoids digit recognition errors and works after returning from the email app (§3.7).
+**The OTP never passes through the LLM**
+- The agent calls `request_verification_code(customer_number)`. The backend creates a **verification challenge** and emails the code. The agent receives only `{challenge_status: "sent", masked_email: "a***@gmail.com"}`, never the code.
+- The **browser code box is the only supported way to enter the code** in the MVP. The page submits it **directly to the backend** verification endpoint, together with the challenge id and the conversation session id. It never travels through the voice service, speech recognition or the agent.
+- **Spoken codes are not accepted.** If a caller reads the code aloud anyway, the agent says "please type it in the box on your screen". While a challenge is open, the voice service **redacts digit sequences** from transcripts before they reach the agent or logs (best effort).
+- The code value is **never logged** anywhere: request logging excludes the verification endpoint's body.
+- On success, the backend creates the patient session, binds it to the conversation session, and notifies the agent with an event: `{verified: true}`. The agent then continues.
+
+**Challenge binding**
+- Each challenge is bound to: **purpose** (`login` | `registration`), **target account** (or pending registration), **conversation session**, and **expiry**.
+- A code is valid only for its own challenge. A login code cannot complete a registration, and a code from one conversation session cannot be used in another.
 
 **Code rules**
 
@@ -60,47 +80,65 @@ There is **no unverified guest role**. Every booking belongs to a patient whose 
 |---|---|
 | Length | 6 digits |
 | Validity | 5 minutes |
-| Use | Single use |
-| Wrong attempts | Max 3, then the code is invalidated |
-| Sending limit | Max 3 codes per customer per 15 minutes, 60 s between sends |
-| Storage | Hashed (HMAC-SHA-256 with server secret), never stored in plain text, never logged |
+| Use | Single use; requesting a new code invalidates the previous one |
+| Wrong attempts | Max 3 per challenge, then the challenge is invalidated |
+| Storage | HMAC-SHA-256 hash with a server secret; never stored in plain text, never logged |
 
-- **Unknown customer numbers:** the response does not reveal whether a number exists ("If this number is registered, a code has been sent"). Combined with rate limiting, this prevents someone from guessing valid customer numbers.
+**Rate limits** (all enforced by the backend)
 
-**Demo email delivery**
-- Development and demo use **Mailpit**, a local fake mail server in Docker with a web inbox. Codes appear on a local page with no real email account and no cost. The mail sender sits behind an interface so a real SMTP provider can replace Mailpit later.
-
-**Phasing (matches the roadmap)**
-
-| Phase | Verification mode |
+| Limit | Value |
 |---|---|
-| Phase 1–5 | `AUTH_VERIFICATION_MODE=dob`: customer number + date of birth. Simple interim mode so the text agent (Phase 2) can work |
-| Phase 6 | `AUTH_VERIFICATION_MODE=email_otp`: customer number + email code becomes the default. DOB mode is kept for automated tests only |
+| Codes per customer number | Max 3 per 15 minutes, 60 s between sends |
+| Codes per client IP | Max 10 per hour |
+| Codes per conversation session | Max 5 |
+| Failed verifications per client IP | Max 20 per hour |
 
-Both modes issue the same token, so nothing downstream changes in Phase 6.
+- **Client IP** is taken from `X-Forwarded-For` **only** when the request comes from our own configured reverse proxy or tunnel (trusted-proxy list in config). Otherwise the socket address is used, so callers cannot fake their IP with a header.
+- **Unknown customer numbers** get the same response as known ones ("If this number is registered, a code has been sent"), so valid numbers cannot be discovered by guessing.
+
+**Email delivery**
+- Development and demo use **Mailpit** (local fake mail server in Docker with a web inbox). The mail sender sits behind an interface so a real SMTP provider can replace it later.
+
+**No date-of-birth authentication**
+- Date of birth is **not** an authentication factor in any mode.
+- Real email OTP (via Mailpit) is used from **Phase 1** onwards, because Mailpit makes it free and local.
+- Automated tests and CI use a **mock verification adapter** that accepts a fixed code for **seeded test accounts only**. It is enabled by `VERIFICATION_PROVIDER=mock` and the backend **refuses to start** if `mock` is configured when `ENVIRONMENT` is not `development` or `test`.
+- The verification API contract is identical for the real and mock adapters, so nothing downstream changes.
+- Phase 6 hardens what exists (adversarial tests, rate-limit tuning, audit logging); it does not introduce a new authentication method.
 
 **Tiered access:** public information never requires verification. Verification is requested only when the caller wants to view, book, reschedule or cancel.
 
-### Decision 3.3: First-time callers register during the call (no unverified guests)
+### Decision 3.3: Session lifecycle
+
+| Item | Rule |
+|---|---|
+| Conversation session | Created by the backend at call start. Ends when the call ends, or 5 minutes after the connection drops without resume |
+| Call-resume window | 5 minutes. Reconnecting within it continues the same conversation session, including its patient session binding |
+| Patient session idle timeout | 15 minutes without a patient-scoped request |
+| Patient session absolute lifetime | 60 minutes, then re-verification is required |
+| End of call / end of resume window | The patient session is **revoked** immediately |
+| Caller says "log out" / switches account | The patient session is revoked; a new verification is needed |
+| Expiry mid-call | Patient-scoped tools return `SESSION_EXPIRED`. The agent explains and starts a new verification. Public questions keep working |
+
+### Decision 3.4: First-time callers register during the call
 
 **Flow**
-1. The caller says they have no customer number. The agent calls `start_registration`, and the call page opens a **quick registration form**: name, phone, date of birth, email, preferred language.
-2. Callers are **never asked to spell an email address aloud**, because speech recognition is unreliable for addresses, especially in mixed Arabic and English.
-3. On submit, the backend sends a one-time code to the email (same code rules as §3.2). The caller types it into the code box.
-4. When the code is correct, the backend creates the patient, assigns a **customer number**, emails it, and issues the session token. The conversation continues as a verified `patient`, so the caller can book right away.
+1. The caller says they have no customer number. The agent calls `start_registration`, and the call page opens a **registration form**: name, phone, date of birth, email, preferred language.
+2. Callers are **never asked to spell an email address aloud**.
+3. On submit, the page sends the form **directly to the backend**, which creates a `registration` challenge and emails a code. The caller types it into the code box.
+4. When the code is correct, the backend creates the patient, assigns a customer number, emails it, creates the patient session and binds it to the conversation session. The caller can book right away.
 
-**Why no guest booking:** a guest identified only by a spoken phone number is unverified, so one person could hold many slots using different numbers. Requiring a verified email at registration closes that gap, and it removes a whole role, its special limits and the guest-to-registered merge logic.
+**Duplicates and linking**
+- **Email** is required and **unique**. If it is already registered, the response is generic ("We could not complete registration with these details. If you already have an account, please verify with your customer number.") and does not reveal which detail matched.
+- **Phone** is a contact field only. It is **not unique**, so family members can share a number. It is not verified and not used for authentication.
+- A new registration is **never automatically linked** to an existing patient based on matching name, phone or date of birth. Merging records is a manual `clinic_staff` task.
+- Max **3 registrations per client IP per day**, plus the code rate limits from §3.2.
 
-**Duplicate and abuse checks**
-- Email and phone are each **unique** across patients. If either already belongs to a patient, registration is refused and the agent asks the caller to verify with their customer number instead. The response does not reveal which field matched.
-- Max **3 registrations per client IP per day**, plus the code sending limits from §3.2.
-- Known limitation: one person can still register several times with different email addresses and phone numbers. This takes real effort and every account is verified, so the risk is accepted for the MVP.
+**What the limits mean:** email verification proves control of an inbox, not real-world identity. All booking limits therefore apply **per registered patient account**. They do not guarantee that one person cannot hold several accounts with different email addresses. For a synthetic demo clinic this is acceptable; reception would check identity on arrival in a real clinic.
 
-**Callers who cannot register** (no email, or cannot use the form): the agent offers `transfer_to_human` so reception can book for them. No booking is ever made for an unverified caller.
+**Callers who cannot register** (no email, or cannot use the form): the agent offers `transfer_to_human`. No booking is ever made without a verified patient session.
 
-**Phasing:** in `AUTH_VERIFICATION_MODE=dob` (Phases 1–5), registration skips the email code so development is not blocked. From Phase 6 (`email_otp`), the email code is required.
-
-### Decision 3.4: Booking rules are enforced by the backend
+### Decision 3.5: Booking rules are enforced by the backend
 
 | Rule | Value | Error code |
 |---|---|---|
@@ -109,90 +147,101 @@ Both modes issue the same token, so nothing downstream changes in Phase 6.
 | Booking horizon | Up to 30 days ahead | `BOOKING_TOO_FAR_AHEAD` |
 | Minimum lead time | At least 1 hour from now | `BOOKING_TOO_SOON` |
 | Cancel / reschedule notice | At least 4 hours before the appointment | `CHANGE_WINDOW_CLOSED` |
-| Per patient per day | Max 2 active appointments, not with the same doctor | `DAILY_LIMIT_REACHED` / `DUPLICATE_DOCTOR_SAME_DAY` |
-| Active appointments per patient | Max 5 | `ACTIVE_LIMIT_REACHED` |
+| Per account per day | Max 2 active appointments, not with the same doctor | `DAILY_LIMIT_REACHED` / `DUPLICATE_DOCTOR_SAME_DAY` |
+| Active appointments per account | Max 5 | `ACTIVE_LIMIT_REACHED` |
 | Clinic closed | Friday | `CLINIC_CLOSED` |
 | Doctor off | Doctor's working days and time off | `DOCTOR_UNAVAILABLE` |
 
 #### Exact rule definitions
 
 **Shared terms**
-- **Clinic time:** `Africa/Cairo`. Appointment dates and times are stored as clinic-local `DATE` + `TIME`. For comparisons they are converted to timezone-aware datetimes, so daylight-saving changes are handled correctly.
+- **Clinic time:** `Africa/Cairo`, used consistently for every rule.
 - **Now:** the current time in clinic time, read from an injectable clock so tests can fix "now" to any moment.
-- **Active appointment:** `status = 'scheduled'` **and** its start is later than now. Cancelled, completed and no-show appointments never count. Neither do `scheduled` appointments whose start time has already passed.
-- **Patient:** one row in `patients`, identified by `patient_id`. Every limit is counted per patient, never per session or browser.
+- **Active appointment:** `status = 'scheduled'` **and** its start is later than now. Cancelled, completed and no-show appointments never count, nor do `scheduled` appointments whose start has passed.
+- **Account:** one registered patient (`patients.id`). Every limit is counted per account, never per session or browser.
 
 **R1. Schedules and slots**
-- Every doctor uses **30-minute slots** (MVP). Slots start on :00 or :30.
-- Each doctor has their **own weekly schedule**: their own working days and one shift (`shift_start`–`shift_end`), with the same hours on each working day. Shift times must be on :00 or :30.
+- Every doctor uses **30-minute slots**. Slots start on :00 or :30 and last exactly 30 minutes.
+- Each doctor has their **own weekly schedule**: their own working days and one shift (`shift_start`–`shift_end`), with the same hours on each working day. Shift times are on :00 or :30.
 - The last slot must **end** by `shift_end` (shift 10:00–14:00 → last slot 13:30).
-- **Per-doctor exceptions** are stored in `doctor_time_off` (a full day or a time range, e.g. "Dr. Sarah off 2026-10-20" or "Dr. Sarah off 2026-10-21 12:00–14:00"). Their slots are not offered or bookable.
+- **Per-doctor exceptions** are stored in `doctor_time_off` (a full day or a time range).
 
 **R2. Max 2 appointments per day**
-- Counted **per patient** (the verified patient from the session token).
-- Counts **active** appointments on the same clinic-local date, **across all doctors**.
-- The two appointments must be with **different doctors**.
+- Per account; counts active appointments on the same clinic-local date, across all doctors; the two must be with different doctors.
 - When rescheduling, the appointment being moved is excluded from the count for its new date.
 
 **R3. Max 5 active appointments**
-- Counted **per patient**, **across all doctors and all future dates**.
+- Per account, across all doctors and all future dates.
 
-**R4. Only verified patients can book**
-- Every booking, reschedule and cancellation requires a session token for a verified patient (existing customer, or newly registered during the call, §3.3).
-- Because every patient has a verified, unique email and a unique phone, the per-patient limits (R2, R3) apply to a real verified identity, not to something the caller can reset.
+**R4. Only verified sessions can change appointments**
+- Every booking, reschedule and cancellation requires a valid patient session bound to the current conversation session (§3.1).
 
 **R5. 4-hour cutoff for cancel and reschedule**
-- Measured from the **appointment's start in clinic time**, converted to an exact moment: allowed if `appointment_start − now ≥ 4 hours` (exactly 4 hours is allowed).
-- For a reschedule, the cutoff applies to the **current** appointment time. The **new** slot must separately satisfy the booking rules (lead time ≥ 1 hour, horizon ≤ 30 days, daily and active limits, availability).
+- Measured from the appointment's start in clinic time, converted to an exact moment: allowed if `appointment_start − now ≥ 4 hours` (exactly 4 hours is allowed).
+- For a reschedule, the cutoff applies to the **current** appointment time; the **new** slot must separately satisfy all booking rules.
 
 **R6. Rescheduling is all-or-nothing**
-- A reschedule is **one database transaction**: lock the appointment row, validate the new slot, update the date and time, write `appointment_history`.
-- If **any** check fails (slot taken, limits, cutoff, a concurrent booking hitting the unique index), the transaction is rolled back. **The original appointment stays exactly as it was**, and the caller receives the specific error code.
-- MVP reschedules stay with the **same doctor**. Changing doctor means booking a new appointment and then cancelling the old one, each confirmed by the caller.
+- One database transaction: lock the appointment row, validate the new slot, update date and time, write `appointment_history`.
+- If any check fails (slot taken, limits, cutoff, a concurrent booking hitting a unique index), the transaction rolls back. **The original appointment stays exactly as it was**, and the specific error code is returned.
+- MVP reschedules stay with the same doctor. Changing doctor = book a new appointment, then cancel the old one, each confirmed by the caller.
 
 **R7. Friday closed**
-- Friday is a **clinic-wide** closure. **No per-doctor exceptions** in the MVP. A doctor's `working_days` may not include Friday, and the backend rejects such schedules.
-- Other clinic-wide closed days (e.g. public holidays) are stored in a `clinic_closures` table.
-- Per-doctor Friday work could be added later by moving the Friday rule from configuration into doctor schedules.
+- Clinic-wide closure, no per-doctor exceptions in the MVP. A doctor's `working_days` may not include Friday; the backend rejects such schedules.
+- Other clinic-wide closed days are stored in `clinic_closures`.
 
-- Values live in backend configuration (one place), not in code constants spread across files.
-- The RAG knowledge base explains these rules in natural language, but **is never the source of enforcement**. Clinic policy documents must match these values.
+**R8. Daylight-saving safety**
+- Egypt's clock changes happen around midnight. Doctor shifts must lie within **07:00–22:00**, enforced by a database check, so no bookable slot can fall in a skipped or repeated hour.
+- As a safety net, conversion from local date + time to an exact moment rejects nonexistent local times (`INVALID_SLOT_TIME`) and resolves ambiguous ones to the first occurrence.
 
-### Decision 3.5: Scheduling model and data integrity
+- Values live in backend configuration (one place), not in constants spread across files.
+- The RAG knowledge base explains these rules, but **is never the source of enforcement**. Clinic policy documents must match these values.
 
-- **Time:** all appointment dates and times are **clinic-local time (`Africa/Cairo`)**. "Now" for past-date and lead-time checks is computed in `Africa/Cairo`. Audit timestamps stay `TIMESTAMPTZ`.
-- **Availability:** computed on request from the doctor's working days and shift, minus clinic closures (Friday + `clinic_closures`), minus the doctor's time off (`doctor_time_off`), minus active appointments, minus slots that break the lead-time or horizon rules. No slot rows are stored.
-- **Double-booking:** with a fixed 30-minute grid, the existing unique indexes on `(doctor_id, appointment_date, start_time)` and `(patient_id, appointment_date, start_time)` cover all overlaps. Daily and active limits are checked inside the booking transaction while holding a row lock on the patient (`SELECT … FOR UPDATE`), so two simultaneous requests cannot both pass.
-- **Status:** the `rescheduled` status is **removed**. A reschedule updates the date and time in place; the appointment stays `scheduled`. The previous date and time are recorded in a new `appointment_history` table.
-- **Statuses:** `scheduled`, `completed`, `cancelled`, `no_show`.
-- **Repeated requests:** write endpoints (book, reschedule, cancel, create ticket) accept an `Idempotency-Key` header. The backend stores the key with the first result for 24 hours and returns that same result for a repeat.
-- **Cancel endpoint:** `POST /appointments/{id}/cancel` replaces `DELETE` with a body, because some HTTP clients drop DELETE bodies.
+### Decision 3.6: Scheduling model and data integrity
 
-### Decision 3.6: Bilingual catalog (Arabic + English)
+- **Time:** appointment dates and times are stored as clinic-local `DATE` + `TIME`. Audit timestamps stay `TIMESTAMPTZ`.
+- **Availability:** computed on request from the doctor's working days and shift, minus clinic closures (Friday + `clinic_closures`), minus `doctor_time_off`, minus active appointments, minus slots that break the lead-time or horizon rules. No slot rows are stored.
+- **The database enforces the same grid as the backend:**
+  - `CHECK (EXTRACT(MINUTE FROM start_time) IN (0, 30) AND EXTRACT(SECOND FROM start_time) = 0)`
+  - `CHECK (end_time = start_time + INTERVAL '30 minutes')`
+  - Shift checks on `doctors`: times on :00/:30, within 07:00–22:00, `shift_end > shift_start`.
+- **Overlap prevention:** because every appointment is exactly one aligned 30-minute slot, the partial unique indexes on `(doctor_id, appointment_date, start_time)` and `(patient_id, appointment_date, start_time)` with `WHERE status = 'scheduled'` prevent all doctor and patient overlaps, including under concurrent requests.
+- **Limits under concurrency:** daily and active limits are checked inside the booking transaction while holding a row lock on the patient (`SELECT … FOR UPDATE`), so two simultaneous requests cannot both pass.
+- **Known constraint:** these indexes are only sufficient for fixed, aligned 30-minute slots. If variable durations or arbitrary start times are introduced later, the design must switch to range-based exclusion constraints (`btree_gist`) in a new ADR.
+- **Status:** `rescheduled` is **removed**. Statuses are `scheduled`, `completed`, `cancelled`, `no_show`. A reschedule updates date and time in place and leaves the status `scheduled`; previous values are stored in `appointment_history`.
+- **Cancel endpoint:** `POST /appointments/{id}/cancel` replaces `DELETE` with a body.
 
-- Doctors, specialties and services store **both** `name_en` and `name_ar`, so the agent reads stored names instead of translating them each time.
+**Idempotency**
+- Write endpoints (book, reschedule, cancel, create ticket) require an `Idempotency-Key` header.
+- Keys are **scoped to (patient account, operation)**. The same key used by another account or for another operation is a different key.
+- The backend stores a hash of the request body with the key. Reusing a key with the **same** body returns the original result; reusing it with a **different** body returns `422 IDEMPOTENCY_KEY_REUSED`.
+- Keys expire after 24 hours.
+
+### Decision 3.7: Bilingual catalog (Arabic + English)
+
+- Doctors, specialties and services store **both** `name_en` and `name_ar`, so the agent reads stored names instead of translating them.
 - Specialty becomes a **`specialties` table** (`id`, `name_en`, `name_ar`, `synonyms[]`). Doctors reference it by `specialty_id`. Example: Cardiology / أمراض القلب / {قلب، heart، cardio}.
-- Search (`find_doctors`) matches against both names and synonyms after **Arabic normalization**: أ/إ/آ → ا, ة → ه, ى → ي, remove diacritics and tatweel, lowercase Latin.
+- Search (`find_doctors`) matches names and synonyms after **Arabic normalization**: أ/إ/آ → ا, ة → ه, ى → ي, remove diacritics and tatweel, lowercase Latin.
 - Patients store `preferred_language` (`ar` | `en`).
 
-### Decision 3.7: Browser call channel, mobile-first
+### Decision 3.8: Browser call channel, mobile-first
 
 This extends ADR-002 Decision 2.1.
 
 - The customer reaches the agent through a **web page with a Call button**, on phones and laptops. There is no phone line in the MVP.
 - The page is **mobile-first**: call button, live transcript, **code box**, registration form (as a bottom panel on phones).
-- **Call resume:** mobile browsers pause the microphone when the user switches apps (e.g. to read the email code). The server keeps the conversation session for **5 minutes**, and the page offers "resume call" to continue where it stopped. The page requests a screen Wake Lock during calls.
+- **Call resume:** mobile browsers pause the microphone when the user switches apps (e.g. to read the email code). The 5-minute resume window (§3.3) lets the caller continue the same conversation. The page requests a screen Wake Lock during calls.
 - **HTTPS** is required for microphone access on phones. Hosting with HTTPS (a server or a tunnel) must exist before mobile testing in Phase 4.
-- **Testing:** Phase 4 tests run on **Android and iPhone, over Wi-Fi and 4G**. Echo/barge-in behaviour is tested on speakerphone and with earphones.
-- **Roadmap update:** Phase 7 "A real call reaches the agent" becomes "A browser call from a phone reaches the agent". Phase 10 "phone call → AI → backend action" becomes "browser call (mobile) → AI → backend action".
-- A real phone line remains possible later through the `VoiceProvider` abstraction, but it is **out of MVP scope**.
+- **Testing:** Phase 4 tests run on **Android and iPhone, over Wi-Fi and 4G**, including speakerphone and earphones.
+- **Roadmap update:** Phase 7 "A real call reaches the agent" → "A browser call from a phone reaches the agent". Phase 10 "phone call → AI → backend action" → "browser call (mobile) → AI → backend action".
+- A real phone line remains possible later through the `VoiceProvider` abstraction but is **out of MVP scope**. This decision depends on supervisor approval (§6).
 
-### Decision 3.8: Data minimization
+### Decision 3.9: Data minimization
 
-- `patients.gender` → optional. `email` → required and unique (verified at registration).
+- `patients.gender` → optional. `email` → required, unique, verified. `phone` → required contact field, not unique.
 - `insurance_provider` and `insurance_policy_number` → optional, and **never returned to the agent**.
 - `appointments.notes` → renamed `visit_reason`, optional, max 300 characters. The agent does **not** ask for symptoms (no clinical triage, per ADR-002 Decision 2.4).
 - No medical history, diagnoses or national IDs are stored.
+- Verification codes, session ids and service tokens are never written to logs or transcripts.
 
 ---
 
@@ -200,55 +249,83 @@ This extends ADR-002 Decision 2.1.
 
 | Alternative | Why not chosen |
 |---|---|
-| Phone number + date of birth only (permanent) | Weak: both are easy for someone else to know. Kept only as the interim/test mode |
+| Date of birth as an interim login (Phases 1–5) | Not a real authentication factor, and a temporary mode tends to become the one everyone builds on. Replaced by real email OTP from Phase 1 plus a test-only mock adapter |
+| Accepting the OTP spoken aloud | The code would enter speech recognition, transcripts, LLM context and logs. Browser code box only |
+| Stateless JWT patient tokens | Harder to revoke at call end, and the token would have to travel through the voice and agent services. Server-side sessions bound to the conversation are simpler and revocable |
 | SMS one-time code | Costs money per message and involves Egyptian telecom rules. Email is free and demonstrable with Mailpit |
-| National ID spoken aloud | 14-digit numbers are where speech recognition fails most, and it is sensitive data we would have to store |
-| Voice biometrics (recognize the caller's voice) | Biometric data is highly sensitive, needs consent and legal review, and is far beyond MVP scope |
-| Unverified guest booking (name + phone by voice) | One person could hold many slots with different phone numbers, and it needs an extra role, separate limits and merge logic. Verified quick registration is safer and simpler |
-| Spelling the email address by voice for registration | Unreliable speech recognition for addresses, especially in mixed Arabic and English |
-| Variable slot lengths per doctor | Needs range-overlap constraints and more complex availability logic. Can be added after the MVP |
+| National ID spoken aloud | Long digit strings are where speech recognition fails most, and it is sensitive data |
+| Voice biometrics | Highly sensitive biometric data, needs consent and legal review; far beyond MVP scope |
+| Unverified guest booking (name + phone by voice) | Unverified identity, an extra role, separate limits and merge logic. Verified in-call registration is safer and simpler |
+| Unique phone numbers | Prevents family members sharing a number, while adding no security because phone is not verified |
+| Automatic linking of new registrations to existing records | Matching name/phone/DOB could attach a stranger to someone else's appointments. Manual merge by staff only |
+| Variable slot lengths per doctor | Needs range-overlap constraints and more complex availability logic. Possible after the MVP with a new ADR |
 | Keeping `rescheduled` as a status | Mixes history with current state and breaks status filters |
-| Real phone line (PSTN) | Cost, telecom regulations and setup time, as analysed in ADR-002 |
+| Real phone line (PSTN) | Cost, telecom regulations and setup time (ADR-002) |
 
 ---
 
 ## 4. Consequences & Trade-offs
 
 ### Positive
-- **The core security promise becomes real:** even a fully manipulated LLM cannot access or change another patient's data, because identity comes from a token the LLM never sees.
-- Booking rules are deterministic, testable and in one place.
-- Arabic doctor search is predictable and testable instead of depending on LLM translation.
-- The browser channel enables things a phone line cannot: on-screen registration, a typed code box and a visible transcript.
+- **The core security promise becomes real:** even a fully manipulated LLM cannot access another patient's data, because the patient comes from a server-side session the LLM never sees, and the OTP never reaches the LLM.
+- One authentication method from Phase 1 to the demo; no temporary mode to remove later.
+- Booking rules are deterministic, testable and enforced by both the backend and database constraints.
+- Arabic doctor search is predictable and testable.
+- The browser channel enables on-screen registration, a code box and a visible transcript.
 - Less personal data stored and exposed.
 
 ### Negative
-- More backend work in Phase 1: verification endpoints, token handling, idempotency, history table, specialties table.
+- More Phase 1 work: challenges, sessions, rate limits, idempotency, history and specialties tables, Mailpit setup.
+- The web page must exist earlier (code box and registration form) for verification to work end-to-end. Until it exists, the text test interface needs a simple code box too.
 - Mid-call email checking adds friction on phones; mitigated by the code box and call resume.
-- First-time callers must have an email and fill in a short form before booking. Callers who cannot are transferred to reception.
-- Fixed 30-minute slots are less realistic for some services; acceptable for the MVP.
-- The approved proposal and the roadmap must be updated (telephony wording).
+- First-time callers need an email and must fill in a short form; callers who cannot are transferred to reception.
+- Limits apply per account; one person with several email addresses can hold several accounts.
+- Fixed 30-minute slots are less realistic for some services.
+- The proposal and roadmap wording must change (telephony).
 
 ---
 
-## 5. Affected Documents (follow-up PRs after this ADR is accepted)
+## 5. Affected Documents
+
+These changes are part of the **same PR** as this ADR; the ADR is not accepted until they are consistent (§7).
 
 | Document | Change |
 |---|---|
-| `docs/architecture/database-schema.md` | New: `specialties`, `doctor_time_off`, `clinic_closures`, `appointment_history`, `verification_codes`, `idempotency_keys`, `sessions` (or token store). Changed: patients (customer number, required unique email, optional fields, preferred language), doctors (bilingual names, `specialty_id`), services (bilingual), appointments (status enum, `visit_reason`) |
-| `docs/architecture/api-contracts.md` | New: verification and registration endpoints; `/patients/me/...`; `POST /appointments/{id}/cancel`; `Idempotency-Key`; full error-code catalog |
-| `docs/architecture/tool-schemas.md` | Remove `patient_id` from all LLM inputs; add `request_verification_code`, `verify_identity`, `start_registration` |
-| `docs/architecture/data-flow.md` | Replace the "4 hours" RAG-only rule with a backend-enforced rule; add verification flow |
-| `docs/product/requirements.md` | Add REQ entries for verification, in-call registration and booking rules |
-| `docs/architecture/voice-architecture.md` | Mobile-first page, call resume, code box, HTTPS |
-| `.env.example` | Add `AUTH_VERIFICATION_MODE`, `AGENT_SERVICE_TOKEN`, `OTP_*`, `SMTP_*` (Mailpit) |
+| `docs/architecture/database-schema.md` | New: `specialties`, `doctor_time_off`, `clinic_closures`, `appointment_history`, `verification_challenges`, `patient_sessions`, `conversation_sessions`, `idempotency_keys`. Changed: `appointment_status` enum without `rescheduled`; both partial unique indexes `WHERE status = 'scheduled'`; slot-grid and shift checks; patients (customer number, unique email, non-unique phone, optional gender/insurance, preferred language); doctors (bilingual names, `specialty_id`); services (bilingual); appointments (`visit_reason`) |
+| `docs/architecture/api-contracts.md` | New: verification challenge + verify endpoints (browser-facing), registration endpoints, `/patients/me/...`, `POST /appointments/{id}/cancel`, `Idempotency-Key`, service + session auth headers, full error-code catalog. Removed: `rescheduled` in filters and example responses |
+| `docs/architecture/tool-schemas.md` | Remove `patient_id` from all inputs; add `request_verification_code`, `start_registration`; no tool accepts or returns an OTP; remove `rescheduled` from outputs |
+| `docs/diagrams/04-data/state-appointment.mmd` (+ rendered images) | Remove the `Rescheduled` state; reschedule is a self-transition on `Scheduled` |
+| `docs/diagrams/04-data/entity-relationship-diagram.mmd` | New tables and changed columns |
+| `docs/architecture/data-flow.md` | Backend-enforced cancellation rule; verification and registration flows |
+| `docs/product/requirements.md` | REQ entries for verification, registration, sessions and booking rules; REQ-PAT-01 "lookup by `patient_id`" removed for the agent |
+| `docs/architecture/voice-architecture.md` | Mobile-first page, call resume, code box, transcript redaction during open challenges |
+| `.env.example` | Add `VERIFICATION_PROVIDER`, `AGENT_SERVICE_TOKEN`, `OTP_*`, `SMTP_*`, `TRUSTED_PROXIES`, session timeouts |
 | `docker-compose.yml` | Add Mailpit service |
-| Roadmap (Phase 7, Phase 10) | Browser call wording (§3.7) |
-| `docs/decisions/README.md` | Add ADR-003 to the index |
+| Roadmap (Phase 7, Phase 10) | Browser call wording (§3.8) |
+| `docs/decisions/README.md` | ADR-003 in the index (done) |
 
 ---
 
-## 6. Open Items Before Acceptance
+## 6. Open Items
 
-1. **Supervisor confirmation** that a mobile browser call replaces the phone line promised in the proposal.
-2. **Team review** of the booking rule values in §3.4 (they are demo values and can be changed in configuration).
-3. **Owner for the web page** (call UI, code box, registration form) — suggested: Bishoy, with support as needed.
+| Item | Blocks | Owner |
+|---|---|---|
+| **Supervisor confirmation** that a mobile browser call replaces the phone line promised in the proposal. If refused, the channel decision (§3.8) is revisited and telephony is scoped deliberately | Acceptance of this ADR | Team lead (to assign) |
+| Team review of booking-rule values (§3.5); values are configurable | Phase 1 booking implementation | Omar + Ziad |
+| Owner for the web page (call UI, code box, registration form) | Phase 2 end-to-end verification | Suggested: Bishoy |
+
+---
+
+## 7. Acceptance Checklist
+
+This ADR moves from **Proposed** to **Accepted** only when every item is checked in the PR:
+
+- [ ] Supervisor has confirmed the browser call channel (§6)
+- [ ] `database-schema.md` updated: no `rescheduled` anywhere; indexes use `WHERE status = 'scheduled'`; grid and shift checks present; new tables present
+- [ ] `api-contracts.md` updated: no patient ids from clients on patient-facing endpoints; verification is browser-to-backend; idempotency semantics defined; error-code catalog complete
+- [ ] `tool-schemas.md` updated: no tool accepts `patient_id`, `customer_number` (except `request_verification_code`) or `email` for patient data; no tool accepts or returns an OTP
+- [ ] Appointment state diagram and ER diagram updated
+- [ ] Repository search shows no remaining `rescheduled` status in docs, diagrams or tests
+- [ ] `.env.example` and `docker-compose.yml` updated (Mailpit, verification provider, trusted proxies)
+- [ ] Mock verification adapter is documented as test-only, with the startup guard
+- [ ] At least one teammate other than the author has approved the PR
