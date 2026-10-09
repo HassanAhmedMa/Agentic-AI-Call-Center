@@ -1,0 +1,1260 @@
+[
+  {
+    "op": "delete-element",
+    "element": "i0"
+  },
+  {
+    "op": "delete-element",
+    "element": "i1"
+  },
+  {
+    "op": "set-background",
+    "slide": "p",
+    "color": "#0F172A"
+  },
+  {
+    "op": "add-shape",
+    "slide": "p",
+    "shape_type": "RECTANGLE",
+    "x": 260,
+    "y": 80,
+    "width": 200,
+    "height": 3,
+    "background_color": "#0284C7"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "p",
+    "text": "AGENTIC CLINIC",
+    "x": 50,
+    "y": 100,
+    "width": 620,
+    "height": 65,
+    "font_size": 42,
+    "bold": true,
+    "color": "#FFFFFF",
+    "font_family": "Roboto",
+    "alignment": "center"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "p",
+    "text": "System Architecture & Technical Foundation",
+    "x": 50,
+    "y": 175,
+    "width": 620,
+    "height": 35,
+    "font_size": 20,
+    "color": "#38BDF8",
+    "font_family": "Roboto",
+    "alignment": "center"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "p",
+    "text": "Simulated Clinic Customer-Service AI Platform across Realtime Voice & Text\nEnglish \u2022 Modern Standard Arabic \u2022 Egyptian Arabic",
+    "x": 50,
+    "y": 220,
+    "width": 620,
+    "height": 45,
+    "font_size": 13,
+    "color": "#94A3B8",
+    "font_family": "Roboto",
+    "alignment": "center",
+    "line_spacing": 140
+  },
+  {
+    "op": "add-shape",
+    "slide": "p",
+    "shape_type": "RECTANGLE",
+    "x": 160,
+    "y": 290,
+    "width": 400,
+    "height": 45,
+    "background_color": "#1E293B",
+    "outline_color": "#334155",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "p",
+    "text": "Graduation Project 2026-2027  |  Phase 0 Architecture Foundation  |  Team of 5 Engineers",
+    "x": 165,
+    "y": 302,
+    "width": 390,
+    "height": 25,
+    "font_size": 11,
+    "color": "#CBD5E1",
+    "font_family": "Roboto",
+    "alignment": "center"
+  },
+  {
+    "op": "set-notes",
+    "slide": "p",
+    "text": "Welcome to the Phase 0 System Architecture presentation for Agentic Clinic. We are a team of 5 software engineering students presenting the system foundation, contracts, and UML architecture designed for parallel development."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_2"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_2",
+    "color": "#F8FAFC"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "Architectural Principles & Core Tenets",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "Non-negotiable architectural invariants designed for clinical safety and determinism",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_2",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_2",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 85,
+    "width": 205,
+    "height": 290,
+    "background_color": "#FFFFFF",
+    "outline_color": "#0284C7",
+    "outline_weight": 2
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "THE GOLDEN TENET",
+    "x": 45,
+    "y": 95,
+    "width": 185,
+    "height": 24,
+    "font_size": 13,
+    "bold": true,
+    "color": "#0284C7",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "No Direct DB Access",
+    "x": 45,
+    "y": 120,
+    "width": 185,
+    "height": 24,
+    "font_size": 16,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "\u2022 The LLM acts strictly as an orchestrator.\n\u2022 Never receives SQL connections, ORM models, or DB credentials.\n\u2022 All actions are proposed via explicitly typed, controlled tools.\n\u2022 Backend REST APIs validate and execute all state changes.",
+    "x": 45,
+    "y": 150,
+    "width": 185,
+    "height": 215,
+    "font_size": 11,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 150
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_2",
+    "shape_type": "RECTANGLE",
+    "x": 255,
+    "y": 85,
+    "width": 205,
+    "height": 290,
+    "background_color": "#FFFFFF",
+    "outline_color": "#0D9488",
+    "outline_weight": 2
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "DETERMINISTIC RULES",
+    "x": 265,
+    "y": 95,
+    "width": 185,
+    "height": 24,
+    "font_size": 13,
+    "bold": true,
+    "color": "#0D9488",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "Backend Enforcement",
+    "x": 265,
+    "y": 120,
+    "width": 185,
+    "height": 24,
+    "font_size": 16,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "\u2022 Backend validates all inputs, invariants, time conflicts, and authorization.\n\u2022 Never rely on LLM prompts to enforce healthcare rules.\n\u2022 Explicit affirmative confirmation is required before any booking or cancellation.\n\u2022 Atomic transactions prevent slot double-booking.",
+    "x": 265,
+    "y": 150,
+    "width": 185,
+    "height": 215,
+    "font_size": 11,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 150
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_2",
+    "shape_type": "RECTANGLE",
+    "x": 475,
+    "y": 85,
+    "width": 205,
+    "height": 290,
+    "background_color": "#FFFFFF",
+    "outline_color": "#6366F1",
+    "outline_weight": 2
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "KNOWLEDGE & SAFETY",
+    "x": 485,
+    "y": 95,
+    "width": 185,
+    "height": 24,
+    "font_size": 13,
+    "bold": true,
+    "color": "#6366F1",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "RAG is Informational Only",
+    "x": 485,
+    "y": 120,
+    "width": 185,
+    "height": 24,
+    "font_size": 16,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_2",
+    "text": "\u2022 RAG provides clinic context: operating hours, preparation guidelines, policies.\n\u2022 RAG NEVER mutates state or grants clinical authorization.\n\u2022 Hardcoded safety tripwires detect emergency keywords immediately.\n\u2022 Warm transfer protocol seamlessly escalates callers to human staff.",
+    "x": 485,
+    "y": 150,
+    "width": 185,
+    "height": 215,
+    "font_size": 11,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 150
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_2",
+    "text": "The core architectural principle of the project is strict isolation: the LLM never touches the database. All operations flow through controlled tools, which call validated REST APIs. RAG provides informational context only."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_3"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_3",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_3",
+    "text": "System Context & External Boundaries",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_3",
+    "text": "High-level environment boundaries connecting callers, clinic personnel, and clinic core",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_3",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_3",
+    "shape_type": "RECTANGLE",
+    "x": 490,
+    "y": 82,
+    "width": 195,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_3",
+    "text": "Boundary Analysis",
+    "x": 500,
+    "y": 92,
+    "width": 175,
+    "height": 24,
+    "font_size": 14,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_3",
+    "text": "\u2022 Patient / Caller:\n  Reaches clinic via phone (WebRTC / SIP) or web chat.\n  Languages: English, Arabic, and Egyptian Arabic.\n\n\u2022 Clinic Staff / Personnel:\n  Receives warm-transferred escalations with transcript & context.\n\n\u2022 Clinic System Boundary:\n  Encapsulates voice processing, AI orchestration, tools, REST API, RAG, and PostgreSQL.",
+    "x": 500,
+    "y": 122,
+    "width": 175,
+    "height": 255,
+    "font_size": 11,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 145
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_3",
+    "text": "The System Context diagram outlines the external actors and interaction channels. Patients interact via voice or text, while human clinic staff handle warm escalations."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_4"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_4",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_4",
+    "text": "UML Use Case Diagram: Clinic Operations",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_4",
+    "text": "Standard UML specification: Stickman actors and operations use case boundary",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_4",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_4",
+    "shape_type": "RECTANGLE",
+    "x": 455,
+    "y": 82,
+    "width": 230,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_4",
+    "text": "Operations Summary",
+    "x": 465,
+    "y": 92,
+    "width": 210,
+    "height": 24,
+    "font_size": 14,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_4",
+    "text": "\u2022 Primary Actor (Patient):\n  - Find Doctor & Specialty\n  - Check Doctor Availability\n  - Book Appointment\n  - Cancel Appointment\n  - Reschedule Appointment\n  - View Patient Appointments\n  - View Services & Pricing\n  - Create / Track Support Tickets\n  - Request Human Escalation\n\n\u2022 Secondary Actors:\n  - Clinic Staff (Escalations & Tickets)\n  - Administrator (Rosters & Services)",
+    "x": 465,
+    "y": 118,
+    "width": 210,
+    "height": 260,
+    "font_size": 10.5,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 140
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_4",
+    "text": "This UML Use Case diagram strictly follows standard UML formatting with stickman figures for actors and horizontal ellipses for use cases within the clinic boundary."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_5"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_5",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_5",
+    "text": "UML Use Case Diagram: AI Conversational Agent",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_5",
+    "text": "Agent dialogue boundary, controlled tool execution, and deterministic handoff",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_5",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_5",
+    "shape_type": "RECTANGLE",
+    "x": 465,
+    "y": 82,
+    "width": 220,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_5",
+    "text": "AI Orchestrator Scope",
+    "x": 475,
+    "y": 92,
+    "width": 200,
+    "height": 24,
+    "font_size": 14,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_5",
+    "text": "\u2022 Dialogue Orchestration:\n  Multi-turn Arabic & English conversation with slot clarification.\n\n\u2022 Controlled Tool Execution:\n  <<include>> relations to 13 strict tool schemas.\n\n\u2022 Explicit Confirmation Gate:\n  <<include>> mandatory user confirmation before state mutations.\n\n\u2022 Safety Escalations:\n  <<extend>> warm transfer to Clinic Human Staff on urgent red flags.",
+    "x": 475,
+    "y": 120,
+    "width": 200,
+    "height": 255,
+    "font_size": 10.5,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 145
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_5",
+    "text": "The AI Agent use case diagram details conversational boundaries, showing how slot clarification, RAG retrieval, tool execution, and human escalation interact."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_6"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_6",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_6",
+    "text": "Subsystem & Component Architecture",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_6",
+    "text": "Decoupled service boundaries connected exclusively via documented REST & Tool DTOs",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_6",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_6",
+    "shape_type": "RECTANGLE",
+    "x": 340,
+    "y": 82,
+    "width": 345,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_6",
+    "text": "Subsystem Responsibilities",
+    "x": 355,
+    "y": 92,
+    "width": 315,
+    "height": 24,
+    "font_size": 14,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_6",
+    "text": "1. Voice Layer (`services/voice/`):\n   Audio streaming gateway, STT/TTS adapters, and WebSockets connection management.\n\n2. AI Agent Orchestrator (`services/ai-agent/`):\n   Multi-turn conversational memory, intent classifier, tool execution engine, and safety tripwires.\n\n3. Clinic Backend (`services/clinic-backend/`):\n   FastAPI REST service enforcing appointments, doctors, schedules, tickets, and slot locks.\n\n4. RAG Knowledge Base (`services/rag/`):\n   Semantic search over clinic FAQs, policies, and preparation procedures.\n\n5. Relational Database:\n   PostgreSQL ACID transactional persistence.",
+    "x": 355,
+    "y": 120,
+    "width": 315,
+    "height": 260,
+    "font_size": 10,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 140
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_6",
+    "text": "The subsystem architecture demonstrates the clean separation between services. Each component has an explicit AGENTS.md and typed contract, allowing all 5 team members to develop in parallel."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_7"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_7",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_7",
+    "text": "AI Agent Control Flow & State Machine",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_7",
+    "text": "Deterministic reasoning loop with safety filters, tool execution, and confirmation gates",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_7",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_7",
+    "shape_type": "RECTANGLE",
+    "x": 280,
+    "y": 82,
+    "width": 405,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_7",
+    "text": "Control Loop Pipeline",
+    "x": 295,
+    "y": 92,
+    "width": 375,
+    "height": 24,
+    "font_size": 14,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_7",
+    "text": "\u2022 Step 1: Pre-Generation Safety Filter\n  Regex + classifier inspects user input for medical emergencies or red flags.\n  Urgent triggers bypass the LLM and initiate warm human handoff immediately.\n\n\u2022 Step 2: Context Assembly & Intent Classification\n  Retrieves session history, patient profile, and relevant RAG policy chunks.\n\n\u2022 Step 3: Tool Decision & Schema Validation\n  LLM selects tools based on typed Pydantic contracts; parameters validated.\n\n\u2022 Step 4: Confirmation Gate for State Mutations\n  Mutations (booking, cancellation) must receive explicit user approval first.\n\n\u2022 Step 5: Post-Generation Grounding & Response\n  Ensures medical diagnosis is avoided and responses are grounded in tool data.",
+    "x": 295,
+    "y": 120,
+    "width": 375,
+    "height": 260,
+    "font_size": 10.5,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 140
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_7",
+    "text": "The agent control flow guarantees safe execution. The LLM is constrained by pre/post safety filters and an explicit confirmation step before any booking is committed."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_8"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_8",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_8",
+    "text": "UML Sequence Diagram: Appointment Booking Flow",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_8",
+    "text": "End-to-end multi-turn interaction: Egyptian Arabic speech to atomic PostgreSQL transaction",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_8",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_8",
+    "text": "This standard UML sequence diagram traces the complete appointment booking flow. Notice the lifelines for Patient, Voice Layer, AI Agent Orchestrator, Tool Dispatcher, Clinic Backend API, and PostgreSQL DB. Explicit confirmation is verified before SQL transaction execution."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_9"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_9",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_9",
+    "text": "UML Sequence Diagram: Safety Escalation & Warm Handoff",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_9",
+    "text": "Deterministic safety tripwires triggering zero-latency transfer to human personnel",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_9",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_9",
+    "shape_type": "RECTANGLE",
+    "x": 525,
+    "y": 82,
+    "width": 160,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_9",
+    "text": "Safety Tripwires",
+    "x": 535,
+    "y": 92,
+    "width": 140,
+    "height": 24,
+    "font_size": 13,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_9",
+    "text": "\u2022 Urgent Red Flags:\n  Chest pain, severe bleeding, breathing distress.\n\n\u2022 Zero-Latency Bypass:\n  Immediate triage advice; bypasses LLM tool loop.\n\n\u2022 Warm Transfer Context:\n  Human agent receives full dialogue transcript, patient ID, and urgency summary.",
+    "x": 535,
+    "y": 120,
+    "width": 140,
+    "height": 255,
+    "font_size": 10,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 145
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_9",
+    "text": "The safety escalation sequence diagram demonstrates how clinical emergencies are handled. Pre-generation tripwires immediately execute a warm transfer without relying on LLM judgment."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_10"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_10",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_10",
+    "text": "Relational Database Schema (PostgreSQL)",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_10",
+    "text": "Third normal form (3NF) relational design with exclusion constraints and audit logging",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_10",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_10",
+    "shape_type": "RECTANGLE",
+    "x": 380,
+    "y": 82,
+    "width": 305,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_10",
+    "text": "Data Model & Integrity Invariants",
+    "x": 395,
+    "y": 92,
+    "width": 275,
+    "height": 24,
+    "font_size": 13,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_10",
+    "text": "\u2022 Core Entities:\n  - `patients`: Demographics, language preference, contact.\n  - `doctors`: Specialty, license, status, consultation fee.\n  - `schedules`: Weekly recurring shifts and exception rules.\n  - `appointments`: Booking status, time range, cancellation reason.\n  - `support_tickets`: Issue tracking, urgency, resolution status.\n  - `audit_logs`: Immutable ledger of all data mutations.\n\n\u2022 Concurrency & Consistency:\n  - PostgreSQL exclusion constraints prevent overlapping slots.\n  - Optimistic concurrency control (version checks) on updates.\n  - UTC timestamps used uniformly across all services.",
+    "x": 395,
+    "y": 118,
+    "width": 275,
+    "height": 260,
+    "font_size": 9.8,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 140
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_10",
+    "text": "The ERD illustrates our relational data model in PostgreSQL. Database-level exclusion constraints guarantee that no double bookings can occur even under high concurrency."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_11"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_11",
+    "color": "#FFFFFF"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_11",
+    "text": "Deployment Architecture & Infrastructure",
+    "x": 35,
+    "y": 16,
+    "width": 650,
+    "height": 32,
+    "font_size": 20,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_11",
+    "text": "Local Docker Compose foundation for 5 developers with direct cloud migration path",
+    "x": 35,
+    "y": 48,
+    "width": 650,
+    "height": 18,
+    "font_size": 11,
+    "color": "#64748B",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_11",
+    "shape_type": "RECTANGLE",
+    "x": 35,
+    "y": 70,
+    "width": 650,
+    "height": 1.5,
+    "background_color": "#E2E8F0"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_11",
+    "shape_type": "RECTANGLE",
+    "x": 490,
+    "y": 82,
+    "width": 195,
+    "height": 305,
+    "background_color": "#F8FAFC",
+    "outline_color": "#CBD5E1",
+    "outline_weight": 1
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_11",
+    "text": "Deployment Strategy",
+    "x": 500,
+    "y": 92,
+    "width": 175,
+    "height": 24,
+    "font_size": 14,
+    "bold": true,
+    "color": "#0F172A",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_11",
+    "text": "\u2022 Local Development:\n  Single `docker-compose.yml` spins up all 4 micro-services + PostgreSQL DB + Mock Voice adapter.\n\n\u2022 Zero Flaky Dependencies:\n  Every service can run with mock adapters for offline local testing.\n\n\u2022 CI/CD Pipeline:\n  GitHub Actions runs automated linting, schema validation, and integration tests on pull requests.\n\n\u2022 Cloud Production:\n  Stateless containers deployable to AWS / GCP / Azure with managed PostgreSQL.",
+    "x": 500,
+    "y": 120,
+    "width": 175,
+    "height": 255,
+    "font_size": 10,
+    "color": "#334155",
+    "font_family": "Roboto",
+    "line_spacing": 140
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_11",
+    "text": "The deployment topology balances local simplicity for a 5-student team with a clear cloud production pathway. Docker Compose provides instant reproducible environments."
+  },
+  {
+    "op": "add-slide",
+    "layout": "BLANK",
+    "id": "SLIDE_12"
+  },
+  {
+    "op": "set-background",
+    "slide": "SLIDE_12",
+    "color": "#0F172A"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "Phase 0 Summary & Phase 1 Roadmap",
+    "x": 40,
+    "y": 25,
+    "width": 640,
+    "height": 36,
+    "font_size": 22,
+    "bold": true,
+    "color": "#FFFFFF",
+    "font_family": "Roboto",
+    "alignment": "center"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "Phase 0 Foundation Complete \u2014 Parallel Engineering Plan for 5 Team Members",
+    "x": 40,
+    "y": 62,
+    "width": 640,
+    "height": 22,
+    "font_size": 13,
+    "color": "#38BDF8",
+    "font_family": "Roboto",
+    "alignment": "center"
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_12",
+    "shape_type": "RECTANGLE",
+    "x": 45,
+    "y": 100,
+    "width": 305,
+    "height": 115,
+    "background_color": "#1E293B",
+    "outline_color": "#0284C7",
+    "outline_weight": 1.5
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "Workstream 1: Clinic Backend",
+    "x": 57,
+    "y": 108,
+    "width": 281,
+    "height": 22,
+    "font_size": 13,
+    "bold": true,
+    "color": "#FFFFFF",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "\u2022 Implement FastAPI REST endpoints\n\u2022 PostgreSQL migrations & seed data\n\u2022 Slot locking & booking conflict validation\n\u2022 Lead Workspace: `services/clinic-backend/`",
+    "x": 57,
+    "y": 132,
+    "width": 281,
+    "height": 75,
+    "font_size": 9.5,
+    "color": "#CBD5E1",
+    "font_family": "Roboto",
+    "line_spacing": 135
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_12",
+    "shape_type": "RECTANGLE",
+    "x": 370,
+    "y": 100,
+    "width": 305,
+    "height": 115,
+    "background_color": "#1E293B",
+    "outline_color": "#0D9488",
+    "outline_weight": 1.5
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "Workstream 2: AI Agent Orchestrator",
+    "x": 382,
+    "y": 108,
+    "width": 281,
+    "height": 22,
+    "font_size": 13,
+    "bold": true,
+    "color": "#FFFFFF",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "\u2022 Implement multi-turn conversation manager\n\u2022 Controlled tool execution & confirmation gate\n\u2022 Multilingual NLU (Egyptian Arabic + English)\n\u2022 Lead Workspace: `services/ai-agent/`",
+    "x": 382,
+    "y": 132,
+    "width": 281,
+    "height": 75,
+    "font_size": 9.5,
+    "color": "#CBD5E1",
+    "font_family": "Roboto",
+    "line_spacing": 135
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_12",
+    "shape_type": "RECTANGLE",
+    "x": 45,
+    "y": 230,
+    "width": 305,
+    "height": 115,
+    "background_color": "#1E293B",
+    "outline_color": "#6366F1",
+    "outline_weight": 1.5
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "Workstream 3: RAG Knowledge Service",
+    "x": 57,
+    "y": 238,
+    "width": 281,
+    "height": 22,
+    "font_size": 13,
+    "bold": true,
+    "color": "#FFFFFF",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "\u2022 Index clinic procedures, FAQs & prep guides\n\u2022 Hybrid semantic search & reranking\n\u2022 Strict informational-only retrieval adapter\n\u2022 Lead Workspace: `services/rag/`",
+    "x": 57,
+    "y": 262,
+    "width": 281,
+    "height": 75,
+    "font_size": 9.5,
+    "color": "#CBD5E1",
+    "font_family": "Roboto",
+    "line_spacing": 135
+  },
+  {
+    "op": "add-shape",
+    "slide": "SLIDE_12",
+    "shape_type": "RECTANGLE",
+    "x": 370,
+    "y": 230,
+    "width": 305,
+    "height": 115,
+    "background_color": "#1E293B",
+    "outline_color": "#F59E0B",
+    "outline_weight": 1.5
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "Workstream 4: Voice Gateway & Telephony",
+    "x": 382,
+    "y": 238,
+    "width": 281,
+    "height": 22,
+    "font_size": 13,
+    "bold": true,
+    "color": "#FFFFFF",
+    "font_family": "Roboto"
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "\u2022 Audio stream buffer & WebSocket adapter\n\u2022 STT/TTS engine interfaces & latency benchmarking\n\u2022 Human escalation warm-transfer gateway\n\u2022 Lead Workspace: `services/voice/`",
+    "x": 382,
+    "y": 262,
+    "width": 281,
+    "height": 75,
+    "font_size": 9.5,
+    "color": "#CBD5E1",
+    "font_family": "Roboto",
+    "line_spacing": 135
+  },
+  {
+    "op": "add-textbox",
+    "slide": "SLIDE_12",
+    "text": "Agentic Clinic  \u2022  University Graduation Project  \u2022  Priorities: Reliability > Latency (<1.5s) > Accuracy > Natural Dialogue",
+    "x": 50,
+    "y": 365,
+    "width": 620,
+    "height": 20,
+    "font_size": 10.5,
+    "color": "#94A3B8",
+    "font_family": "Roboto",
+    "alignment": "center"
+  },
+  {
+    "op": "set-notes",
+    "slide": "SLIDE_12",
+    "text": "With Phase 0 complete, our parallel development matrix enables each student to build their workstream against documented contracts without blocking one another. We are ready for Phase 1 implementation."
+  }
+]
