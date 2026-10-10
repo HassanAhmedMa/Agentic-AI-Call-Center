@@ -9,6 +9,8 @@
 
 ## 1. Entity-Relationship Overview
 
+**Implementation status (2026-10-10):** migration `0001_catalog` creates `specialties`, `doctors` and `services` only. The remaining tables below describe the target schema and will be added incrementally before their features are exposed. The implemented working-day constraint also rejects NULL array elements. Seed data is synthetic, bilingual and idempotent. See [the backend guide](../../services/clinic-backend/README.md) and [change summary](../development/phase1-catalog-changes.md). The full target schema has not yet been deployed.
+
 ```
                          ┌──────────────┐
                          │ specialties  │

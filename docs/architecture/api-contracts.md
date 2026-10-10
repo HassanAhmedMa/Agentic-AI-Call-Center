@@ -10,6 +10,8 @@
 
 ## 1. Callers & Authentication
 
+**Implementation status (2026-10-10):** the initial local slice implements health/readiness (§3), specialties, doctor list/detail and service list/detail (§§5.1–5.3, 5.6–5.7). Identity, conversation lifecycle, availability, booking and ticket endpoints remain planned. Idempotency (§1.5) is specified but not implemented yet because this slice exposes no write operations. English/Egyptian Arabic catalog data/search are implemented; user-facing conversation/UI translations come later. Public limits currently operate in one local process; shared atomic limits and trusted ingress must precede public deployment. See [the backend guide](../../services/clinic-backend/README.md) and [change summary](../development/phase1-catalog-changes.md). These markers report implementation progress, not ADR acceptance or changed endpoint behavior.
+
 ### 1.1. Who calls the backend
 
 | Caller | What it is | Credentials it holds |

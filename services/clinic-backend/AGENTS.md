@@ -42,6 +42,6 @@ This service is the **sole authority for clinic business rules and database muta
 
 ---
 
-## 4. Phase 0 Status
+## 4. Initial Phase 1 Status
 
-Do NOT implement the full service in Phase 0. Ensure that any future PR implements endpoints strictly matching the documented contracts.
+The public catalog, health endpoints and their three database tables are implemented. Identity, availability, booking and agent operations remain planned. Implement later slices strictly against the documented contracts; never expose placeholders as working operations.

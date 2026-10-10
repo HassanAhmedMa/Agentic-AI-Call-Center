@@ -9,6 +9,8 @@
 
 ## 1. Architectural Role of Tools
 
+**Implementation status (2026-10-10):** these are target tool contracts; no agent tools or LLM integration have been implemented in this first backend catalog slice. The public catalog REST endpoints exist, but their agent dispatcher/wrappers remain planned. `transfer_to_human` still requires the deferred Phase 2 backend/staff-queue implementation; this slice does not perform or claim a live handoff. See [the change summary](../development/phase1-catalog-changes.md). Tool names, schemas and approval gates are unchanged by this progress note.
+
 ```
 ┌──────────┐  tool call   ┌──────────────────────────┐  HTTP + credentials  ┌────────────────┐
 │   LLM    │ ───────────► │ Tool layer (deterministic │ ───────────────────► │ Clinic backend │

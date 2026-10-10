@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Date: 2026-10-10. Current state: Phase 0 documentation and infrastructure scaffolding; no application, migrations or executable service tests yet. This is a proposed implementation sequence, not evidence of accepted scope or completed milestones.
+Date: 2026-10-10. Current state: initial Phase 1 public catalog implemented locally, with packaging, three-table migration, synthetic seeds, health/readiness, bilingual catalog and PostgreSQL tests. Awaiting human review; local Docker build/migration/seed/bilingual smoke checks passed, while GitHub CI verification remains pending. This sequence is not evidence of accepted ADR scope or completed Phase 1 acceptance.
 
 ## Start decision
 
@@ -26,7 +26,7 @@ Avoid another round of broad design documents. Existing API/schema/tool contract
 
 ## First implementation PR
 
-After ADR acceptance, create a small Phase 1 PR for packaging/settings, PostgreSQL migration/seed, health endpoints and bilingual catalog. Next implement conversation + email verification + minimal text form page, then booking transactions. Keep the first PR small enough for a teammate to review; do not build the whole project in one PR.
+The user authorized building the first catalog slice locally for review on the existing branch. Its packaging/settings, PostgreSQL migration/seed, health endpoints and bilingual catalog now exist. Obtain human review and Docker/CI validation before landing it. Next implement conversation + email verification + minimal text form page, then booking transactions. ADR acceptance and business/channel decisions remain gates for their affected later features; implementing this public slice does not mark them approved.
 
 Suggested module deliverables (adapt filenames to the agreed package layout): `pyproject.toml`, backend app/settings, `packages/schemas` DTOs, Alembic configuration and initial migration, seed runner, unit/integration tests, then the minimal web page. Add a frontend directory only when its owner/runtime is agreed. Mock LLM/SMTP/provider adapters support parallel work, but PostgreSQL integration tests must exercise the real constraints/locking.
 
@@ -40,3 +40,7 @@ Suggested module deliverables (adapt filenames to the agreed package layout): `p
 - Provider owners: choose/benchmark LLM, STT, TTS and embeddings; arrange credentials/budget when integrating live providers. No provider secret is needed for contract review or mocked implementation.
 
 Live telephony, variable appointment durations, clinical diagnosis, payments, extensive dashboards, dedicated vector clusters and distributed tracing remain beyond the bounded demo. If supervisor requires telephony, revise channel scope deliberately before implementing voice.
+
+## Agreed shared hosting direction (2026-10-10)
+
+The user confirmed local databases for individual development plus an Oracle-hosted Docker/PostgreSQL environment for team/demo access. No Oracle VM has been provisioned by this implementation. Account/region capacity, deployment configuration, private database access, HTTPS, shared limiting, backups and monitoring must be verified before exposure. Free-tier idle reclamation prevents treating it as guaranteed uninterrupted hosting.

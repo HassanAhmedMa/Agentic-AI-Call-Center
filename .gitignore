@@ -50,6 +50,7 @@ venv/
 ENV/
 env/
 .pytest_cache/
+pytest-cache-files-*/
 .coverage
 htmlcov/
 .mypy_cache/
