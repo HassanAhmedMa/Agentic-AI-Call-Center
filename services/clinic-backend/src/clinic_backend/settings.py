@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
@@ -13,6 +13,48 @@ class Settings(BaseSettings):
     public_rate_limit: int = Field(default=60, ge=1, le=1000)
     migrations_dir: Path = Path("database/migrations")
     agent_service_token: SecretStr | None = None
+    identity_enabled: bool = False
+    otp_hmac_secret: SecretStr | None = None
+    smtp_host: str = "localhost"
+    smtp_port: int = Field(default=1025, ge=1, le=65535)
+    smtp_from: str = "clinic@example.test"
+    smtp_username: str = ""
+    smtp_password: SecretStr = SecretStr("")
+    smtp_use_tls: bool = False
+    environment: str = "development"
+    otp_ttl_seconds: int = Field(default=300, ge=60, le=900)
+    otp_max_attempts: int = Field(default=3, ge=1, le=3)
+    otp_max_sends_per_identity: int = Field(default=3, ge=1, le=10)
+    otp_send_window_seconds: int = Field(default=900, ge=60, le=86400)
+    otp_send_cooldown_seconds: int = Field(default=60, ge=1, le=3600)
+    otp_max_sends_per_ip: int = Field(default=10, ge=1, le=100)
+    otp_ip_window_seconds: int = Field(default=3600, ge=60, le=86400)
+    otp_max_sends_per_conversation: int = Field(default=5, ge=1, le=5)
+    otp_max_failures_per_ip: int = Field(default=20, ge=1, le=100)
+    registration_max_per_ip_per_day: int = Field(default=3, ge=1, le=100)
+    patient_session_idle_seconds: int = Field(default=900, ge=60, le=3600)
+    patient_session_absolute_seconds: int = Field(default=3600, ge=60, le=86400)
+
+    @model_validator(mode="after")
+    def identity_configuration(self) -> "Settings":
+        if self.identity_enabled:
+            secret = self.otp_hmac_secret
+            if (
+                secret is None
+                or len(secret.get_secret_value().encode()) < 32
+                or secret.get_secret_value().startswith("replace-with-")
+            ):
+                raise ValueError(
+                    "Identity requires a generated OTP_HMAC_SECRET of at least 32 bytes"
+                )
+            if self.agent_service_token is None or secret == self.agent_service_token:
+                raise ValueError("Identity requires distinct service and OTP secrets")
+            if (
+                self.environment not in {"development", "test"}
+                and not self.smtp_use_tls
+            ):
+                raise ValueError("SMTP TLS is required outside development/test")
+        return self
 
     @field_validator("agent_service_token")
     @classmethod

@@ -44,4 +44,4 @@ This service is the **sole authority for clinic business rules and database muta
 
 ## 4. Initial Phase 1 Status
 
-The public catalog, health endpoints and conversation creation/lifecycle are implemented. Patient identity, availability, booking and agent operations remain planned. Conversation lifecycle currently has no patient bindings to revoke; implement that atomically before enabling verification. Implement later slices strictly against the documented contracts; never expose placeholders as working operations.
+Public catalog, health, conversations, registration/email verification, patient bindings, profile/logout and the bilingual registration page are implemented. Conversation end/expiry revokes identity. Availability, booking and agent operations remain planned. SMTP currently targets local Mailpit; real delivery requires configured SMTP. Implement later slices strictly against documented contracts; never expose placeholders as working operations.

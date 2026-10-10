@@ -26,10 +26,11 @@ Avoid another round of broad design documents. Existing API/schema/tool contract
 
 ## First implementation PR
 
-**Current local increment:** conversation creation and authenticated lifecycle now
-exist after the catalog. See [conversation review notes](phase1-conversation-changes.md).
-Registration, email verification, patient binding and bilingual forms are next;
-the broader identity milestone is not complete yet.
+**Current local increment:** catalog, conversation lifecycle and patient identity
+now exist. See [identity review notes](phase1-identity-changes.md) for registration,
+SMTP verification, sessions and bilingual forms. Next implement doctor availability
+and appointment transactions. Real SMTP and shared Oracle deployment remain
+configuration/deployment work.
 
 The user authorized building the first catalog slice locally for review on the existing branch. Its packaging/settings, PostgreSQL migration/seed, health endpoints and bilingual catalog now exist. Obtain human review and Docker/CI validation before landing it. Next implement conversation + email verification + minimal text form page, then booking transactions. ADR acceptance and business/channel decisions remain gates for their affected later features; implementing this public slice does not mark them approved.
 

@@ -57,6 +57,9 @@ async def find_conversation(
     ):
         row.status = "ended"
         row.ended_at = now
+        from clinic_backend.identity import revoke
+
+        await revoke(session, row.id, "resume_expired", now)
         return None
     return row
 
@@ -181,6 +184,9 @@ def conversation_router(
                 if body.event == "ended":
                     row.status = "ended"
                     row.ended_at = now
+                    from clinic_backend.identity import revoke
+
+                    await revoke(session, row.id, "call_ended", now)
                 elif body.event == "disconnected" and row.status == "active":
                     row.status = "disconnected"
                     row.disconnected_at = now

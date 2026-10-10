@@ -10,7 +10,7 @@
 
 ## 1. Callers & Authentication
 
-**Implementation status (2026-10-10):** the initial local slice implements health/readiness (§3), specialties, doctor list/detail and service list/detail (§§5.1–5.3, 5.6–5.7). Identity, conversation lifecycle, availability, booking and ticket endpoints remain planned. Idempotency (§1.5) is specified but not implemented yet because this slice exposes no write operations. English/Egyptian Arabic catalog data/search are implemented; user-facing conversation/UI translations come later. Public limits currently operate in one local process; shared atomic limits and trusted ingress must precede public deployment. See [the backend guide](../../services/clinic-backend/README.md) and [change summary](../development/phase1-catalog-changes.md). These markers report implementation progress, not ADR acceptance or changed endpoint behavior.
+**Implementation status (2026-10-10):** local catalog, conversations and identity (§4, §6.1) are implemented, including SMTP verification, sessions and bilingual registration. Availability, appointments, tickets and idempotency remain planned. Mailpit delivery is tested; real SMTP needs sender configuration. Public catalog limits remain single-process, while identity limits are atomic in PostgreSQL. Trusted ingress and gateway transport ownership remain deployment work. See [identity review notes](../development/phase1-identity-changes.md). These markers do not change ADR acceptance.
 
 ### 1.1. Who calls the backend
 
@@ -169,9 +169,11 @@ Validation order for appointment writes (first failure wins): auth → body shap
 
 ### 4.1. `POST /conversations`
 
-**Implementation status:** creation and lifecycle (§4.2) are implemented locally.
-Patient bindings, verification (§4.3 onward) and gateway transport ownership are
-not implemented yet. The service secret stays outside product browser code.
+**Implementation status:** conversation/identity endpoints in §4 and minimal
+profile §6.1 are implemented locally behind IDENTITY_ENABLED. Email delivery is
+tested with Mailpit; real inbox delivery requires SMTP configuration. Patient
+bindings are revoked on end/expiry. Gateway transport ownership remains future
+work. The service secret stays outside product browser code.
 
 Starts a conversation. Called by the **call page** when the user presses Call (or opens the text chat).
 
@@ -224,6 +226,8 @@ Current verification state of the conversation. Polled by the call page (to show
   { "state": "verified", "purpose": "login", "verified_at": "2026-10-10T14:33:10Z" }
   ```
 - Never contains codes, emails or patient data.
+- When a new challenge is pending, polling shows it ahead of an existing valid
+  binding so the page can display code entry. Polling never refreshes idle time.
 
 ---
 

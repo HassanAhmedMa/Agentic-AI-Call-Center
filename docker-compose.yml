@@ -69,6 +69,15 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-clinic_user}:${POSTGRES_PASSWORD:-clinic_password}@database:5432/${POSTGRES_DB:-clinic_db}
       # Empty disables lifecycle writes; generate locally, never send to a browser.
       AGENT_SERVICE_TOKEN: ${AGENT_SERVICE_TOKEN:-}
+      IDENTITY_ENABLED: ${IDENTITY_ENABLED:-false}
+      OTP_HMAC_SECRET: ${OTP_HMAC_SECRET:-}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-clinic@example.test}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
     depends_on:
       database:
         condition: service_healthy

@@ -1,5 +1,6 @@
 import asyncio
 
+import clinic_backend.identity_models  # noqa: F401
 from alembic import context
 from clinic_backend.models import Base
 from clinic_backend.settings import Settings

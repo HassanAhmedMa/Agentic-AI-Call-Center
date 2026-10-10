@@ -9,7 +9,7 @@
 
 ## 1. Entity-Relationship Overview
 
-**Implementation status (2026-10-10):** migration `0001_catalog` creates `specialties`, `doctors` and `services` only. The remaining tables below describe the target schema and will be added incrementally before their features are exposed. The implemented working-day constraint also rejects NULL array elements. Seed data is synthetic, bilingual and idempotent. See [the backend guide](../../services/clinic-backend/README.md) and [change summary](../development/phase1-catalog-changes.md). The full target schema has not yet been deployed.
+**Implementation status (2026-10-10):** migrations 0001–0003 implement catalog, conversations, rate events, patients, verification challenges and patient sessions. Appointment/ticket/idempotency tables remain target contracts. Synthetic seeds are bilingual and idempotent; identity uses submitted forms, never seeded real personal data. See [identity review notes](../development/phase1-identity-changes.md). The full target schema is not yet deployed.
 
 ```
                          ┌──────────────┐
@@ -57,9 +57,9 @@ Independent:  services · clinic_closures · idempotency_keys · rate_limit_even
 
 ## 3. Enum Types
 
-**Implementation status:** migration `0002_conversations` adds conversation
-sessions, the conversation-status enum and rate-limit events. Patient/session/
-challenge tables below remain target contracts for the next identity increment.
+**Implementation status:** migrations `0002_conversations` and `0003_identity`
+implement conversation/rate-limit and patient/session/challenge tables.
+Appointments, tickets and idempotency tables remain future work.
 
 ```sql
 CREATE TYPE appointment_status AS ENUM (
@@ -372,6 +372,7 @@ One row per call (or text chat). Created by the backend when the call starts (AD
 | `token_hash` | `BYTEA` | `NOT NULL UNIQUE` | SHA-256 of the opaque session token (≥ 32 random bytes) held by the call page and the agent. The token itself is never stored |
 | `status` | `conversation_status` | `NOT NULL DEFAULT 'active'` | |
 | `channel` | `VARCHAR(16)` | `NOT NULL CHECK (channel IN ('voice','text'))` | |
+| `otp_send_count` | `INT` | `NOT NULL DEFAULT 0 CHECK (otp_send_count BETWEEN 0 AND 5)` | Cumulative sends under the conversation lock; preserves the five-total cap after rate-event cleanup |
 | `client_ip` | `INET` | `NULL` | For rate limits. Personal data: deleted with the row (§6) |
 | `started_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | |
 | `last_seen_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | |

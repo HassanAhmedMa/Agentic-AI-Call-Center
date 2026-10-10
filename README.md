@@ -76,17 +76,20 @@ agentic-clinic/
 
 ---
 
-## 🚦 Current Status: Phase 1 — Public Catalog and Conversations
+## 🚦 Current Status: Phase 1 — Catalog, Conversations and Identity
 
 The first Phase 1 slice implements public doctor/service discovery:
 
 Conversation creation and service-authenticated lifecycle are now implemented
 locally. See [conversation review notes](docs/development/phase1-conversation-changes.md).
-Registration, verification and bilingual forms are still pending.
+Registration, SMTP verification and bilingual forms now exist locally.
+See [identity review notes](docs/development/phase1-identity-changes.md).
+
 - ✅ FastAPI backend, three catalog tables, Alembic migrations and deterministic synthetic seeds.
 - ✅ English/Egyptian Arabic catalog data and normalized Arabic/English doctor search.
 - ✅ Health/readiness endpoints, typed public contracts and PostgreSQL integration tests.
-- ⏳ Identity, availability, appointments, tools, RAG and the patient UI remain planned.
+- ✅ Identity endpoints and English/Egyptian Arabic registration page; local Mailpit email testing.
+- ⏳ Availability, appointments, agent tools, RAG and voice remain planned.
 - ❌ No production speech recognition or voice pipelines are hooked up.
 - ✅ All architectural boundaries, REST contracts, AI tool schemas, and database entity relationships are formalized and documented.
 - ✅ The monorepo layout, Git conventions, CI pipeline foundation, and AI agent constitutions are in place.
@@ -120,4 +123,4 @@ To explore the architecture and prepare your local environment, consult:
 
 ## ADR-003 review and next implementation step
 
-Identity/booking decisions remain **Proposed** pending the recorded approval gates. Read the [review findings](docs/development/architecture-review-2026-10-10.md) and [implementation roadmap](docs/development/implementation-roadmap.md). Phase 1 targets deterministic backend identity and a minimal browser text/form page; currently the backend implements catalog and conversation foundation.
+Identity/booking decisions remain **Proposed** pending the recorded approval gates. Read the [review findings](docs/development/architecture-review-2026-10-10.md) and [implementation roadmap](docs/development/implementation-roadmap.md). Phase 1 targets deterministic backend identity and a minimal browser text/form page; currently the backend implements catalog, conversations and patient identity.

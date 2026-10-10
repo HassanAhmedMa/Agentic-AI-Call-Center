@@ -9,7 +9,7 @@
 
 ## 1. Architectural Role of Tools
 
-**Implementation status (2026-10-10):** these are target tool contracts; no agent tools or LLM integration have been implemented in this first backend catalog slice. The public catalog REST endpoints exist, but their agent dispatcher/wrappers remain planned. `transfer_to_human` still requires the deferred Phase 2 backend/staff-queue implementation; this slice does not perform or claim a live handoff. See [the change summary](../development/phase1-catalog-changes.md). Tool names, schemas and approval gates are unchanged by this progress note.
+**Implementation status (2026-10-10):** target tool contracts remain unchanged; no agent dispatcher or LLM integration is implemented. Catalog and identity REST endpoints now exist, but agent wrappers remain planned. Verification codes/forms go directly from browser to backend, never through tools. transfer_to_human still requires Phase 2 staff queue work. See [identity review notes](../development/phase1-identity-changes.md).
 
 ```
 ┌──────────┐  tool call   ┌──────────────────────────┐  HTTP + credentials  ┌────────────────┐

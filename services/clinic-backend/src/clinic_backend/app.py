@@ -1,10 +1,12 @@
+import asyncio
 import logging
 import math
 import re
 import time
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
+from pathlib import Path as FilePath
 from typing import Annotated, Any, Literal
 from uuid import uuid4
 
@@ -15,12 +17,14 @@ from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from starlette.exceptions import HTTPException
-from starlette.responses import Response
+from starlette.responses import FileResponse, Response
+from starlette.staticfiles import StaticFiles
 
 from clinic_backend.catalog import Catalog
 from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
 from clinic_backend.errors import APIError, ErrorEnvelope, error_response
+from clinic_backend.mail import Delivery, SMTPDelivery
 from clinic_backend.settings import Settings
 
 logger = logging.getLogger("clinic_backend")
@@ -63,19 +67,35 @@ class PublicLimiter:
 
 
 def create_app(
-    settings: Settings | None = None, *, engine: AsyncEngine | None = None
+    settings: Settings | None = None,
+    *,
+    engine: AsyncEngine | None = None,
+    mailer: Delivery | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     owns_engine = engine is None
     engine = engine or make_engine(settings)
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     limiter = PublicLimiter(settings.public_rate_limit)
+    mailer = mailer or SMTPDelivery(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        yield
-        if owns_engine:
-            await engine.dispose()
+        task = None
+        if settings.identity_enabled:
+            from clinic_backend.identity_cleanup import cleanup_loop
+
+            task = asyncio.create_task(cleanup_loop(sessions, settings))
+        try:
+            yield
+        finally:
+            if task:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+            await mailer.close()
+            if owns_engine:
+                await engine.dispose()
 
     app = FastAPI(
         title="Agentic Clinic — Phase 1 Backend", version="0.2.0", lifespan=lifespan
@@ -124,7 +144,13 @@ def create_app(
 
     @app.exception_handler(APIError)
     async def api_error(request: Request, exc: APIError) -> Response:
-        return error_response(request, exc.status, exc.code, exc.message, exc.details)
+        response = error_response(
+            request, exc.status, exc.code, exc.message, exc.details
+        )
+        if exc.status == 429 and exc.details:
+            response.headers["Retry-After"] = str(exc.details.get("retry_after", 60))
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(
@@ -140,6 +166,15 @@ def create_app(
             "service_id",
             "channel",
             "event",
+            "full_name",
+            "phone",
+            "date_of_birth",
+            "email",
+            "preferred_language",
+            "privacy_notice_accepted",
+            "purpose",
+            "code",
+            "customer_number",
         }
         fields = []
         for problem in exc.errors():
@@ -263,11 +298,38 @@ def create_app(
         return item
 
     app.include_router(conversation_router(sessions, settings))
+    if settings.identity_enabled:
+        from clinic_backend.identity_routes import identity_router
+
+        app.include_router(identity_router(sessions, settings, mailer))
+        static = FilePath(__file__).parent / "static"
+        app.mount(
+            "/identity-assets", StaticFiles(directory=static), name="identity-assets"
+        )
+
+        @app.get("/register", include_in_schema=False)
+        async def registration_page() -> Response:
+            return FileResponse(
+                static / "register.html",
+                headers={
+                    "Cache-Control": "no-store",
+                    "Content-Security-Policy": (
+                        "default-src 'self'; frame-ancestors 'none'; "
+                        "base-uri 'none'; form-action 'self'"
+                    ),
+                    "X-Content-Type-Options": "nosniff",
+                    "Referrer-Policy": "no-referrer",
+                },
+            )
 
     # FastAPI defaults to a 422 validation response. This catalog contract uses
     # our sanitized 400 envelope; keep the review UI aligned with actual behavior.
     schema = app.openapi()
     for path_item in schema["paths"].values():
         for operation in path_item.values():
-            operation.get("responses", {}).pop("422", None)
+            if (
+                operation.get("responses", {}).get("422", {}).get("description")
+                == "Validation Error"
+            ):
+                operation["responses"].pop("422", None)
     return app

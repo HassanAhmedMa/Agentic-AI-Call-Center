@@ -38,7 +38,7 @@ jobs:
           echo "docker-compose.yml syntax is valid."
 
   backend:
-    name: Bilingual Catalog and PostgreSQL Tests
+    name: Catalog, Identity and PostgreSQL Tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -67,16 +67,19 @@ jobs:
           python -m mypy
       - name: Unit and real PostgreSQL integration tests
         run: python -m pytest -q
-      - name: Build catalog image
+      - name: Build backend image
         run: docker compose --profile backend build clinic-backend
       - name: Container migration and bilingual smoke test
         run: |
           docker compose up -d database
+          python scripts/setup_identity_dev.py
+          docker compose up -d mailpit
           docker compose --profile backend run --rm clinic-backend python -m alembic upgrade head
           docker compose --profile backend run --rm clinic-backend python -m clinic_backend.seed
           docker compose --profile backend up -d clinic-backend
           curl --retry 10 --retry-delay 2 --retry-all-errors --fail http://localhost:8000/api/v1/health/ready
           curl --fail --get --data-urlencode 'q=قلب' http://localhost:8000/api/v1/doctors
+          python scripts/smoke_identity.py
       - name: Stop containers
         if: always()
         run: docker compose --profile backend down
