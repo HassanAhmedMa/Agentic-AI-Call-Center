@@ -26,6 +26,11 @@ Avoid another round of broad design documents. Existing API/schema/tool contract
 
 ## First implementation PR
 
+**Current local increment:** conversation creation and authenticated lifecycle now
+exist after the catalog. See [conversation review notes](phase1-conversation-changes.md).
+Registration, email verification, patient binding and bilingual forms are next;
+the broader identity milestone is not complete yet.
+
 The user authorized building the first catalog slice locally for review on the existing branch. Its packaging/settings, PostgreSQL migration/seed, health endpoints and bilingual catalog now exist. Obtain human review and Docker/CI validation before landing it. Next implement conversation + email verification + minimal text form page, then booking transactions. ADR acceptance and business/channel decisions remain gates for their affected later features; implementing this public slice does not mark them approved.
 
 Suggested module deliverables (adapt filenames to the agreed package layout): `pyproject.toml`, backend app/settings, `packages/schemas` DTOs, Alembic configuration and initial migration, seed runner, unit/integration tests, then the minimal web page. Add a frontend directory only when its owner/runtime is agreed. Mock LLM/SMTP/provider adapters support parallel work, but PostgreSQL integration tests must exercise the real constraints/locking.

@@ -1,5 +1,6 @@
 from datetime import datetime, time
 from decimal import Decimal
+from uuid import UUID
 
 from sqlalchemy import (
     BigInteger,
@@ -9,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     Numeric,
     SmallInteger,
     String,
@@ -16,12 +18,53 @@ from sqlalchemy import (
     Time,
     func,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, INET
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class ConversationSession(Base):
+    __tablename__ = "conversation_sessions"
+    __table_args__ = (
+        CheckConstraint("channel IN ('voice', 'text')", name="ck_conversation_channel"),
+        Index("ix_conversation_status_seen", "status", "last_seen_at"),
+    )
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, server_default=func.gen_random_uuid()
+    )
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    status: Mapped[str] = mapped_column(
+        ENUM("active", "disconnected", "ended", name="conversation_status"),
+        server_default="active",
+    )
+    channel: Mapped[str] = mapped_column(String(16))
+    client_ip: Mapped[str | None] = mapped_column(INET)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    disconnected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RateLimitEvent(Base):
+    __tablename__ = "rate_limit_events"
+    __table_args__ = (
+        Index(
+            "ix_rate_limit_bucket_subject_created", "bucket", "subject", "created_at"
+        ),
+    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    bucket: Mapped[str] = mapped_column(String(48))
+    subject: Mapped[str] = mapped_column(String(128))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
 
 class Timestamps:

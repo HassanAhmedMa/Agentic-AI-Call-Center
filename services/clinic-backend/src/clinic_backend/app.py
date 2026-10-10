@@ -18,6 +18,7 @@ from starlette.exceptions import HTTPException
 from starlette.responses import Response
 
 from clinic_backend.catalog import Catalog
+from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
 from clinic_backend.errors import APIError, ErrorEnvelope, error_response
 from clinic_backend.settings import Settings
@@ -77,7 +78,7 @@ def create_app(
             await engine.dispose()
 
     app = FastAPI(
-        title="Agentic Clinic — Public Catalog", version="0.1.0", lifespan=lifespan
+        title="Agentic Clinic — Phase 1 Backend", version="0.2.0", lifespan=lifespan
     )
 
     @app.middleware("http")
@@ -107,7 +108,7 @@ def create_app(
             response = await call_next(request)
         except (SQLAlchemyError, OSError, TimeoutError):
             response = error_response(
-                request, 503, "SERVICE_UNAVAILABLE", "Catalog temporarily unavailable."
+                request, 503, "SERVICE_UNAVAILABLE", "Service temporarily unavailable."
             )
         except Exception as exc:
             logger.error(
@@ -137,6 +138,8 @@ def create_app(
             "category",
             "doctor_id",
             "service_id",
+            "channel",
+            "event",
         }
         fields = []
         for problem in exc.errors():
@@ -146,7 +149,7 @@ def create_app(
             field = ".".join(
                 str(part)
                 for part in location
-                if part in known_fields or part in {"query", "path"}
+                if part in known_fields or part in {"query", "path", "body"}
             )
             fields.append({"field": field or "request", "reason": problem["type"]})
         return error_response(
@@ -258,6 +261,8 @@ def create_app(
         if item is None:
             raise APIError(404, "SERVICE_NOT_FOUND", "Service not found.")
         return item
+
+    app.include_router(conversation_router(sessions, settings))
 
     # FastAPI defaults to a 422 validation response. This catalog contract uses
     # our sanitized 400 envelope; keep the review UI aligned with actual behavior.

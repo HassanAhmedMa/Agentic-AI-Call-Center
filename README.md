@@ -76,9 +76,13 @@ agentic-clinic/
 
 ---
 
-## 🚦 Current Status: Phase 1 — Public Catalog
+## 🚦 Current Status: Phase 1 — Public Catalog and Conversations
 
 The first Phase 1 slice implements public doctor/service discovery:
+
+Conversation creation and service-authenticated lifecycle are now implemented
+locally. See [conversation review notes](docs/development/phase1-conversation-changes.md).
+Registration, verification and bilingual forms are still pending.
 - ✅ FastAPI backend, three catalog tables, Alembic migrations and deterministic synthetic seeds.
 - ✅ English/Egyptian Arabic catalog data and normalized Arabic/English doctor search.
 - ✅ Health/readiness endpoints, typed public contracts and PostgreSQL integration tests.
@@ -116,4 +120,4 @@ To explore the architecture and prepare your local environment, consult:
 
 ## ADR-003 review and next implementation step
 
-Identity/booking changes remain **Proposed** pending the recorded approval gates. Read the [review findings](docs/development/architecture-review-2026-10-10.md) and [implementation roadmap](docs/development/implementation-roadmap.md). Phase 1 includes deterministic backend identity and a minimal browser text/form page; no application service is implemented yet.
+Identity/booking decisions remain **Proposed** pending the recorded approval gates. Read the [review findings](docs/development/architecture-review-2026-10-10.md) and [implementation roadmap](docs/development/implementation-roadmap.md). Phase 1 targets deterministic backend identity and a minimal browser text/form page; currently the backend implements catalog and conversation foundation.

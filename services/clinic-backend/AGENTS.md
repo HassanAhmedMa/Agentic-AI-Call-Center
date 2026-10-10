@@ -44,4 +44,4 @@ This service is the **sole authority for clinic business rules and database muta
 
 ## 4. Initial Phase 1 Status
 
-The public catalog, health endpoints and their three database tables are implemented. Identity, availability, booking and agent operations remain planned. Implement later slices strictly against the documented contracts; never expose placeholders as working operations.
+The public catalog, health endpoints and conversation creation/lifecycle are implemented. Patient identity, availability, booking and agent operations remain planned. Conversation lifecycle currently has no patient bindings to revoke; implement that atomically before enabling verification. Implement later slices strictly against the documented contracts; never expose placeholders as working operations.

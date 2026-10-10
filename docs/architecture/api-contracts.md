@@ -169,6 +169,10 @@ Validation order for appointment writes (first failure wins): auth → body shap
 
 ### 4.1. `POST /conversations`
 
+**Implementation status:** creation and lifecycle (§4.2) are implemented locally.
+Patient bindings, verification (§4.3 onward) and gateway transport ownership are
+not implemented yet. The service secret stays outside product browser code.
+
 Starts a conversation. Called by the **call page** when the user presses Call (or opens the text chat).
 
 - **Access:** Public (rate-limited per IP)

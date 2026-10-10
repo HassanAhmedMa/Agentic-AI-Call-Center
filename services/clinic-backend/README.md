@@ -1,9 +1,9 @@
 # Clinic Backend Service (`services/clinic-backend`)
 
-Deterministic FastAPI backend. This first Phase 1 slice implements the public catalog only. Run commands below from the repository root.
+Deterministic FastAPI backend with public catalog and conversation creation/lifecycle. Patient identity and bookings remain pending. Run commands below from the repository root.
 
 ## Architecture Status
-- **Current Phase:** Phase 1 — Public catalog
+- **Current Phase:** Phase 1 — Public catalog and conversation foundation
 - **API Contracts:** [docs/architecture/api-contracts.md](../../docs/architecture/api-contracts.md)
 - **Database Schema:** [docs/architecture/database-schema.md](../../docs/architecture/database-schema.md)
 
@@ -112,4 +112,11 @@ SELECT id, name_en, name_ar, specialty_id, consultation_fee FROM doctors ORDER B
 SELECT id, name_en, name_ar, category, price FROM services ORDER BY id;
 ```
 
-Use `\d doctors` to inspect columns/constraints and `\q` to exit. Only the three catalog tables plus Alembic's version table exist in this slice; patient/appointment tables come later.
+Use `\d doctors` to inspect columns/constraints and `\q` to exit. The three catalog tables, conversation sessions, rate-limit events and Alembic's version table now exist; patient/appointment tables come later.
+
+# Conversation increment
+
+Conversation creation and service-authenticated lifecycle are available at
+`/api/v1/conversations`. See the
+[review notes](../../docs/development/phase1-conversation-changes.md) for setup,
+scope and security boundaries. Registration and verification remain pending.

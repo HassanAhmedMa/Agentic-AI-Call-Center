@@ -1,7 +1,7 @@
 # AGENTS.md - Repository Operating Constitution for AI Coding Agents & Engineers
 
 > **PROJECT:** Agentic Clinic  
-> **CURRENT PHASE:** Phase 1 — Initial public catalog implementation
+> **CURRENT PHASE:** Phase 1 — Public catalog and conversation foundation
 > **TARGET AUDIENCE:** All AI coding agents (and human engineers) collaborating on this repository.
 
 ---

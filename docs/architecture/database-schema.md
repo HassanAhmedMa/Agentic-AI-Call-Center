@@ -57,6 +57,10 @@ Independent:  services · clinic_closures · idempotency_keys · rate_limit_even
 
 ## 3. Enum Types
 
+**Implementation status:** migration `0002_conversations` adds conversation
+sessions, the conversation-status enum and rate-limit events. Patient/session/
+challenge tables below remain target contracts for the next identity increment.
+
 ```sql
 CREATE TYPE appointment_status AS ENUM (
     'scheduled',   -- Booked and upcoming (also after a reschedule)
