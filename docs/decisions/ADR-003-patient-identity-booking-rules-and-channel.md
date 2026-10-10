@@ -34,7 +34,7 @@ A review of the Phase 0 contracts before starting Phase 1 found gaps that would 
 |---|---|---|
 | `patients.id` | Internal database primary key | Backend only. Never shown to the caller or the LLM |
 | `customer_number` | Patient-facing account identifier, used only to **start** verification | Caller, agent |
-| `email` | Required, unique, verified contact address and destination for verification codes | Backend; shown to the caller only masked |
+| `email` | Required, unique, verified contact address and destination for verification codes | Browser form and backend only; never returned to the agent |
 | Patient session | Establishes **which patient the current operation may access** | Backend only (server-side) |
 
 **Rules**
@@ -45,7 +45,7 @@ A review of the Phase 0 contracts before starting Phase 1 found gaps that would 
   1. **Service authentication:** the `AGENT_SERVICE_TOKEN` proves the request comes from our agent service. It grants **no** patient permissions by itself.
   2. **Patient authorization:** the backend looks up the patient session bound to the given conversation session. It must exist, be verified, and not be expired or revoked. The patient comes from that binding.
 
-  A valid service token with no valid patient session can only reach public endpoints.
+  Without a valid patient session, public catalog and authenticated conversation/verification/escalation bootstrap operations remain available; patient data and writes do not.
 
 **Roles**
 
@@ -98,7 +98,7 @@ There is **no unverified guest role**.
 - **Unknown customer numbers** get the same response as known ones ("If this number is registered, a code has been sent"), so valid numbers cannot be discovered by guessing.
 
 **Email delivery**
-- Development and demo use **Mailpit** (local fake mail server in Docker with a web inbox). The mail sender sits behind an interface so a real SMTP provider can replace it later.
+- Development and demo use **Mailpit** (local capture server in Docker with a web inbox; it does not deliver to real inboxes). A mobile demo needs controlled access to the synthetic inbox or a configured SMTP provider. The mail sender sits behind an interface so a real SMTP provider can replace it later.
 
 **No date-of-birth authentication**
 - Date of birth is **not** an authentication factor in any mode.
@@ -169,7 +169,7 @@ There is **no unverified guest role**.
 
 **R2. Max 2 appointments per day**
 - Per account; counts active appointments on the same clinic-local date, across all doctors; the two must be with different doctors.
-- When rescheduling, the appointment being moved is excluded from the count for its new date.
+- When rescheduling, the appointment being moved is excluded from both the daily count for its new date and the total active count.
 
 **R3. Max 5 active appointments**
 - Per account, across all doctors and all future dates.
@@ -209,12 +209,12 @@ There is **no unverified guest role**.
 - **Limits under concurrency:** daily and active limits are checked inside the booking transaction while holding a row lock on the patient (`SELECT … FOR UPDATE`), so two simultaneous requests cannot both pass.
 - **Known constraint:** these indexes are only sufficient for fixed, aligned 30-minute slots. If variable durations or arbitrary start times are introduced later, the design must switch to range-based exclusion constraints (`btree_gist`) in a new ADR.
 - **Status:** `rescheduled` is **removed**. Statuses are `scheduled`, `completed`, `cancelled`, `no_show`. A reschedule updates date and time in place and leaves the status `scheduled`; previous values are stored in `appointment_history`.
-- **Cancel endpoint:** `POST /appointments/{id}/cancel` replaces `DELETE` with a body.
+- **Cancel endpoint:** `POST /patients/me/appointments/{id}/cancel` replaces `DELETE` with a body.
 
 **Idempotency**
 - Write endpoints (book, reschedule, cancel, create ticket) require an `Idempotency-Key` header.
 - Keys are **scoped to (patient account, operation)**. The same key used by another account or for another operation is a different key.
-- The backend stores a hash of the request body with the key. Reusing a key with the **same** body returns the original result; reusing it with a **different** body returns `422 IDEMPOTENCY_KEY_REUSED`.
+- The backend stores a fingerprint of the operation, normalized route target (including appointment id) and validated canonical body with the key. Reusing a key with the **same** request fingerprint returns the original result; reusing it with a **different** request fingerprint returns `422 IDEMPOTENCY_KEY_REUSED`.
 - Keys expire after 24 hours.
 
 ### Decision 3.7: Bilingual catalog (Arabic + English)
@@ -293,7 +293,7 @@ These changes are part of the **same PR** as this ADR; the ADR is not accepted u
 | Document | Change |
 |---|---|
 | `docs/architecture/database-schema.md` | New: `specialties`, `doctor_time_off`, `clinic_closures`, `appointment_history`, `verification_challenges`, `patient_sessions`, `conversation_sessions`, `idempotency_keys`. Changed: `appointment_status` enum without `rescheduled`; both partial unique indexes `WHERE status = 'scheduled'`; slot-grid and shift checks; patients (customer number, unique email, non-unique phone, optional gender/insurance, preferred language); doctors (bilingual names, `specialty_id`); services (bilingual); appointments (`visit_reason`) |
-| `docs/architecture/api-contracts.md` | New: verification challenge + verify endpoints (browser-facing), registration endpoints, `/patients/me/...`, `POST /appointments/{id}/cancel`, `Idempotency-Key`, service + session auth headers, full error-code catalog. Removed: `rescheduled` in filters and example responses |
+| `docs/architecture/api-contracts.md` | New: verification challenge + verify endpoints (browser-facing), registration endpoints, `/patients/me/...`, `POST /patients/me/appointments/{id}/cancel`, `Idempotency-Key`, service + session auth headers, full error-code catalog. Removed: `rescheduled` in filters and example responses |
 | `docs/architecture/tool-schemas.md` | Remove `patient_id` from all inputs; add `request_verification_code`, `start_registration`; no tool accepts or returns an OTP; remove `rescheduled` from outputs |
 | `docs/diagrams/04-data/state-appointment.mmd` (+ rendered images) | Remove the `Rescheduled` state; reschedule is a self-transition on `Scheduled` |
 | `docs/diagrams/04-data/entity-relationship-diagram.mmd` | New tables and changed columns |
@@ -322,11 +322,20 @@ These changes are part of the **same PR** as this ADR; the ADR is not accepted u
 This ADR moves from **Proposed** to **Accepted** only when every item is checked in the PR:
 
 - [ ] Supervisor has confirmed the browser call channel (§6)
-- [ ] `database-schema.md` updated: no `rescheduled` anywhere; indexes use `WHERE status = 'scheduled'`; grid and shift checks present; new tables present
+- [ ] `database-schema.md` updated: no current `rescheduled` status (historical change notes may explain its removal); indexes use `WHERE status = 'scheduled'`; grid and shift checks present; new tables present
 - [ ] `api-contracts.md` updated: no patient ids from clients on patient-facing endpoints; verification is browser-to-backend; idempotency semantics defined; error-code catalog complete
 - [ ] `tool-schemas.md` updated: no tool accepts `patient_id`, `customer_number` (except `request_verification_code`) or `email` for patient data; no tool accepts or returns an OTP
-- [ ] Appointment state diagram and ER diagram updated
-- [ ] Repository search shows no remaining `rescheduled` status in docs, diagrams or tests
+- [x] Appointment state diagram and ER diagram updated
+- [x] Repository search shows no remaining current `rescheduled` status in docs, diagrams or tests (historical explanations are allowed)
 - [ ] `.env.example` and `docker-compose.yml` updated (Mailpit, verification provider, trusted proxies)
-- [ ] Mock verification adapter is documented as test-only, with the startup guard
+- [x] Mock verification adapter is documented as test-only, with the startup guard
 - [ ] At least one teammate other than the author has approved the PR
+
+
+## 8. Review clarifications (2026-10-10)
+
+The companion contracts now clarify proposal delivery/turn checks and replay, idempotency route targets and atomic persistence, conversation-bound client-IP rate limiting, concurrent registration/session replacement, challenge cleanup FKs and seven-inclusive-date search ranges. Rate limits count all identities equally and are checked atomically. Backend values remain configurable; the 30-minute database grid is structural.
+
+The same PR includes the 19-tool catalog, affected source/rendered diagrams, browser form/control flows, Mailpit configuration, requirements/traceability and an implementation roadmap. Staff queue authentication must be contracted in Phase 2 alongside escalation rather than waiting until Phase 6. In Phase 1 handoff is unavailable and must be reported truthfully.
+
+These corrections do not record supervisor approval, team approval of booking values or teammate PR approval. The ADR remains **Proposed**. Full implementation starts only after the relevant acceptance gates are resolved. OTP transcript redaction is best effort; it cannot guarantee that a caller never speaks a code to an STT provider, and direct raw-audio-to-LLM providers need a separate isolation review.

@@ -65,9 +65,9 @@ Required on: book, reschedule, cancel, create ticket. Missing header → `400 ID
 | Situation | Response |
 |---|---|
 | New key | Operation runs; response stored for 24 h |
-| Same key, same body, finished | Stored response returned again (same status code and body) |
-| Same key, same body, still running | `409 IDEMPOTENCY_IN_PROGRESS` |
-| Same key, different body | `422 IDEMPOTENCY_KEY_REUSED` |
+| Same key, same request fingerprint, finished | Stored response returned again (same status code and body) |
+| Same key, same request fingerprint, still running | `409 IDEMPOTENCY_IN_PROGRESS` |
+| Same key, different request fingerprint | `422 IDEMPOTENCY_KEY_REUSED` |
 
 ### 1.6. Rate limiting
 
@@ -81,9 +81,11 @@ Exceeded limits return `429 RATE_LIMITED` with a `Retry-After` header (seconds).
 | Verification codes, per IP | 10 / hour |
 | Verification codes, per conversation | 5 total |
 | Failed code entries, per IP | 20 / hour |
-| Registrations, per IP | 3 / day |
+| Registrations, per IP | 3 / rolling 24 h |
 
-The client IP is read from `X-Forwarded-For` **only** when the request arrives from an address in `TRUSTED_PROXIES`; otherwise the socket address is used.
+The client IP is read from `X-Forwarded-For` **only** when the request arrives from an address in `TRUSTED_PROXIES`; otherwise the socket address is used. Parse the chain from the trusted edge, never trust arbitrary leftmost values. At conversation creation, record the resolved browser IP. Agent-triggered OTP requests use that stored conversation IP, not the agent server IP; browser registrations and code entries use the currently resolved browser IP. Public ingress strips caller-supplied forwarding headers before adding its own.
+
+Check and append each rate-limit bucket atomically while holding transaction-scoped locks on `(bucket, subject)` in sorted order. Count known and unknown numbers equally, including the 60-second cooldown. Count every registration attempt (including duplicates), and apply send limits per normalized email for registration (3/15 min and 60-second cooldown) as well as per IP/conversation. Multi-worker requests must not bypass limits through count-then-insert races.
 
 ### 1.7. Logging rules
 
@@ -143,7 +145,7 @@ The client IP is read from `X-Forwarded-For` **only** when the request arrives f
 | 422 | `SAME_SLOT` | Reschedule to the appointment's current date and time | Ask for a different time |
 | 422 | `INVALID_CUSTOMER_NUMBER` | Not 6 digits, or Luhn check digit wrong | Ask the caller to repeat the number |
 | 422 | `INVALID_CODE` | Wrong code. `details.attempts_remaining` | Ask to re-type the code |
-| 422 | `IDEMPOTENCY_KEY_REUSED` | Same key, different body | Internal bug |
+| 422 | `IDEMPOTENCY_KEY_REUSED` | Same key, different request fingerprint | Internal bug |
 | 429 | `RATE_LIMITED` | Limit exceeded; `Retry-After` header | Explain and wait, or escalate |
 | 500 | `INTERNAL_ERROR` | Unexpected failure | Apologise; escalate |
 | 503 | `SERVICE_UNAVAILABLE` | Database or mail server unavailable | Apologise; escalate |
@@ -251,7 +253,7 @@ Starts **login** verification for a customer number. Called by the agent (tool `
 
 Submits the code typed in the **code box**. This is the **only** way to complete verification; the agent has no endpoint that accepts a code.
 
-- **Access:** Conversation (call page only). Requests carrying `X-Service-Token` are rejected with `403 ACTION_NOT_ALLOWED`.
+- **Access:** Conversation (call page only). Requests carrying `X-Service-Token` are rejected with `403 ACTION_NOT_ALLOWED`. This header rule prevents accidental routing through tools; it is not proof of browser origin. The architecture must keep code entry out of agent/voice routes, SDK callbacks and logs.
 - **Request:**
   ```json
   { "purpose": "login", "code": "604913" }
@@ -266,7 +268,7 @@ Submits the code typed in the **code box**. This is the **only** way to complete
   ```json
   { "state": "verified", "purpose": "registration", "customer_number": "482133" }
   ```
-  The patient is created, the customer number is shown on the page and emailed, and a patient session is bound.
+  The patient is created, the customer number is shown on the page and emailed, and a patient session is bound. Registration consumes its challenge and creates the patient/session in one transaction. Recheck normalized email uniqueness at completion; serialize concurrent registrations for that email. A registration that lost a uniqueness race fails through the same generic invalid-code flow as an unusable duplicate challenge, never an account-existence error.
 - **Errors:** `409 NO_PENDING_CHALLENGE`, `422 INVALID_CODE` (`details.attempts_remaining`), `410 CHALLENGE_EXPIRED`, `429 RATE_LIMITED`.
 
 ---
@@ -275,7 +277,7 @@ Submits the code typed in the **code box**. This is the **only** way to complete
 
 Submits the **registration form** from the call page.
 
-- **Access:** Conversation (call page only)
+- **Access:** Conversation (call page only); requests carrying `X-Service-Token` return `403 ACTION_NOT_ALLOWED`.
 - **Request:**
   ```json
   {
@@ -385,7 +387,7 @@ Ends the patient session (caller says "log out" or wants to switch account).
 Free slots for one doctor.
 
 - **Access:** Public
-- **Query:** `from_date` (required), `to_date` (optional, default = `from_date`, max 7 days after `from_date`).
+- **Query:** `from_date` (required), `to_date` (optional, default = `from_date`, at most 6 days after `from_date` (7 inclusive dates)).
 - **Rules:** returns only slots that satisfy **all** booking rules at the time of the request (shift, working days, closures, time off, lead time ≥ 1 h, horizon ≤ 30 days, not taken). Dates outside the horizon return empty days, not errors.
 - **Response `200`:**
   ```json
@@ -411,7 +413,7 @@ Free slots for one doctor.
 - **Access:** Public
 - **Query:**
   - `specialty_id` (optional) or `doctor_id` (optional)
-  - `from_date` (required), `to_date` (optional, max 7 days after `from_date`)
+  - `from_date` (required), `to_date` (optional, at most 6 days after `from_date` (7 inclusive dates))
   - `earliest_time`, `latest_time` (optional `HH:MM`, filter on slot start)
   - `limit` (default 5, max 20)
 - **Response `200`:** earliest slots first.
@@ -521,7 +523,7 @@ All require **Patient** access (§1.3). The patient is always the one bound to t
     ]
   }
   ```
-  `can_change` = the 4-hour change window is still open (computed by the backend, so the agent never calculates time rules itself).
+  `can_change` = status is `scheduled`, the appointment is in the future, and the 4-hour change window is still open (computed by the backend, so the agent never calculates time rules itself).
 
 ---
 
@@ -558,15 +560,15 @@ Moves the appointment to another slot **with the same doctor**.
 - **Headers:** `Idempotency-Key` (required)
 - **Request:**
   ```json
-  { "date": "2026-10-16", "start_time": "15:00" }
+  { "date": "2026-10-17", "start_time": "15:00" }
   ```
-- **Rules:** the **current** appointment must be `scheduled` and ≥ 4 hours away; the **new** slot must satisfy all booking rules (the moved appointment is excluded from the daily count). All-or-nothing: on any error the original appointment is unchanged.
+- **Rules:** the **current** appointment must be `scheduled` and ≥ 4 hours away; the **new** slot must satisfy all booking rules (the moved appointment is excluded from both daily and total active counts). All-or-nothing: on any error the original appointment is unchanged.
 - **Response `200`:**
   ```json
   {
     "id": 501,
     "doctor": { "id": 12, "name_en": "Dr. Sarah Farouk", "name_ar": "د. سارة فاروق" },
-    "date": "2026-10-16",
+    "date": "2026-10-17",
     "start_time": "15:00",
     "end_time": "15:30",
     "status": "scheduled",
@@ -650,7 +652,7 @@ These are required by the roadmap but are **not** part of the Phase 1 contract. 
 | Feature | Phase | Needs |
 |---|---|---|
 | Human escalation queue (`POST /escalations`, used by `transfer_to_human`) | Phase 2 | `escalations` table, staff view |
-| Staff authentication and roles | Phase 6 / dashboard | `staff_users` table, staff login |
+| Staff authentication and roles | Phase 2 minimum queue; Phase 6 hardening | `staff_users` table, staff login |
 | Staff operations: update tickets, mark appointments completed / no-show, manage doctor time off and closures | Dashboard | Staff authentication |
 | General audit log | Phase 6 | `audit_log` table |
 
@@ -673,3 +675,14 @@ These are required by the roadmap but are **not** part of the Phase 1 contract. 
 | No idempotency | `Idempotency-Key` on all four writes | ADR-003 §3.6 |
 | `PATCH /tickets/{id}` (staff) | Deferred until staff authentication exists (§8) | No staff auth in Phase 1 |
 | `GET /appointments/{id}` (any appointment) | `GET /patients/me/appointments/{id}` (own only, 404 otherwise) | Ownership enforcement |
+
+
+## 10. Implementation invariants clarified during review
+
+- **Idempotency fingerprint:** SHA-256 of canonical JSON containing operation, normalized route target (including appointment id for cancel/reschedule) and validated body with defaults applied. The same key on appointment A and B is a different fingerprint even with identical bodies. Authentication/session validation runs before every replay. Reserve the key, mutate clinic data, append history and persist the successful response in one transaction. Use a savepoint for domain failures if storing their terminal responses. A crash cannot leave a committed mutation without its replay response; an uncommitted reservation rolls back. `IDEMPOTENCY_IN_PROGRESS` describes lock contention, not a permanently abandoned row.
+- **Identity concurrency:** serialize verification/session replacement per conversation before locking its challenge. After resolving a code, invalidate every other pending challenge in that conversation, including the other purpose, so a stale form cannot unexpectedly switch accounts. Logout and explicit call end also invalidate pending challenges. Polling `verified` reflects a currently valid binding; it does not refresh patient idle expiry. Expired sessions are revoked before inserting a replacement under the live-session unique index.
+- **Challenge indistinguishability:** unknown and duplicate accounts receive the same pending state, expiry, attempt counters, errors, rate buckets and comparable verification work as known accounts. Perform a constant-time comparison against a dummy HMAC for unusable challenges. Send mail asynchronously through the adapter; account-dependent SMTP latency/errors must not leak existence through the request response. Operational delivery failures are reported without identifying whether a particular account exists.
+- **Email normalization:** trim and lowercase the complete address for this synthetic clinic before lookup, registration, uniqueness checks and rate limiting. Validate `full_name` length 1–255 after trimming, `preferred_language` in `ar|en`, required fields and privacy consent. Ticket subject length is 3–255; description is 10–2000.
+- **Time boundaries:** lead time ≥ exactly one hour; horizon ≤ exactly `now + 30 days` as elapsed time; change notice ≥ exactly four hours. Convert Cairo local slots to exact instants before comparison. Availability cannot enforce patient-specific limits because it is public; writes enforce them. Rescheduling excludes the moved appointment from both active and daily counts. Time-of-day filters are lower-inclusive and upper-exclusive.
+- **Conversation lifecycle:** expiry is checked on each request, not only by cleanup. Gateway liveness detects dropped transports and reports disconnect; one active transport per conversation is allowed. Explicit End and text-session close are reported by the gateway using service credentials. Connection ownership prevents an old socket from ending a newly resumed call. Tokens travel over HTTPS/WSS and stay out of URLs, model context and logs.
+- **Phase 2 escalation dependency:** queue creation, staff authentication and queue acceptance/read contracts must be specified together before implementation. A log or queued request is not a completed live transfer. Anonymous callers can request help without a patient session, but staff access never becomes public.

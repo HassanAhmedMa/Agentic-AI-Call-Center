@@ -70,3 +70,12 @@ When launching an AI coding agent on your local machine:
 1. Ensure your agent reads [AGENTS.md](../../AGENTS.md) and the service-specific `AGENTS.md` in your target directory.
 2. Confirm the agent operates on a designated `feature/<description>` branch, never on `main`.
 3. Verify that the agent runs `python scripts/validate_repo.py` before you commit.
+
+
+## ADR-003 local verification setup
+
+`docker compose up -d database redis mailpit` starts development dependencies. Open Mailpit at http://localhost:8025; SMTP is localhost:1025 for a host process or mailpit:1025 for a backend container. Local Mailpit captures messages; it does not send to personal inboxes. For a mobile demo, provide controlled access to the synthetic inbox or configure a real SMTP adapter; never publish Mailpit through the public app tunnel.
+
+Generate separate random service and OTP-HMAC secrets in an ignored local `.env`. The backend must reject placeholder/empty secrets before exposure. Leave `TRUSTED_PROXIES` empty until a specific proxy is configured. Only explicitly trusted ingress may set forwarded IPs. Use real email challenges in development; CI's mock provider is restricted to seeded test accounts and refuses other environments.
+
+Phase 1 needs the minimal browser text/form page before its end-to-end acceptance; the full dashboard is later. Follow [implementation-roadmap.md](implementation-roadmap.md).

@@ -42,7 +42,7 @@ This directory contains the official UML Use Case models for **Agentic Clinic**,
 - **Secondary Actor:** `Clinic Human Staff` receives escalated sessions via the `Escalate via Predefined Safety Rules` use case.
 - **UML Stereotypes:**
   - `«extend»`: Clarification of missing slots, RAG informational querying, and predefined safety escalation conditionally extend the dialogue.
-  - `«include»`: Invoking controlled tools always includes mandatory user confirmation before executing state-altering actions (`book_appointment`, `cancel_appointment`, `reschedule_appointment`).
+  - `«include»`: Invoking controlled tools always includes mandatory user confirmation before executing state-altering actions (`propose_*` followed by guarded `confirm_pending_action`).
 - **Backend Boundary:** Controlled tools invoke `Validate Slot & Rules` on the Clinic Backend REST API, which deterministically enforces constraints before `Execute Atomic Mutation` in PostgreSQL.
 
 ---

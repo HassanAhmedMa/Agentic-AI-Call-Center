@@ -108,3 +108,7 @@ To explore the architecture and prepare your local environment, consult:
 - [Database Schema Blueprint](docs/architecture/database-schema.md)
 - [Local Development Setup](docs/development/setup.md)
 - [Git Workflow](docs/development/git-workflow.md)
+
+## ADR-003 review and next implementation step
+
+Identity/booking changes remain **Proposed** pending the recorded approval gates. Read the [review findings](docs/development/architecture-review-2026-10-10.md) and [implementation roadmap](docs/development/implementation-roadmap.md). Phase 1 includes deterministic backend identity and a minimal browser text/form page; no application service is implemented yet.

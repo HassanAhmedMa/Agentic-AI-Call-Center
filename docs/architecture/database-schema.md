@@ -241,9 +241,9 @@ CREATE UNIQUE INDEX uq_patients_email ON patients (lower(email));
 CREATE INDEX idx_patients_phone ON patients (phone);   -- staff lookup only, non-unique
 ```
 
-**Customer number generation:** the backend picks a **random** 5-digit base (not sequential), appends the Luhn digit, and retries on a unique-constraint conflict. Capacity: 100,000 numbers, enough for the demo.
+**Customer number generation:** the backend picks a **random zero-padded** 5-digit base (00000–99999) (not sequential), appends the Luhn digit, and retries on a unique-constraint conflict. Capacity: 100,000 numbers, enough for the demo.
 
-**Fields visible to the agent** (via the API, after verification): `full_name` (first name for greeting), `preferred_language`, masked email. Nothing else.
+**Fields visible to the agent** (via the API, after verification): `customer_number`, `first_name` (derived for greeting), `preferred_language`. No masked email or other contact fields.
 
 ---
 
@@ -385,7 +385,7 @@ A verified patient bound to one conversation. The agent never sees any patient s
 | `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | |
 | `patient_id` | `BIGINT` | `NOT NULL REFERENCES patients(id) ON DELETE CASCADE` | |
 | `conversation_session_id` | `UUID` | `NOT NULL REFERENCES conversation_sessions(id) ON DELETE CASCADE` | |
-| `verified_via` | `UUID` | `NOT NULL REFERENCES verification_challenges(id)` | The challenge that created this session |
+| `verified_via` | `UUID` | `NULL REFERENCES verification_challenges(id) ON DELETE SET NULL` | The challenge that created this session |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | |
 | `last_activity_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Idle timeout: 15 min (config) |
 | `expires_at` | `TIMESTAMPTZ` | `NOT NULL` | Absolute lifetime: `created_at + 60 min` (config) |
@@ -412,7 +412,7 @@ One row per code sent (ADR-003 §3.2, §3.4).
 
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
-| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Challenge id, given to the call page |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Internal challenge id; never sent to the page or LLM |
 | `purpose` | `verification_purpose` | `NOT NULL` | |
 | `conversation_session_id` | `UUID` | `NOT NULL REFERENCES conversation_sessions(id) ON DELETE CASCADE` | A code only works in this conversation |
 | `patient_id` | `BIGINT` | `NULL REFERENCES patients(id) ON DELETE CASCADE` | `login`: target account (`NULL` if the customer number was unknown) |
@@ -455,7 +455,7 @@ ADR-003 §3.6.
 | `patient_id` | `BIGINT` | `NOT NULL REFERENCES patients(id) ON DELETE CASCADE` | Scope part 1 |
 | `operation` | `VARCHAR(32)` | `NOT NULL CHECK (operation IN ('book_appointment','reschedule_appointment','cancel_appointment','create_ticket'))` | Scope part 2 |
 | `idempotency_key` | `VARCHAR(128)` | `NOT NULL` | Client-supplied header value |
-| `request_hash` | `BYTEA` | `NOT NULL` | SHA-256 of the canonical request body |
+| `request_hash` | `BYTEA` | `NOT NULL` | SHA-256 of canonical operation, route target and validated body (§5) |
 | `response_status` | `SMALLINT` | `NULL` | `NULL` while the first request is still running |
 | `response_body` | `JSONB` | `NULL` | |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | |
@@ -466,8 +466,8 @@ ADR-003 §3.6.
 | Situation | Response |
 |---|---|
 | New key | Insert row, run the operation, store the response |
-| Same key, same `request_hash`, finished | Return the stored response |
-| Same key, same `request_hash`, still running | `409 IDEMPOTENCY_IN_PROGRESS` |
+| Same key, same request fingerprint, finished | Return the stored response |
+| Same key, same request fingerprint, still running | `409 IDEMPOTENCY_IN_PROGRESS` |
 | Same key, different `request_hash` | `422 IDEMPOTENCY_KEY_REUSED` |
 
 ---
@@ -485,7 +485,7 @@ Simple, testable rate limiting in PostgreSQL (no extra infrastructure). Can move
 
 **Indexes:** `idx_rate_limit_lookup` on `(bucket, subject, created_at)`.
 
-Limit values (ADR-003 §3.2, §3.4) are configuration, checked as "count rows for `(bucket, subject)` newer than the window".
+Limit values (ADR-003 §3.2, §3.4) are configuration. Acquire transaction-scoped advisory locks for `(bucket, subject)` in sorted order, check counts/cooldown, then append events atomically. Registration email subjects use a keyed hash of the normalized address. Store no OTPs or raw registration forms in rate-limit events.
 
 ---
 
@@ -495,7 +495,7 @@ Limit values (ADR-003 §3.2, §3.4) are configuration, checked as "count rows fo
 |---|---|
 | Book | Transaction: `SELECT … FROM patients WHERE id = $1 FOR UPDATE` → check limits and availability → `INSERT appointments` → `INSERT appointment_history` |
 | Reschedule | Transaction: lock patient row, then `SELECT … FROM appointments WHERE id = $1 FOR UPDATE` → check cutoff, new slot, limits → `UPDATE` date/time → history row. Any failure rolls back; the original is untouched |
-| Cancel | Transaction: lock appointment row → check ownership, status, cutoff → `UPDATE status` → history row |
+| Cancel | Transaction: lock patient row, then appointment row → check ownership, status, cutoff → `UPDATE status` → history row |
 | Verify code | Transaction: `SELECT … FROM verification_challenges WHERE id = $1 FOR UPDATE` → check status/expiry/conversation → compare hash (constant-time) → update challenge, create patient session |
 
 A unique-index violation on `appointments` is translated to `409 SLOT_UNAVAILABLE`, never shown as a 500.
@@ -506,7 +506,7 @@ A unique-index violation on `appointments` is translated to `409 SLOT_UNAVAILABL
 
 | Data | Kept for | Then |
 |---|---|---|
-| `verification_challenges` | 24 hours | Deleted (incl. `pending_registration`) |
+| `verification_challenges` | 24 hours | Clear pending form data immediately on use/expiry; delete row at 24 h (session FK becomes NULL) |
 | `idempotency_keys` | 24 hours | Deleted |
 | `rate_limit_events` | 24 hours | Deleted |
 | `patient_sessions` | 30 days | Deleted |
@@ -542,3 +542,14 @@ A scheduled cleanup job in `clinic-backend` performs the deletions.
 | `appointments.notes` | "Symptoms or notes" | `visit_reason` (300 chars, administrative) | ADR-003 §3.9 |
 | Ticket FK | `ON DELETE CASCADE` | `ON DELETE RESTRICT` | Consistency with appointments |
 | New tables | — | `doctor_time_off`, `clinic_closures`, `appointment_history`, `conversation_sessions`, `patient_sessions`, `verification_challenges`, `idempotency_keys`, `rate_limit_events` | ADR-003 |
+
+
+## 9. Transaction and cleanup details
+
+`verified_via` is nullable solely for challenge retention: deleting a 24-hour-old challenge must not delete or invalidate the 30-day session audit record. Session creation always initially records its challenge. Wipe `pending_registration` and code material on terminal challenge states; capture needed data before wiping in the registration transaction.
+
+Store unusable login/duplicate-registration challenges with no usable code; compare against a dummy HMAC and apply the same attempt/expiry behavior. Supersede both challenge purposes after successful verification or logout/call end. Before creating a replacement session, revoke any previous binding including an expired one. Serialize these changes by locking the conversation row, then the challenge, then the patient where needed. Patient-scoped mutations lock and revalidate the conversation/session binding before their domain locks so logout/account-switch cannot race an authorized mutation. Use this common order everywhere to avoid deadlocks.
+
+Idempotency keys use the request fingerprint defined in api-contracts §10, including the route target. Reservation, successful mutation, history and replay response commit atomically; failed operations roll back their domain changes. A PostgreSQL lock timeout may yield `IDEMPOTENCY_IN_PROGRESS`; no incomplete reservation is committed independently of its outcome. Exclude the moved appointment from **both** daily and total active counts when rescheduling. Booking, rescheduling and cancellation use the same patient-then-appointment lock order after identity locks.
+
+Clinic closures, schedules and time-off are read-only seeded data in Phase 1. Before adding staff schedule mutations, define their locking and treatment of affected bookings in the staff contract. No such undocumented endpoint is authorized by this schema.

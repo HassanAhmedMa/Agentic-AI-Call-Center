@@ -10,8 +10,6 @@
 # blueprints to be un-commented as service implementations land in Phase 1+.
 # ==============================================================================
 
-version: '3.8'
-
 services:
   # ----------------------------------------------------------------------------
   # Shared Database: PostgreSQL (Relational persistence for Clinic Backend)
@@ -29,7 +27,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U clinic_user -d clinic_db"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -51,6 +49,15 @@ services:
       timeout: 3s
       retries: 5
 
+  # Local synthetic email inbox only. Do not expose it through the public tunnel.
+  mailpit:
+    image: axllent/mailpit:v1.27.4
+    container_name: agentic_clinic_mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
   # ============================================================================
   # FUTURE APPLICATION SERVICES (To be activated in Phase 1+)
   # ============================================================================
@@ -66,6 +73,11 @@ services:
   #   environment:
   #     - DATABASE_URL=postgresql://clinic_user:clinic_password@database:5432/clinic_db
   #     - REDIS_URL=redis://redis:6379/0
+  #     - SMTP_HOST=mailpit
+  #     - SMTP_PORT=1025
+  #     - VERIFICATION_PROVIDER=smtp
+  #     - AGENT_SERVICE_TOKEN=${AGENT_SERVICE_TOKEN}
+  #     - OTP_HMAC_SECRET=${OTP_HMAC_SECRET}
   #   depends_on:
   #     database:
   #       condition: service_healthy
