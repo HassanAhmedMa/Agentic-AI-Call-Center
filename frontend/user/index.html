@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#FFFFFF">
+  <title>Nile Clinics - AI Call Center</title>
+
+  <!-- Typography: Inter for clean UI, Cairo for Egyptian Arabic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Full Application Layout Container (Adapts seamlessly from Desktop to Mobile) -->
+  <div class="app-layout">
+
+    <!-- =========================================================================
+         1. LEFT SIDEBAR (Desktop >= 992px)
+         ========================================================================= -->
+    <aside class="sidebar">
+      <!-- Logo Section -->
+      <div class="logo-container">
+        <div class="logo-icon-box">
+          <svg class="heart-pulse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <div class="brand-name">Nile Clinics</div>
+          <div class="brand-tagline">Your Health, Our Care</div>
+        </div>
+      </div>
+
+      <!-- Navigation: ONLY AI Call Center as requested -->
+      <nav class="nav-menu">
+        <a href="#call-center" class="nav-item active" id="nav-call-center">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <path d="M8 10h.01"/>
+            <path d="M12 10h.01"/>
+            <path d="M16 10h.01"/>
+          </svg>
+          <span class="nav-label">AI Call Center</span>
+        </a>
+      </nav>
+
+      <!-- Bottom Help Card -->
+      <div class="help-card">
+        <div class="help-header">
+          <div class="help-icon-circle">
+            <svg class="headset-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>
+            </svg>
+          </div>
+          <div class="help-text">
+            <div class="help-title">Need Help?</div>
+            <div class="help-subtitle">Prefer speaking to a human?</div>
+          </div>
+        </div>
+        <button class="help-btn" id="contactSupportBtn" onclick="openContactModal()">
+          <span>Contact Support</span>
+          <svg class="arrow-right-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/>
+            <path d="m12 5 7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- =========================================================================
+         CENTER AI ASSISTANT CHAT (Universal Desktop & Mobile)
+         ========================================================================= -->
+    <main class="chat-main">
+
+      <!-- MOBILE TOP HEADER (Mobile < 992px) -->
+      <header class="mobile-top-header">
+        <div class="mobile-brand-box">
+          <div class="mobile-brand-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+            </svg>
+          </div>
+          <div class="mobile-brand-titles">
+            <div class="mobile-brand-name">Nile Clinics</div>
+            <div class="mobile-brand-tagline">Your Health, Our Care</div>
+          </div>
+        </div>
+        <div class="mobile-header-actions">
+          <button class="header-icon-btn" id="mobileNotificationBtn" title="Notifications" onclick="openNotificationsModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="notification-badge-dot"></span>
+          </button>
+          <button class="header-avatar-btn" id="mobileProfileBtn" title="Your Profile" onclick="openProfileModal()">
+            <span>MA</span>
+          </button>
+        </div>
+      </header>
+      <!-- Chat Header -->
+      <header class="chat-header">
+        <div class="assistant-info">
+          <div class="assistant-avatar">
+            <!-- Solid Friendly Blue Robot Vector SVG -->
+            <svg class="robot-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4V7" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="3.5" r="1.5" fill="#2563EB"/>
+              <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
+              <rect x="2" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <rect x="27" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <circle cx="11.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="20.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="11.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <circle cx="20.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <path d="M11 20C12 21.5 20 21.5 21 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="assistant-details">
+            <div class="assistant-title-row">
+              <span class="assistant-name">Nile AI Assistant</span>
+              <span class="status-badge">
+                <span class="status-dot"></span>
+                <span>Online</span>
+              </span>
+            </div>
+            <div class="assistant-desc">I can help you book appointments, check your details, answer questions, and more.</div>
+          </div>
+        </div>
+
+        <div class="chat-header-actions">
+          <!-- Voice Call button (accessible in mobile & desktop) -->
+          <button class="icon-btn-call" id="headerVoiceBtn" title="AI Voice Call" onclick="startVoiceCall()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </button>
+          <!-- Options button (...) -->
+          <button class="icon-btn-ghost" title="More Options" id="chatOptionsBtn" onclick="openOptionsModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1.5"/>
+              <circle cx="6" cy="12" r="1.5"/>
+              <circle cx="18" cy="12" r="1.5"/>
+            </svg>
+          </button>
+          <!-- Desktop New Chat Button -->
+          <button class="new-chat-btn desktop-only" id="newChatBtn" onclick="resetChat()">New Chat</button>
+        </div>
+      </header>
+
+      <!-- Mobile Mode Switcher Bar [ 💬 Text chat ˅ ] -->
+      <div class="mobile-mode-bar">
+        <button class="mode-pill-btn" onclick="startVoiceCall()">
+          <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <line x1="9" y1="10" x2="15" y2="10"/>
+          </svg>
+          <span>Text chat</span>
+          <svg class="chevron-down-icon" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Chat Scrollable Message Stream -->
+      <div class="chat-messages" id="chatMessages">
+        
+        <!-- Message 1: Initial Bot Greeting -->
+        <div class="message-row bot-row">
+          <div class="bot-avatar-small">
+            <svg class="robot-icon-small" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4V7" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="3.5" r="1.5" fill="#2563EB"/>
+              <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
+              <rect x="2" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <rect x="27" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <circle cx="11.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="20.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="11.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <circle cx="20.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <path d="M11 20C12 21.5 20 21.5 21 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="message-content-wrapper">
+            <div class="bot-bubble">
+              <p class="greeting-lead">
+                <span>Hello Mona!</span>
+                <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                </svg>
+              </p>
+              <p class="sub-lead">I'm the Nile Clinics AI Assistant. I can help you with:</p>
+              <ul class="capability-list">
+                <li>
+                  <svg class="cap-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span>Booking, rescheduling, or canceling appointments</span>
+                </li>
+                <li>
+                  <svg class="cap-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  <span>Checking your appointments and medical records</span>
+                </li>
+                <li>
+                  <svg class="cap-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Answering questions about our services, doctors, or policies</span>
+                </li>
+                <li>
+                  <svg class="cap-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    <path d="M8 10h.01"/>
+                    <path d="M12 10h.01"/>
+                    <path d="M16 10h.01"/>
+                  </svg>
+                  <span>Creating support requests if you need further help</span>
+                </li>
+              </ul>
+              <p class="closing-lead">How can I assist you today?</p>
+            </div>
+            <div class="message-time">10:24 AM</div>
+          </div>
+        </div>
+
+        <!-- Message 2: Patient Arabic Prompt -->
+        <div class="message-row user-row">
+          <div class="message-content-wrapper">
+            <div class="user-bubble">
+              <span class="arabic-text">عايز احجز مع دكتور القلب يوم الخميس بعد الضهر</span>
+            </div>
+            <div class="message-time-user">
+              <span>10:25 AM</span>
+              <svg class="checkmarks-icon" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 7 17l-5-5"/>
+                <path d="m22 10-7.5 7.5L13 16"/>
+              </svg>
+            </div>
+          </div>
+          <div class="user-avatar-small">MA</div>
+        </div>
+
+        <!-- Message 3: Doctor Availability Slots -->
+        <div class="message-row bot-row">
+          <div class="bot-avatar-small">
+            <svg class="robot-icon-small" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4V7" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="3.5" r="1.5" fill="#2563EB"/>
+              <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
+              <rect x="2" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <rect x="27" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <circle cx="11.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="20.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="11.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <circle cx="20.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <path d="M11 20C12 21.5 20 21.5 21 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="message-content-wrapper">
+            <div class="bot-bubble">
+              <p>Of course! Let me check the available cardiology appointments for Thursday, 14 November, in the afternoon.</p>
+              <p class="slots-subheading">Here are the available slots:</p>
+              
+              <!-- Doctor Slots Container -->
+              <div class="doctor-slots-container">
+                <!-- Doctor 1 -->
+                <div class="doctor-slot-card" data-doctor="Dr. Ahmed Mohamed" data-time="2:00 PM">
+                  <div class="doctor-profile-mini">
+                    <img class="doctor-avatar" src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=100&h=100&fit=crop&crop=faces" alt="Dr. Ahmed Mohamed">
+                    <div class="doctor-text-mini">
+                      <div class="doctor-name">Dr. Ahmed Mohamed</div>
+                      <div class="doctor-specialty">Cardiology</div>
+                    </div>
+                  </div>
+                  <div class="doctor-slot-time">2:00 PM</div>
+                  <button class="select-slot-btn" onclick="selectDoctorSlot('Dr. Ahmed Mohamed', '2:00 PM')">Select</button>
+                </div>
+
+                <!-- Doctor 2 -->
+                <div class="doctor-slot-card" data-doctor="Dr. Sara Elsayed" data-time="3:30 PM">
+                  <div class="doctor-profile-mini">
+                    <img class="doctor-avatar" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100&h=100&fit=crop&crop=faces" alt="Dr. Sara Elsayed">
+                    <div class="doctor-text-mini">
+                      <div class="doctor-name">Dr. Sara Elsayed</div>
+                      <div class="doctor-specialty">Cardiology</div>
+                    </div>
+                  </div>
+                  <div class="doctor-slot-time">3:30 PM</div>
+                  <button class="select-slot-btn" onclick="selectDoctorSlot('Dr. Sara Elsayed', '3:30 PM')">Select</button>
+                </div>
+
+                <!-- Doctor 3 -->
+                <div class="doctor-slot-card" data-doctor="Dr. Mohamed Ali" data-time="4:00 PM">
+                  <div class="doctor-profile-mini">
+                    <img class="doctor-avatar" src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=100&h=100&fit=crop&crop=faces" alt="Dr. Mohamed Ali">
+                    <div class="doctor-text-mini">
+                      <div class="doctor-name">Dr. Mohamed Ali</div>
+                      <div class="doctor-specialty">Cardiology</div>
+                    </div>
+                  </div>
+                  <div class="doctor-slot-time">4:00 PM</div>
+                  <button class="select-slot-btn" onclick="selectDoctorSlot('Dr. Mohamed Ali', '4:00 PM')">Select</button>
+                </div>
+              </div>
+            </div>
+            <div class="message-time">10:25 AM</div>
+          </div>
+        </div>
+
+        <!-- Message 4: User Selection (Arabic) -->
+        <div class="message-row user-row">
+          <div class="message-content-wrapper">
+            <div class="user-bubble">
+              <span class="arabic-text">احجز مع دكتور احمد الساعة ٢</span>
+            </div>
+            <div class="message-time-user">
+              <span>10:26 AM</span>
+              <svg class="checkmarks-icon" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 7 17l-5-5"/>
+                <path d="m22 10-7.5 7.5L13 16"/>
+              </svg>
+            </div>
+          </div>
+          <div class="user-avatar-small">MA</div>
+        </div>
+
+        <!-- Message 5: Booking Confirmation Success Card -->
+        <div class="message-row bot-row" id="confirmationMessageRow">
+          <div class="bot-avatar-small">
+            <svg class="robot-icon-small" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4V7" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="3.5" r="1.5" fill="#2563EB"/>
+              <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
+              <rect x="2" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <rect x="27" y="14" width="3" height="5" rx="1.5" fill="#2563EB"/>
+              <circle cx="11.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="20.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="11.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <circle cx="20.5" cy="14.5" r="1" fill="#1E40AF"/>
+              <path d="M11 20C12 21.5 20 21.5 21 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="message-content-wrapper">
+            <div class="booking-success-card">
+              <div class="success-header">
+                <div class="success-icon-box">
+                  <svg class="check-circle-icon" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                </div>
+                <div class="success-title">
+                  <span>Appointment Booked Successfully!</span>
+                  <svg class="celebrate-icon" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </div>
+              </div>
+              <p class="success-body-text">
+                You have an appointment with <strong id="bookedDoctorName">Dr. Ahmed Mohamed (Cardiology)</strong> on <strong id="bookedDoctorDateTime">Thursday, 14 November at 2:00 PM</strong> at <strong>Main Branch - Heliopolis</strong>.
+              </p>
+              
+              <!-- Embedded doctor card snippet for mobile view parity -->
+              <div class="embedded-appointment-card">
+                <img class="emb-doc-avatar" id="embDoctorAvatar" src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=100&h=100&fit=crop&crop=faces" alt="Dr. Ahmed Mohamed">
+                <div class="emb-doc-meta">
+                  <div class="emb-meta-line">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span id="embDate">Thursday, 14 November 2024</span>
+                  </div>
+                  <div class="emb-meta-line">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span id="embTime">2:00 PM</span>
+                  </div>
+                  <div class="emb-meta-line">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>Main Branch - Heliopolis</span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="success-note">
+                You will receive a confirmation shortly, and you can view the details in your appointments.
+              </p>
+              <div class="success-actions">
+                <button class="primary-action-btn" id="viewAppointmentBtn" onclick="openAppointmentModal()">
+                  <span>View Appointment</span>
+                  <svg class="arrow-forward-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                  </svg>
+                </button>
+                <button class="secondary-action-btn" id="addToCalendarBtn" onclick="downloadCalendarInvite()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span>Add to Calendar</span>
+                </button>
+              </div>
+            </div>
+            <div class="message-time">10:26 AM</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Chat Bottom Input Bar -->
+      <footer class="chat-input-bar">
+        <div class="input-container">
+          <button class="attachment-btn" title="Attach file" id="attachmentBtn" onclick="showToast('Attachment feature ready', 'info')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
+          <input type="text" id="chatInput" placeholder="Type your message here..." autocomplete="off">
+          <button class="send-btn" id="sendBtn" title="Send Message" onclick="handleSendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </footer>
+
+      <!-- =========================================================================
+           4. MOBILE BOTTOM NAVIGATION (Mobile < 992px)
+           ========================================================================= -->
+      <nav class="mobile-bottom-nav">
+        <button class="nav-tab" id="tabHome" onclick="switchTab('Home')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="tab-label">Home</span>
+        </button>
+
+        <button class="nav-tab" id="tabAppointments" onclick="switchTab('Appointments')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="tab-label">Appointments</span>
+        </button>
+
+        <button class="nav-tab active-tab" id="tabAIChat" onclick="switchTab('AIChat')">
+          <div class="active-tab-bubble">
+            <svg class="active-robot-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4V7" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="3.5" r="1.5" fill="#2563EB"/>
+              <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
+              <circle cx="11.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <circle cx="20.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+              <path d="M11 20C12 21.5 20 21.5 21 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span class="active-tab-text">AI Chat</span>
+          </div>
+        </button>
+
+        <button class="nav-tab" id="tabRecords" onclick="switchTab('Records')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span class="tab-label">Records</span>
+        </button>
+
+        <button class="nav-tab" id="tabProfile" onclick="switchTab('Profile')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="tab-label">Profile</span>
+        </button>
+      </nav>
+    </main>
+
+    <!-- =========================================================================
+         5. RIGHT SIDEBAR / WIDGETS PANEL (Desktop >= 992px)
+         ========================================================================= -->
+    <aside class="right-panel">
+      <!-- Top Profile Bar -->
+      <div class="right-panel-header">
+        <button class="notification-btn" title="Notifications" onclick="openNotificationsModal()">
+          <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+          </svg>
+          <span class="notification-badge"></span>
+        </button>
+
+        <div class="user-profile-pill" onclick="openProfileModal()">
+          <div class="user-avatar-pill">MA</div>
+          <span class="user-name-pill">Mona Ahmed</span>
+          <svg class="chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Widgets List -->
+      <div class="widgets-scroll-area">
+        
+        <!-- WIDGET 1: Your Profile -->
+        <div class="widget-card profile-card">
+          <div class="widget-header">
+            <h3 class="widget-title">Your Profile</h3>
+            <button class="widget-action-btn" onclick="openProfileModal()">
+              <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                <path d="m15 5 4 4"/>
+              </svg>
+              <span>Edit</span>
+            </button>
+          </div>
+          
+          <div class="profile-hero">
+            <div class="profile-avatar-large">MA</div>
+            <div class="profile-meta">
+              <h4 class="patient-name">Mona Ahmed</h4>
+              <p class="patient-phone">+20 101 234 5678</p>
+            </div>
+          </div>
+
+          <div class="profile-details-list">
+            <div class="profile-detail-row">
+              <div class="detail-label-group">
+                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>Date of Birth</span>
+              </div>
+              <span class="detail-value">14 March 2002</span>
+            </div>
+
+            <div class="profile-detail-row">
+              <div class="detail-label-group">
+                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2"/>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+                <span>Email</span>
+              </div>
+              <span class="detail-value">mona.ahmed@example.com</span>
+            </div>
+
+            <div class="profile-detail-row">
+              <div class="detail-label-group">
+                <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                </svg>
+                <span>Insurance</span>
+              </div>
+              <div class="insurance-status-group">
+                <span class="detail-value" id="desktopInsuranceStatus">Not added</span>
+                <button class="link-btn" onclick="openInsuranceModal()">Add Insurance</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIDGET 2: Upcoming Appointment -->
+        <div class="widget-card appointment-card">
+          <div class="widget-header">
+            <h3 class="widget-title">Upcoming Appointment</h3>
+            <button class="link-btn" onclick="openAppointmentModal()">View All</button>
+          </div>
+
+          <div class="appointment-content-card">
+            <div class="appointment-main-row">
+              <div class="appointment-date-badge">
+                <span class="date-day-name" id="badgeDayName">THU</span>
+                <span class="date-day-num" id="badgeDayNum">14</span>
+                <span class="date-month-name" id="badgeMonth">Nov</span>
+              </div>
+              
+              <div class="doctor-info-col">
+                <div class="doc-header-inline">
+                  <img class="doc-avatar-thumb" id="sideDocAvatar" src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=100&h=100&fit=crop&crop=faces" alt="Dr. Ahmed Mohamed">
+                  <div>
+                    <h4 class="doc-full-name" id="sideDocName">Dr. Ahmed Mohamed</h4>
+                    <p class="doc-specialty-sub" id="sideDocSpecialty">Cardiology</p>
+                  </div>
+                </div>
+                
+                <div class="appt-time-row">
+                  <svg class="appt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span id="sideDocTime">2:00 PM</span>
+                </div>
+
+                <div class="appt-location-row">
+                  <svg class="appt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span id="sideDocBranch">Main Branch - Heliopolis</span>
+                </div>
+
+                <div class="appt-status-row">
+                  <span class="status-pill-green">
+                    <span class="dot-green"></span>
+                    <span id="sideDocStatus">Confirmed</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="appointment-btn-row">
+              <button class="appt-btn-outline" onclick="openRescheduleModal()">Reschedule</button>
+              <button class="appt-btn-danger" onclick="openCancelModal()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIDGET 3: Suggested Questions -->
+        <div class="widget-card questions-card">
+          <div class="widget-header">
+            <h3 class="widget-title">Suggested Questions</h3>
+            <button class="icon-btn-ghost-sm" title="Refresh Questions" onclick="refreshQuestions()">
+              <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                <path d="M16 21h5v-5"/>
+              </svg>
+            </button>
+          </div>
+
+          <ul class="questions-list" id="questionsList">
+            <li onclick="askSuggested('What are your working hours?')">
+              <span>What are your working hours?</span>
+              <svg class="chevron-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </li>
+            <li onclick="askSuggested('How can I reschedule my appointment?')">
+              <span>How can I reschedule my appointment?</span>
+              <svg class="chevron-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </li>
+            <li onclick="askSuggested('Do you accept health insurance?')">
+              <span>Do you accept health insurance?</span>
+              <svg class="chevron-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </li>
+            <li onclick="askSuggested('Where is the Heliopolis branch?')">
+              <span>Where is the Heliopolis branch?</span>
+              <svg class="chevron-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </li>
+            <li onclick="askSuggested('What should I bring to my appointment?')">
+              <span>What should I bring to my appointment?</span>
+              <svg class="chevron-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- =========================================================================
+       UNIVERSAL INTERACTIVE MODALS & BOTTOM SHEETS
+       ========================================================================= -->
+  <div class="interactive-modal-backdrop" id="modalBackdrop" onclick="closeActiveModal(event)">
+    <div class="interactive-modal-container" id="modalContainer">
+      <div class="sheet-handle-bar">
+        <div class="sheet-handle"></div>
+      </div>
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Details</h3>
+        <button class="modal-close-btn" onclick="closeActiveModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Content injected dynamically -->
+      </div>
+      <div class="modal-footer" id="modalFooter">
+        <!-- Buttons injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Call Simulation Overlay -->
+  <div class="voice-call-overlay" id="voiceCallOverlay">
+    <div class="voice-call-card">
+      <div class="voice-assistant-avatar">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
+          <circle cx="11.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+          <circle cx="20.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
+          <path d="M11 20C12 21.5 20 21.5 21 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h3 class="voice-caller-name">Nile AI Voice Assistant</h3>
+      <p class="voice-call-status" id="voiceCallStatus">Connected • Real-time Voice (MSA & Egyptian)</p>
+      
+      <!-- Audio Wave Animation Indicator -->
+      <div class="voice-wave-container">
+        <div class="wave-bar bar-1"></div>
+        <div class="wave-bar bar-2"></div>
+        <div class="wave-bar bar-3"></div>
+        <div class="wave-bar bar-4"></div>
+        <div class="wave-bar bar-5"></div>
+      </div>
+
+      <p class="voice-transcript-sample" id="voiceTranscriptSample">"أهلاً بحضرتك يا فندم! أنا المساعد الصوتي لعيادات النيل، أقدر أساعدك إزاي النهاردة؟"</p>
+
+      <div class="voice-controls-row">
+        <button class="voice-action-btn" title="Mute" onclick="toggleMuteVoice(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+          <span>Mute</span>
+        </button>
+        <button class="voice-action-btn" title="Speaker" onclick="toggleSpeakerVoice(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+          <span>Speaker</span>
+        </button>
+        <button class="voice-hangup-btn" title="End Call" onclick="endVoiceCall()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
+            <line x1="22" y1="2" x2="2" y2="22"/>
+          </svg>
+          <span>End Call</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-stack" id="toastContainer"></div>
+
+  <!-- Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
