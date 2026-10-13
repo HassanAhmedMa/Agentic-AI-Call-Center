@@ -785,7 +785,7 @@ function initSidebarNav() {
       } else if (label === 'Appointments') {
         openAllAppointmentsModal();
       } else if (label === 'Patients') {
-        openFindPatientModal();
+        window.location.href = 'patients.html';
       } else if (label === 'Knowledge Base' || label === 'Documents') {
         openAddKnowledgeModal();
       } else if (label === 'Analytics') {
