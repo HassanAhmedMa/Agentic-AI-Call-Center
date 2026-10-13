@@ -24,7 +24,7 @@ from clinic_backend.catalog import Catalog
 from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
 from clinic_backend.errors import APIError, ErrorEnvelope, error_response
-from clinic_backend.mail import Delivery, SMTPDelivery
+from clinic_backend.mail import Delivery, make_delivery
 from clinic_backend.settings import Settings
 
 logger = logging.getLogger("clinic_backend")
@@ -77,7 +77,7 @@ def create_app(
     engine = engine or make_engine(settings)
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     limiter = PublicLimiter(settings.public_rate_limit)
-    mailer = mailer or SMTPDelivery(settings)
+    mailer = mailer or make_delivery(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:

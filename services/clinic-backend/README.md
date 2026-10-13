@@ -19,7 +19,9 @@ Implemented: `/api/v1/health`, `/health/ready`, `/specialties`, `/doctors`, `/do
 
 English and Arabic names/descriptions are returned together. Doctor search accepts normalized English, Egyptian specialty terms (`قلب`, `جلدية`, `عيال`, `عضم`, `باطنة`) and Arabic letter/diacritic variants. Category values and error codes remain stable English machine identifiers. User-facing error translations belong to the later Arabic/English UI/agent.
 
-Not implemented yet: identity/email verification, conversations, availability, booking, support tickets, AI tools, RAG, voice and patient UI. There are no placeholder action endpoints. Working hours are catalog information, not bookable availability.
+Registration/email verification, conversation lifecycle, patient sessions/profile/logout and the bilingual registration form are implemented. Email delivery supports direct SMTP or authenticated n8n; see [n8n setup](../../docs/development/n8n-email-setup.md).
+
+Not implemented yet: availability, booking, support tickets, AI tools, RAG and voice. There are no placeholder action endpoints. Working hours are catalog information, not bookable availability.
 
 The three-table migration is intentionally incremental. Later migrations add the remaining schema before the corresponding API is exposed. The backend owns database access; the LLM never receives database credentials.
 

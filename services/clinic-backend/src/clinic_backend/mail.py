@@ -1,12 +1,14 @@
 """SMTP delivery boundary. Never logs recipients, bodies, codes or credentials."""
 
 import asyncio
+import json
 import logging
 import smtplib
 import ssl
 from dataclasses import dataclass
 from email.message import EmailMessage
 from typing import Protocol
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from clinic_backend.settings import Settings
 
@@ -66,7 +68,7 @@ class SMTPDelivery:
         try:
             await asyncio.to_thread(self._send, message)
         except (OSError, smtplib.SMTPException):
-            logger.error("SMTP delivery failed; operator action required")
+            logger.error("Email delivery failed; operator action required")
 
     def _send(self, message: Mail) -> None:
         mime = EmailMessage()
@@ -91,6 +93,63 @@ class SMTPDelivery:
     async def close(self) -> None:
         if self.tasks:
             await asyncio.gather(*list(self.tasks), return_exceptions=True)
+
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        req: Request,
+        fp: object,
+        code: int,
+        msg: str,
+        headers: object,
+        newurl: str,
+    ) -> None:
+        return None
+
+
+class N8NDelivery(SMTPDelivery):
+    """Same bounded asynchronous queue, with authenticated HTTPS instead of SMTP."""
+
+    def _send(self, message: Mail) -> None:
+        assert self.settings.n8n_webhook_url and self.settings.n8n_webhook_secret
+        request = Request(
+            self.settings.n8n_webhook_url,
+            data=json.dumps(
+                {
+                    "recipient": message.recipient,
+                    "subject": message.subject,
+                    "body": message.body,
+                },
+                ensure_ascii=False,
+            ).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "X-Clinic-Webhook-Key": (
+                    self.settings.n8n_webhook_secret.get_secret_value()
+                ),
+            },
+            method="POST",
+        )
+        # Redirects must never forward the authentication header to another host.
+        with build_opener(NoRedirect()).open(request, timeout=20) as response:
+            payload = response.read(1025)
+            if response.status != 200 or len(payload) > 1024:
+                raise OSError("Email webhook did not accept delivery")
+            try:
+                accepted = json.loads(payload) == {"status": "accepted"}
+            except (ValueError, UnicodeError):
+                accepted = False
+            if not accepted:
+                raise OSError("Email webhook did not accept delivery")
+
+
+def make_delivery(settings: Settings) -> Delivery:
+    return (
+        N8NDelivery(settings)
+        if settings.email_delivery == "n8n"
+        else SMTPDelivery(settings)
+    )
 
 
 def verification_mail(email: str, code: str, language: str) -> Mail:

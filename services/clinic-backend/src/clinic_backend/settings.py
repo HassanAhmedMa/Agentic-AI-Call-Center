@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +24,9 @@ class Settings(BaseSettings):
     smtp_username: str = ""
     smtp_password: SecretStr = SecretStr("")
     smtp_use_tls: bool = False
+    email_delivery: Literal["smtp", "n8n"] = "smtp"
+    n8n_webhook_url: str | None = None
+    n8n_webhook_secret: SecretStr | None = None
     environment: str = "development"
     otp_ttl_seconds: int = Field(default=300, ge=60, le=900)
     otp_max_attempts: int = Field(default=3, ge=1, le=3)
@@ -38,6 +43,33 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def identity_configuration(self) -> "Settings":
+        if self.email_delivery == "n8n":
+            url = urlsplit(self.n8n_webhook_url or "")
+            local_test = (
+                self.environment == "test"
+                and url.scheme == "http"
+                and url.hostname in {"localhost", "127.0.0.1", "::1"}
+            )
+            if (
+                not url.hostname
+                or not url.path
+                or url.username
+                or url.password
+                or url.query
+                or url.fragment
+                or (url.scheme != "https" and not local_test)
+            ):
+                raise ValueError(
+                    "n8n requires an HTTPS webhook URL without credentials/query"
+                )
+            secret = self.n8n_webhook_secret
+            if (
+                secret is None
+                or len(secret.get_secret_value().encode()) < 32
+                or secret.get_secret_value().startswith("replace-with-")
+                or secret in (self.agent_service_token, self.otp_hmac_secret)
+            ):
+                raise ValueError("n8n requires a distinct generated webhook secret")
         if self.identity_enabled:
             secret = self.otp_hmac_secret
             if (
@@ -52,6 +84,7 @@ class Settings(BaseSettings):
                 raise ValueError("Identity requires distinct service and OTP secrets")
             if (
                 self.environment not in {"development", "test"}
+                and self.email_delivery == "smtp"
                 and not self.smtp_use_tls
             ):
                 raise ValueError("SMTP TLS is required outside development/test")

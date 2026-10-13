@@ -44,4 +44,4 @@ This service is the **sole authority for clinic business rules and database muta
 
 ## 4. Initial Phase 1 Status
 
-Public catalog, health, conversations, registration/email verification, patient bindings, profile/logout and the bilingual registration page are implemented. Conversation end/expiry revokes identity. Availability, booking and agent operations remain planned. SMTP currently targets local Mailpit; real delivery requires configured SMTP. Implement later slices strictly against documented contracts; never expose placeholders as working operations.
+Public catalog, health, conversations, registration/email verification, patient bindings, profile/logout and the bilingual registration page are implemented. Conversation end/expiry revokes identity. Availability, booking and agent operations remain planned. Local SMTP/Mailpit and authenticated n8n delivery adapters are implemented. Oracle uses the published n8n workflow; credentials remain outside source control. Implement later slices strictly against documented contracts; never expose placeholders as working operations.
