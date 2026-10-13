@@ -1,0 +1,16 @@
+# Server-only override. Keep the original database available for rollback.
+# Deploy the reviewed backend image before applying this override.
+services:
+  clinic-backend:
+    depends_on: !reset {}
+    environment:
+      DATABASE_URL: ${CLINIC_SUPABASE_DATABASE_URL:?Set in a protected server-only env file}
+      DATABASE_SCHEMA: clinic
+    networks:
+      - default
+      - clinic_supabase
+
+networks:
+  clinic_supabase:
+    external: true
+    name: supabase_default

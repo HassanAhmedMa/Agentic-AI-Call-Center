@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from alembic.script import ScriptDirectory
 from sqlalchemy import text
@@ -7,11 +8,19 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from clinic_backend.settings import Settings
 
 
+def connection_args(settings: Settings) -> dict[str, Any]:
+    return {
+        "timeout": 3,
+        "command_timeout": 5,
+        "server_settings": {"search_path": f'"{settings.database_schema}", pg_catalog'},
+    }
+
+
 def make_engine(settings: Settings) -> AsyncEngine:
     return create_async_engine(
         settings.database_url.get_secret_value(),
         pool_pre_ping=True,
-        connect_args={"timeout": 3, "command_timeout": 5},
+        connect_args=connection_args(settings),
     )
 
 

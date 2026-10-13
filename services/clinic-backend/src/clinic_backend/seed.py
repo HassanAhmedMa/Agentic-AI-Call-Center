@@ -8,8 +8,9 @@ from pathlib import Path
 
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+from clinic_backend.database import make_engine
 from clinic_backend.models import Doctor, Service, Specialty
 from clinic_backend.search import normalize_search
 from clinic_backend.settings import Settings
@@ -58,7 +59,7 @@ async def seed_catalog(engine: AsyncEngine, path: Path) -> None:
 
 
 async def run(path: Path) -> None:
-    engine = create_async_engine(Settings().database_url.get_secret_value())
+    engine = make_engine(Settings())
     try:
         await seed_catalog(engine, path)
     finally:
