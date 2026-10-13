@@ -826,10 +826,18 @@ function initSidebarNav() {
       } else if (label === 'Analytics') {
         openAnalyticsModal();
       } else if (label === 'Settings') {
-        showToast('Settings panel opens configuration for Voice Provider & LLM Adapter', 'info');
+        if (typeof openApiConfigModal === 'function') {
+          openApiConfigModal();
+        }
       }
     });
   });
+
+  if (window.location.hash === '#settings') {
+    setTimeout(() => {
+      if (typeof openApiConfigModal === 'function') openApiConfigModal();
+    }, 200);
+  }
 }
 
 function handleBranchChange(selectEl) {

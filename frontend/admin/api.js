@@ -215,8 +215,14 @@
   function initStatusBadge() {
     const badge = document.getElementById('apiStatusBadge');
     const dot = document.getElementById('apiStatusDot');
-    const text = document.getElementById('apiStatusText');
     if (!badge || !dot || !text) return;
+    badge.style.cursor = 'pointer';
+    badge.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof window.openApiConfigModal === 'function') {
+        window.openApiConfigModal();
+      }
+    });
 
     window.addEventListener('clinic:connection-state', (e) => {
       const state = e.detail.state;
