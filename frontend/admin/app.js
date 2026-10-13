@@ -302,7 +302,10 @@ function openAdminModal(title, bodyHtml, footerHtml = '') {
     `;
   }
 
-  if (backdrop) backdrop.classList.add('open');
+  if (backdrop) {
+    backdrop.classList.add('active');
+    backdrop.classList.add('open');
+  }
 }
 
 function closeAdminModal(e) {
@@ -310,7 +313,10 @@ function closeAdminModal(e) {
     return;
   }
   const backdrop = document.getElementById('adminModalBackdrop');
-  if (backdrop) backdrop.classList.remove('open');
+  if (backdrop) {
+    backdrop.classList.remove('active');
+    backdrop.classList.remove('open');
+  }
 }
 
 // 4.1 Full Live Transcript Modal

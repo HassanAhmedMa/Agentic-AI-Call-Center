@@ -306,8 +306,18 @@
       <button class="modal-btn-primary" onclick="saveModalApiConnection()">Save & Reload</button>
     `;
 
-    if (typeof openAdminModal === 'function') {
-      openAdminModal('Clinic Backend API Connection', bodyHtml, footerHtml);
+    const backdrop = document.getElementById('adminModalBackdrop');
+    const titleEl = document.getElementById('adminModalTitle');
+    const bodyEl = document.getElementById('adminModalBody');
+    const footerEl = document.getElementById('adminModalFooter');
+
+    if (titleEl) titleEl.textContent = 'Clinic Backend API Connection';
+    if (bodyEl) bodyEl.innerHTML = bodyHtml;
+    if (footerEl) footerEl.innerHTML = footerHtml;
+
+    if (backdrop) {
+      backdrop.classList.add('active');
+      backdrop.classList.add('open');
     } else {
       alert(`API Endpoint: ${currentBase}\nStatus: ${state.state}`);
     }

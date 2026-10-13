@@ -1418,7 +1418,7 @@ html, body {
   height: 100%;
   background-color: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(2px);
-  z-index: 100;
+  z-index: 9999;
   display: none;
   align-items: center;
   justify-content: center;
@@ -1426,9 +1426,11 @@ html, body {
   transition: opacity 0.2s ease;
 }
 
-.admin-modal-backdrop.active {
-  display: flex;
-  opacity: 1;
+.admin-modal-backdrop.active,
+.admin-modal-backdrop.open {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .admin-modal-container {
@@ -1492,7 +1494,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 150;
+  z-index: 10000;
   pointer-events: none;
 }
 
