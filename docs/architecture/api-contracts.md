@@ -10,7 +10,7 @@
 
 ## 1. Callers & Authentication
 
-**Implementation status (2026-10-14):** catalog, conversations and identity are implemented; shared Oracle registration/email verification through n8n is tested. Doctor availability and earliest-slot search (§5.4–5.5) are implemented locally for review, with migration 0004 prepared but not deployed to Oracle. Appointment writes, tickets and idempotency remain planned. Public limits remain single-process; identity limits are atomic in PostgreSQL. See [availability review notes](../development/phase1-availability-changes.md). These markers do not change ADR acceptance.
+**Implementation status (2026-10-14):** catalog, conversations and identity are implemented; shared Oracle registration/email verification through n8n is tested. Doctor availability and earliest-slot search (§5.4–5.5) are implemented and deployed to Oracle with migration 0004 after user approval. Appointment writes, tickets and idempotency remain planned. Public limits remain single-process; identity limits are atomic in PostgreSQL. See [availability review notes](../development/phase1-availability-changes.md). These markers do not change ADR acceptance.
 
 ### 1.1. Who calls the backend
 

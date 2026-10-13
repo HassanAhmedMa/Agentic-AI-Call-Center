@@ -9,7 +9,7 @@
 
 ## 1. Entity-Relationship Overview
 
-**Implementation status (2026-10-14):** migrations 0001–0003 are implemented and deployed to the private Oracle/Supabase clinic schema. Revision 0004 is prepared locally for review: clinic closures, doctor time off, appointments and appointment history, with slot checks, scheduled-slot uniqueness and backend-only private-schema RLS. Appointment writes, ticket/idempotency tables remain planned. Synthetic scheduling seeds are opt-in and contain no patients/bookings. See [availability review notes](../development/phase1-availability-changes.md). The full target schema is not yet deployed.
+**Implementation status (2026-10-14):** migrations 0001–0003 are implemented and deployed to the private Oracle/Supabase clinic schema. Revision 0004 is implemented and deployed after user approval: clinic closures, doctor time off, appointments and appointment history, with slot checks, scheduled-slot uniqueness and backend-only private-schema RLS. Appointment writes, ticket/idempotency tables remain planned. Synthetic scheduling seeds are opt-in and contain no patients/bookings. See [availability review notes](../development/phase1-availability-changes.md). The full target schema is not yet deployed.
 
 ```
                          ┌──────────────┐

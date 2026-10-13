@@ -21,7 +21,7 @@ English and Arabic names/descriptions are returned together. Doctor search accep
 
 Registration/email verification, conversation lifecycle, patient sessions/profile/logout and the bilingual registration form are implemented. Email delivery supports direct SMTP or authenticated n8n; see [n8n setup](../../docs/development/n8n-email-setup.md).
 
-Public `/api/v1/doctors/{id}/availability` and `/api/v1/availability/search` are implemented locally for review. Both require `from_date`; see [availability review notes](../../docs/development/phase1-availability-changes.md) for rules, examples and deployment steps. The database head is `0004_scheduling`; Oracle remains at `0003_identity` until the paired migration/image deployment is approved.
+Public `/api/v1/doctors/{id}/availability` and `/api/v1/availability/search` are implemented and deployed to Oracle. Both require `from_date`; see [availability review notes](../../docs/development/phase1-availability-changes.md) for rules, examples and deployment steps. The database head is `0004_scheduling`; Oracle runs the paired `0004_scheduling` migration and `clinic-backend:c53cf91` image.
 
 Not implemented yet: booking writes, support tickets, AI tools, RAG and voice. Availability is a snapshot; booking must revalidate it transactionally.
 

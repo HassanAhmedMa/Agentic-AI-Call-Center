@@ -1,7 +1,7 @@
 # Doctor availability review notes
 
-Date: 2026-10-14. This increment is prepared locally on the existing branch.
-Oracle remains at `0003_identity` until deployment is approved.
+Date: 2026-10-14. User approved commit and Oracle deployment on 2026-10-14.
+Implementation commit `c53cf91` is deployed with migration `0004_scheduling`.
 
 ## What changed
 
@@ -83,4 +83,31 @@ Full suite: 108 passed against local PostgreSQL. Ruff, Black, strict mypy,
 repository validation and Compose syntax passed. Fresh Docker migration to
 0004, optional synthetic seed, readiness and bilingual availability/search
 smoke passed. Fresh code review found no unresolved critical/important issues.
-GitHub CI will run after commit/push; this increment is still uncommitted.
+The implementation is committed and pushed; GitHub CI status has not been verified in this deployment session.
+
+## Oracle deployment record — 2026-10-14
+
+- Deployed exact implementation commit `c53cf91046c6b2ebf122bf29b45cfb409d3a1740`.
+- Clean release directory: `/home/ziad/clinic-releases/c53cf91`. The earlier
+  server checkout was preserved because it contains prior deployment edits.
+- Active image: `clinic-backend:c53cf91`, container healthy.
+- Protected backup: `/home/ziad/clinic-cutover/availability-c53cf91` contains
+  the pre-migration clinic dump/checksum, preserved configuration and metadata.
+  Previous image retained as `clinic-backend:before-availability-c53cf91`.
+- Briefly paused only the clinic backend. Exact row counts/content fingerprints
+  for all existing clinic tables matched before and after migration.
+- All four new tables have RLS and runtime permissions; anon/authenticated lack
+  table access and clinic schema usage. No scheduling demo seed ran on Oracle.
+- Readiness, registration page and bilingual doctor availability/search passed
+  on Oracle and through the existing SSH tunnel at `http://localhost:8002/docs`.
+  Identity remains enabled and email delivery remains n8n. No test email was sent.
+- Existing Compose-format migration credentials required a protected Docker
+  env-file normalization because `docker run --env-file` preserves quote marks.
+  The initial attempt changed no database objects; the corrected upgrade passed.
+
+For future restarts use the release Compose files plus `deployment.override.yml`,
+project name `agentic-call-center`, and the original protected `.env.cutover-base`,
+`.env.supabase`, `.env.n8n` under `/srv/team-projects/agentic-call-center`.
+Do not redeploy the old checkout accidentally. Runtime credentials remain
+separate from the protected migration credentials; backups contain secrets and
+patient data and must never be added to Git.

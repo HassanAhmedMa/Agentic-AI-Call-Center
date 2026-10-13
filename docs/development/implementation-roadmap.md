@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Date: 2026-10-14. Catalog, conversations and patient identity run on shared Oracle/Supabase with n8n verification emails. Doctor availability/search and scheduling migration 0004 are prepared locally for review; Docker migration/seed/bilingual smoke checks passed. Appointment writes, tickets, idempotency and Phase 1 acceptance remain. GitHub CI for this uncommitted increment has not run. This sequence does not imply completed Phase 1 acceptance.
+Date: 2026-10-14. Catalog, conversations and patient identity run on shared Oracle/Supabase with n8n verification emails. Doctor availability/search and scheduling migration 0004 are deployed to Oracle after user approval; Docker migration/seed/bilingual smoke checks passed. Appointment writes, tickets, idempotency and Phase 1 acceptance remain. GitHub CI for this uncommitted increment has not run. This sequence does not imply completed Phase 1 acceptance.
 
 ## Start decision
 
@@ -28,8 +28,8 @@ Avoid another round of broad design documents. Existing API/schema/tool contract
 
 **Current increment (2026-10-14):** catalog, conversation lifecycle and patient
 identity run on shared Oracle/Supabase; n8n sends verified registration emails.
-Doctor availability/search and scheduling persistence are prepared locally for
-review; see [availability review notes](phase1-availability-changes.md).
+Doctor availability/search and scheduling persistence are deployed to Oracle after user
+approval; see [availability review notes](phase1-availability-changes.md).
 Next implement transactional booking with identity ownership, patient limits,
 history, slot conflict handling and idempotent retries; then reschedule/cancel,
 support tickets and Phase 1 acceptance scenarios.
