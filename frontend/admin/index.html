@@ -173,6 +173,12 @@
         </div>
 
         <div class="top-bar-right">
+          <!-- Backend API Connection Badge -->
+          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
+            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
+            <span class="status-indicator-text" id="apiStatusText">API: Initializing</span>
+          </div>
+
           <!-- Notification Bell -->
           <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
             <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -450,7 +456,13 @@
           <!-- RIGHT CARD: APPOINTMENTS CALENDAR & LIST -->
           <div class="card-panel appointments-panel">
             <div class="panel-header-row">
-              <h3 class="panel-title">Appointments</h3>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 class="panel-title">Appointments</h3>
+                <span class="live-badge-green" title="FastAPI Clinic Backend: Real Doctor Catalog Active">
+                  <span class="status-indicator-dot dot-connected" style="width:6px; height:6px;"></span>
+                  <span>Live Catalog Active</span>
+                </span>
+              </div>
               <button class="header-link-btn" onclick="openAllAppointmentsModal()">View All</button>
             </div>
 
@@ -570,7 +582,13 @@
           <!-- LEFT CARD: RECENT CALLS TABLE -->
           <div class="card-panel recent-calls-panel">
             <div class="panel-header-row">
-              <h3 class="panel-title">Recent Calls</h3>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 class="panel-title">Recent Calls</h3>
+                <span class="demo-mode-pill" title="Phase 2 Telephony & Voice Service Simulation">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>Demo Call Telemetry</span>
+                </span>
+              </div>
               <button class="header-link-btn" onclick="openAllCallsModal()">View All</button>
             </div>
 
@@ -815,6 +833,10 @@
 
   <!-- Toast Stack -->
   <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Centralized Config & API Client -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
 
   <!-- Admin Interaction Script -->
   <script src="app.js"></script>

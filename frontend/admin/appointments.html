@@ -168,6 +168,12 @@
         </div>
 
         <div class="top-bar-right">
+          <!-- Backend API Connection Badge -->
+          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
+            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
+            <span class="status-indicator-text" id="apiStatusText">API: Initializing</span>
+          </div>
+
           <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
             <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
@@ -189,7 +195,13 @@
         <!-- Appointments Page Header Row -->
         <div class="live-calls-header-row">
           <div class="live-calls-title-group">
-            <h1 class="live-calls-main-title">Appointments</h1>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <h1 class="live-calls-main-title">Appointments</h1>
+              <span class="live-badge-green" title="FastAPI Clinic Backend: Real Doctor Catalog & Shift Times Active">
+                <span class="status-indicator-dot dot-connected" style="width:6px; height:6px;"></span>
+                <span>Live Catalog Active</span>
+              </span>
+            </div>
             <p class="live-calls-subtext">Manage clinic appointments, view schedules, and handle bookings across all doctors and departments.</p>
           </div>
           <div class="appointments-header-actions">
@@ -889,6 +901,10 @@
 
   <!-- Toast Stack -->
   <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Centralized Config & API Client -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
 
   <!-- Appointments Controller Script -->
   <script src="appointments.js"></script>

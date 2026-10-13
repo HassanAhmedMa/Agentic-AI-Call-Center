@@ -173,6 +173,12 @@
         </div>
 
         <div class="top-bar-right">
+          <!-- Backend API Connection Badge -->
+          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
+            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
+            <span class="status-indicator-text" id="apiStatusText">API: Initializing</span>
+          </div>
+
           <!-- Notification Bell -->
           <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
             <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -297,7 +303,13 @@
             
             <!-- Panel Header Row -->
             <div class="patients-panel-header">
-              <h2 class="patients-panel-title">Patients</h2>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <h2 class="patients-panel-title">Patients</h2>
+                <span class="demo-mode-pill" title="Protected Patient Mode: Backend Administrative Authorization required to query live patient database records.">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>Demo Preview Data</span>
+                </span>
+              </div>
               <div class="patients-header-actions">
                 <button class="btn-add-patient" onclick="openAddPatientModal()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -894,6 +906,10 @@
 
   <!-- Toast Stack -->
   <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Centralized Config & API Client -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
 
   <!-- Patients Controller Script -->
   <script src="patients.js"></script>

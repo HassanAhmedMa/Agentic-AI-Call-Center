@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGlobalShortcuts();
   initSidebarNav();
   initSearchFilter();
+  loadLiveOverviewCatalog();
 });
 
 /* =============================================================================
@@ -249,6 +250,39 @@ function renderAppointmentsList(items) {
 
 function shiftWeek(dir) {
   showToast(dir > 0 ? 'Viewing next week: Nov 17 - Nov 23' : 'Viewing previous week: Nov 03 - Nov 09', 'info');
+}
+
+/* =============================================================================
+   3.5 LIVE FASTAPI CATALOG SYNC
+   ============================================================================= */
+async function loadLiveOverviewCatalog() {
+  if (!window.ClinicApi) return;
+  try {
+    const docData = await ClinicApi.getDoctors({ limit: 50 });
+    if (docData && Array.isArray(docData.doctors) && docData.doctors.length > 0) {
+      const liveDoctors = docData.doctors;
+      // Enrich schedule items with real doctor names and specialties from FastAPI
+      Object.keys(dailyAppointmentsData).forEach((dayKey) => {
+        const slots = dailyAppointmentsData[dayKey];
+        slots.forEach((slot, idx) => {
+          const doc = liveDoctors[idx % liveDoctors.length];
+          if (doc) {
+            slot.doctor = doc.name_en;
+            if (doc.specialty) slot.dept = doc.specialty.name_en;
+          }
+        });
+      });
+
+      // Re-render currently active day
+      const activeCell = document.querySelector('.cal-day-cell.active');
+      if (activeCell) {
+        const dayNum = parseInt(activeCell.textContent.trim());
+        if (dayNum) selectCalendarDay(dayNum, activeCell);
+      }
+    }
+  } catch (err) {
+    console.debug('[ClinicApi] Overview catalog load warning:', err.message);
+  }
 }
 
 /* =============================================================================

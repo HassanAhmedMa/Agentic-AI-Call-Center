@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initGlobalShortcuts();
   initAppointmentsStore();
+  loadLiveCatalog();
 });
 
 /* =============================================================================
@@ -838,6 +839,9 @@ function updateDateHeading() {
 
   if (heading) heading.textContent = formatted;
   if (pillText) pillText.textContent = shortFormatted;
+
+  // Sync live availability for newly selected date
+  syncLiveAvailability();
 }
 
 function shiftMiniMonth(delta) {
@@ -866,6 +870,132 @@ function highlightCalendarDay(day) {
       cell.classList.add('active-day');
     }
   });
+}
+
+/* =============================================================================
+   8.5 LIVE FASTAPI CATALOG & AVAILABILITY SYNC
+   ============================================================================= */
+let liveDoctorsCache = [];
+let liveSpecialtiesCache = [];
+
+function getSelectedDateIso() {
+  const baseDate = new Date(2024, 10, 14); // 14 Nov 2024
+  baseDate.setDate(baseDate.getDate() + currentDateOffset);
+  const yyyy = baseDate.getFullYear();
+  const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(baseDate.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+async function loadLiveCatalog() {
+  if (!window.ClinicApi) return;
+  try {
+    const [specData, docData] = await Promise.all([
+      ClinicApi.getSpecialties().catch(e => {
+        console.debug('[ClinicApi] Specialties fetch error:', e.message);
+        return [];
+      }),
+      ClinicApi.getDoctors({ limit: 50 }).catch(e => {
+        console.debug('[ClinicApi] Doctors fetch error:', e.message);
+        return { total: 0, doctors: [] };
+      })
+    ]);
+
+    if (Array.isArray(specData) && specData.length > 0) {
+      liveSpecialtiesCache = specData;
+      populateSpecialtiesFilter(specData);
+    }
+
+    if (docData && Array.isArray(docData.doctors) && docData.doctors.length > 0) {
+      liveDoctorsCache = docData.doctors;
+      populateDoctorsFilter(docData.doctors);
+      updateDoctorScheduleColumns(docData.doctors);
+    }
+
+    // Sync live availability for the currently selected date
+    syncLiveAvailability();
+  } catch (err) {
+    console.warn('[ClinicApi] Live catalog sync warning:', err.message);
+  }
+}
+
+function populateSpecialtiesFilter(specialties) {
+  const select = document.getElementById('deptSelectFilter');
+  if (!select) return;
+  const currentVal = select.value;
+
+  select.innerHTML = '<option value="All Departments">All Departments</option>';
+  specialties.forEach(spec => {
+    const opt = document.createElement('option');
+    opt.value = spec.name_en;
+    opt.textContent = `${spec.name_en} (${spec.name_ar})`;
+    select.appendChild(opt);
+  });
+
+  if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+    select.value = currentVal;
+  }
+}
+
+function populateDoctorsFilter(doctors) {
+  const select = document.getElementById('doctorSelectFilter');
+  if (!select) return;
+  const currentVal = select.value;
+
+  select.innerHTML = '<option value="All Doctors">All Doctors</option>';
+  doctors.forEach(doc => {
+    const opt = document.createElement('option');
+    opt.value = doc.name_en;
+    const deptName = doc.specialty ? doc.specialty.name_en : '';
+    opt.textContent = `${doc.name_en} (${deptName || doc.title_en})`;
+    select.appendChild(opt);
+  });
+
+  if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+    select.value = currentVal;
+  }
+}
+
+function updateDoctorScheduleColumns(doctors) {
+  const table = document.querySelector('.doctor-schedule-table');
+  if (!table) return;
+
+  const thElements = table.querySelectorAll('thead th');
+  // First th is "Time" column, remaining th are doctors
+  doctors.slice(0, 5).forEach((doc, idx) => {
+    const th = thElements[idx + 1];
+    if (!th) return;
+
+    const nameEl = th.querySelector('.doctor-header-name');
+    const deptEl = th.querySelector('.doctor-header-dept');
+    const avatarEl = th.querySelector('.doctor-header-avatar');
+
+    if (nameEl) nameEl.textContent = doc.name_en;
+    if (deptEl && doc.specialty) deptEl.textContent = doc.specialty.name_en;
+    if (avatarEl) {
+      const cleanName = doc.name_en.replace(/Dr\.\s*/i, '');
+      const initials = cleanName.split(' ').map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase();
+      avatarEl.textContent = initials || 'DR';
+    }
+  });
+}
+
+async function syncLiveAvailability() {
+  if (!window.ClinicApi) return;
+  const dateIso = getSelectedDateIso();
+
+  try {
+    const result = await ClinicApi.searchAvailability(dateIso, 20);
+    if (result && Array.isArray(result.slots) && result.slots.length > 0) {
+      console.info(`[ClinicApi] Found ${result.slots.length} available slots for ${dateIso}`);
+      const pill = document.getElementById('activeDatePillText');
+      if (pill) {
+        pill.title = `${result.slots.length} live available slots synced from FastAPI backend.`;
+      }
+    }
+  } catch (err) {
+    console.debug(`[ClinicApi] Availability endpoint for ${dateIso}:`, err.message);
+  }
 }
 
 /* =============================================================================
