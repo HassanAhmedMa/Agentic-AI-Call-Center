@@ -776,12 +776,7 @@ function initSidebarNav() {
 
       const label = link.querySelector('.nav-text')?.textContent || 'Section';
       if (label === 'Live Calls') {
-        const liveCard = document.getElementById('liveCallCard');
-        if (liveCard) {
-          liveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          liveCard.style.outline = '2px solid #2563EB';
-          setTimeout(() => liveCard.style.outline = '', 1500);
-        }
+        window.location.href = 'live-calls.html';
       } else if (label === 'Appointments') {
         openAllAppointmentsModal();
       } else if (label === 'Patients') {

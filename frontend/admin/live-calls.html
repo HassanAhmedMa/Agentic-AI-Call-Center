@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nile Clinics - Live Calls Monitoring</title>
+
+  <!-- Typography: Inter for Admin Metrics & Cairo for Arabic Live Transcripts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Admin Main Layout Grid -->
+  <div class="admin-layout">
+
+    <!-- =========================================================================
+         LEFT SIDEBAR NAVIGATION
+         ========================================================================= -->
+    <aside class="admin-sidebar">
+      
+      <!-- Top Brand Header -->
+      <div class="sidebar-brand-box">
+        <div class="brand-logo-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+          </svg>
+        </div>
+        <div class="brand-text-col">
+          <h2 class="brand-title">Nile Clinics</h2>
+          <span class="brand-subtitle">AI Call Center</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <!-- 1. Dashboard -->
+        <a href="index.html" class="nav-link" id="nav-dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22" fill="#FFFFFF"/>
+          </svg>
+          <span class="nav-text">Dashboard</span>
+        </a>
+
+        <!-- 2. Live Calls (Active Tab with Badge 8) -->
+        <a href="live-calls.html" class="nav-link active" id="nav-live-calls">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="nav-text">Live Calls</span>
+          <span class="nav-badge-red" id="liveCallsCountBadge">8</span>
+        </a>
+
+        <!-- 3. Appointments -->
+        <a href="index.html#appointments" class="nav-link" id="nav-appointments">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="nav-text">Appointments</span>
+        </a>
+
+        <!-- 4. Patients -->
+        <a href="patients.html" class="nav-link" id="nav-patients">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="nav-text">Patients</span>
+        </a>
+
+        <!-- 5. Knowledge Base -->
+        <a href="index.html#knowledge" class="nav-link" id="nav-knowledge">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+          <span class="nav-text">Knowledge Base</span>
+        </a>
+
+        <!-- 6. Documents -->
+        <a href="index.html#documents" class="nav-link" id="nav-documents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          <span class="nav-text">Documents</span>
+        </a>
+
+        <!-- 7. Analytics -->
+        <a href="index.html#analytics" class="nav-link" id="nav-analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <!-- 8. Settings -->
+        <a href="index.html#settings" class="nav-link" id="nav-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom Cluster -->
+      <div class="sidebar-bottom-cluster">
+        <div class="branch-switcher-pill" onclick="handleBranchChange()">
+          <div class="branch-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="branch-name" id="currentBranchName">Main Clinic</span>
+          <svg class="branch-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+
+        <div class="admin-profile-pill">
+          <div class="admin-avatar-circle">A</div>
+          <div class="admin-profile-meta">
+            <span class="admin-user-name">Ahmed Salah</span>
+            <span class="admin-user-role">Administrator</span>
+          </div>
+        </div>
+
+        <button class="logout-btn" onclick="handleLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================================
+         MAIN ADMIN CONTENT WORKSPACE
+         ========================================================================= -->
+    <div class="admin-main-viewport">
+      
+      <!-- Top Search & Status Bar -->
+      <header class="admin-top-bar">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="liveCallsGlobalSearch" placeholder="Search callers, patient names, phone numbers..." autocomplete="off">
+          <span class="shortcut-tag">Ctrl K</span>
+        </div>
+
+        <div class="top-bar-right">
+          <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="bell-red-badge"></span>
+          </button>
+
+          <div class="live-clock-box">
+            <span class="live-date" id="liveDateText">Wed, 14 Oct 2026</span>
+            <span class="live-time" id="liveTimeText">01:27 AM</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Live Calls Workspace Body -->
+      <main class="dashboard-scroll-body">
+        
+        <!-- Live Calls Page Title Header -->
+        <div class="live-calls-header-row">
+          <div class="live-calls-title-group">
+            <div class="live-calls-title-line">
+              <h1 class="live-calls-main-title">Live Calls</h1>
+              <span class="ongoing-calls-pill">
+                <span class="pulse-dot"></span>
+                <span id="ongoingPillCount">8 ongoing calls</span>
+              </span>
+            </div>
+            <p class="live-calls-subtext">Monitor all active calls in real time. Listen, view transcripts, and take over when needed.</p>
+          </div>
+          <button class="btn-open-grid" onclick="openGridViewModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span>Open in Grid</span>
+          </button>
+        </div>
+
+        <!-- SECTION 1: TOP 5 METRIC CARDS -->
+        <section class="metrics-grid-5">
+          
+          <!-- Metric 1: Ongoing Calls -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-green-subtle text-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Ongoing Calls</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricOngoingCalls">8</span>
+                <span class="metric-trend text-green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+                  <span>2</span>
+                  <span class="trend-sub">vs. last hour</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 2: Handled by AI -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-blue-subtle text-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <path d="M12 7v4"/>
+                <line x1="8" y1="16" x2="8" y2="16"/>
+                <line x1="16" y1="16" x2="16" y2="16"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Handled by AI</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricHandledAi">6</span>
+                <span class="trend-sub" style="font-weight:700; color:var(--text-muted); margin-left:4px;" id="metricAiPercent">75%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 3: Human Agents -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-purple-subtle text-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Human Agents</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricHumanAgents">2</span>
+                <span class="trend-sub" style="font-weight:700; color:var(--text-muted); margin-left:4px;" id="metricHumanPercent">25%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 4: Average Call Duration -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-orange-subtle text-orange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Average Call Duration</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricAvgDuration">04:32</span>
+                <span class="metric-trend text-green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  <span>18%</span>
+                  <span class="trend-sub">vs. yesterday</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 5: Waiting for Agent -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-red-subtle text-red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="20" y1="4" x2="12" y2="4"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Waiting for Agent</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricWaitingAgent">1</span>
+                <span class="metric-trend text-red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+                  <span>1</span>
+                  <span class="trend-sub">needs attention</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- SECTION 2: WORKSPACE SPLIT (TABLE PANEL & LIVE CALL HANDLE) -->
+        <section class="live-calls-main-split">
+          
+          <!-- LEFT CARD: LIVE CALLS TABLE -->
+          <div class="live-calls-table-panel" id="liveCallsTablePanel">
+            
+            <!-- Segmented Filter Bar -->
+            <div class="live-calls-filter-bar">
+              <div class="live-calls-tabs-group">
+                <button class="live-call-tab-btn active" onclick="filterLiveCallsTab('all', this)">All Calls (8)</button>
+                <button class="live-call-tab-btn" onclick="filterLiveCallsTab('ai', this)">AI Handling (6)</button>
+                <button class="live-call-tab-btn" onclick="filterLiveCallsTab('human', this)">Human Handling (2)</button>
+                <button class="live-call-tab-btn" onclick="filterLiveCallsTab('waiting', this)">Waiting (1)</button>
+              </div>
+
+              <div class="live-calls-right-filters">
+                <select class="filter-pill-select" id="liveDeptFilter" onchange="applyLiveFilters()">
+                  <option value="">All Departments</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="General">General</option>
+                  <option value="Dermatology">Dermatology</option>
+                  <option value="Orthopedics">Orthopedics</option>
+                  <option value="ENT">ENT</option>
+                  <option value="Pediatrics">Pediatrics</option>
+                </select>
+
+                <select class="filter-pill-select" id="liveDurationSort" onchange="sortLiveCallsByDuration()">
+                  <option value="default">Call Duration</option>
+                  <option value="longest">Longest First</option>
+                  <option value="shortest">Shortest First</option>
+                </select>
+
+                <button class="sort-duration-btn" title="Toggle Sort Order" onclick="toggleDurationSort()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="patients-table-container">
+              <table class="patients-table live-calls-table" id="liveCallsMainTable">
+                <thead>
+                  <tr>
+                    <th class="th-checkbox">
+                      <input type="checkbox" class="custom-checkbox" id="selectAllLiveCalls" onchange="toggleSelectAllLive(this)">
+                    </th>
+                    <th>Caller</th>
+                    <th>Patient Info</th>
+                    <th>Department</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Current Intent</th>
+                    <th>Live Transcript</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="liveCallsTableBody">
+                  
+                  <!-- ROW 1: Mona Ahmed (Selected by default) -->
+                  <tr class="selected-row" onclick="selectLiveCallRow(1, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#EDE9FE; color:#7C3AED;">M</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Mona Ahmed</span>
+                          <span class="caller-phone-text">+20 101 234 5678</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">PT-2024-001</span>
+                        <span class="patient-status-text">Known Patient</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        <span>Cardiology</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow1">02:46</span></td>
+                    <td><span class="badge-status-ai">• AI Handling</span></td>
+                    <td><span class="intent-tag-pill intent-blue">Book Appointment</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">عايزه احجز مع دكتور القلب</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-take-over-row" onclick="event.stopPropagation(); handleTakeOver(1)">Take Over</button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- ROW 2: Unknown Caller -->
+                  <tr onclick="selectLiveCallRow(2, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#F1F5F9; color:#475569;">U</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Unknown</span>
+                          <span class="caller-phone-text">+20 112 345 6789</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">Not Found</span>
+                        <span class="patient-status-text">New Caller</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        <span>General</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow2">01:12</span></td>
+                    <td><span class="badge-status-waiting">• Waiting</span></td>
+                    <td><span class="intent-tag-pill intent-gray">General Inquiry</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">مواعيد العيادة ايه ؟</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-take-over-row" onclick="event.stopPropagation(); handleTakeOver(2)">Take Over</button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- ROW 3: Sara Mohamed -->
+                  <tr onclick="selectLiveCallRow(3, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#EFF6FF; color:#2563EB;">S</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Sara Mohamed</span>
+                          <span class="caller-phone-text">+20 106 543 2198</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">PT-2024-003</span>
+                        <span class="patient-status-text">Known Patient</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        <span>Dermatology</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow3">05:21</span></td>
+                    <td><span class="badge-status-human">• Human Agent</span></td>
+                    <td><span class="intent-tag-pill intent-green">Medical Advice</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">عندي التهاب في الجلد ...</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-end-call-row" onclick="event.stopPropagation(); handleEndCall(3)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" y1="2" x2="2" y2="22"/></svg>
+                          <span>End Call</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- ROW 4: Ahmed Hassan -->
+                  <tr onclick="selectLiveCallRow(4, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#EFF6FF; color:#2563EB;">A</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Ahmed Hassan</span>
+                          <span class="caller-phone-text">+20 100 987 6543</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">PT-2024-002</span>
+                        <span class="patient-status-text">Known Patient</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <span>Orthopedics</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow4">03:10</span></td>
+                    <td><span class="badge-status-ai">• AI Handling</span></td>
+                    <td><span class="intent-tag-pill intent-purple">Reschedule</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">عايز اغير الموعد ...</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-take-over-row" onclick="event.stopPropagation(); handleTakeOver(4)">Take Over</button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- ROW 5: Youssef Ali -->
+                  <tr onclick="selectLiveCallRow(5, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#EEF2FF; color:#4F46E5;">Y</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Youssef Ali</span>
+                          <span class="caller-phone-text">+20 112 345 6789</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">Not Found</span>
+                        <span class="patient-status-text">New Caller</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        <span>General</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow5">00:58</span></td>
+                    <td><span class="badge-status-ai">• AI Handling</span></td>
+                    <td><span class="intent-tag-pill intent-orange">Insurance Inquiry</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">التأمين بتاعك متعاقد مع ...</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-take-over-row" onclick="event.stopPropagation(); handleTakeOver(5)">Take Over</button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- ROW 6: Nour Khaled -->
+                  <tr onclick="selectLiveCallRow(6, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#FEE2E2; color:#DC2626;">N</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Nour Khaled</span>
+                          <span class="caller-phone-text">+20 109 876 5432</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">PT-2024-005</span>
+                        <span class="patient-status-text">Known Patient</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        <span>Cardiology</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow6">07:13</span></td>
+                    <td><span class="badge-status-human">• Human Agent</span></td>
+                    <td><span class="intent-tag-pill intent-red">Follow-up</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">كنت عايزه اسأل عن نتيجة ...</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-end-call-row" onclick="event.stopPropagation(); handleEndCall(6)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" y1="2" x2="2" y2="22"/></svg>
+                          <span>End Call</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- ROW 7: Omar Ibrahim -->
+                  <tr onclick="selectLiveCallRow(7, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#DCFCE7; color:#15803D;">O</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Omar Ibrahim</span>
+                          <span class="caller-phone-text">+20 120 456 7890</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">PT-2024-006</span>
+                        <span class="patient-status-text">Known Patient</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                        <span>ENT</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow7">01:45</span></td>
+                    <td><span class="badge-status-ai">• AI Handling</span></td>
+                    <td><span class="intent-tag-pill intent-green">Clinic Information</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">فين فرع مصر الجديدة ؟</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-take-over-row" onclick="event.stopPropagation(); handleTakeOver(7)">Take Over</button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- ROW 8: Hassan Mostafa -->
+                  <tr onclick="selectLiveCallRow(8, this)">
+                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
+                    <td>
+                      <div class="patient-cell-profile">
+                        <div class="patient-avatar-circle" style="background:#EDE9FE; color:#7C3AED;">H</div>
+                        <div class="caller-meta-col">
+                          <span class="caller-name-text">Hassan Mostafa</span>
+                          <span class="caller-phone-text">+20 115 678 9012</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="patient-info-col">
+                        <span class="patient-code-text">PT-2024-008</span>
+                        <span class="patient-status-text">Known Patient</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="dept-pill-cell text-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <span>Pediatrics</span>
+                      </span>
+                    </td>
+                    <td><span class="call-timer-text" id="timerRow8">04:09</span></td>
+                    <td><span class="badge-status-ai">• AI Handling</span></td>
+                    <td><span class="intent-tag-pill intent-blue">Book Appointment</span></td>
+                    <td>
+                      <div class="live-trans-cell">
+                        <div class="audio-waveform-mini">
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div><div class="waveform-bar"></div>
+                          <div class="waveform-bar"></div>
+                        </div>
+                        <span class="arabic-trans-snippet">احجز لطفلي مع دكتور الأطفال</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="table-actions-cell">
+                        <button class="btn-take-over-row" onclick="event.stopPropagation(); handleTakeOver(8)">Take Over</button>
+                      </div>
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+
+              <!-- Empty state if search returns no records -->
+              <div class="empty-state-card" id="liveCallsEmptyState" style="display: none; padding: 40px 20px;">
+                <div class="empty-state-icon text-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <h4 class="empty-state-title">No Active Calls Found</h4>
+                <p class="empty-state-desc">No live call streams match your filter criteria.</p>
+                <button class="simulate-call-btn" onclick="resetLiveCallFilters()">Reset Filters</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT CARD: LIVE CALL HANDLE PANEL -->
+          <div class="live-handle-panel" id="liveCallHandlePanel">
+            
+            <!-- Live Tag & Timer Header -->
+            <div class="live-handle-header">
+              <div class="handle-live-indicator">
+                <span class="live-tag-badge" id="handleLiveTag">
+                  <span class="pulse-dot"></span>
+                  <span id="handleStatusText">Live</span>
+                </span>
+                <span class="handle-timer-display" id="handleTimerCounter">00:02:46</span>
+              </div>
+              <div class="handle-top-icons">
+                <button class="btn-handle-icon" title="Expand View" onclick="openExpandedDialogueModal()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                    <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+                  </svg>
+                </button>
+                <button class="btn-handle-icon" title="Minimize Panel" onclick="minimizeHandlePanel()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Caller Profile Hero -->
+            <div class="patient-hero-row">
+              <div class="patient-hero-left">
+                <div class="patient-hero-avatar" id="handleAvatar" style="background:#EDE9FE; color:#7C3AED;">M</div>
+                <div class="patient-hero-info">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <h3 class="patient-hero-name" id="handleCallerName">Mona Ahmed</h3>
+                    <span class="known-patient-pill" id="handlePatientBadge">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>Known Patient</span>
+                    </span>
+                  </div>
+                  <span class="caller-phone-num" id="handleCallerPhone">+20 101 234 5678</span>
+                  <span class="patient-hero-id" id="handleCallerMeta">PT-2024-001 | 22 years | Female</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub Navigation Tabs -->
+            <div class="patient-sub-tabs">
+              <button class="sub-tab-btn active" onclick="switchHandleTab('conversation', this)">Conversation</button>
+              <button class="sub-tab-btn" onclick="switchHandleTab('patientInfo', this)">Patient Info</button>
+              <button class="sub-tab-btn" onclick="switchHandleTab('notes', this)">Notes</button>
+            </div>
+
+            <!-- Dynamic Tab Content: Conversation Stream -->
+            <div id="tabContentConversation" style="display:flex; flex-direction:column; gap:12px;">
+              
+              <!-- Dialogue Stream Messages -->
+              <div class="dialogue-messages-stream" id="dialogueMessagesStream">
+                
+                <!-- Bubble 1: AI Agent -->
+                <div class="dialogue-bubble-row">
+                  <div class="dialogue-avatar-ai">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+                  </div>
+                  <div class="dialogue-bubble-ai">
+                    <p class="dialogue-text-ar">مرحباً! ازاي اقدر اساعدك النهارده؟</p>
+                    <span class="dialogue-timestamp-text">01:24 AM</span>
+                  </div>
+                </div>
+
+                <!-- Bubble 2: Caller -->
+                <div class="dialogue-bubble-row">
+                  <div class="dialogue-bubble-caller">
+                    <p class="dialogue-text-ar" id="dialogueCallerSpeech">عايزه احجز مع دكتور القلب يوم الخميس بعد الضهر</p>
+                    <span class="dialogue-timestamp-text">01:25 AM</span>
+                  </div>
+                </div>
+
+                <!-- Bubble 3: AI Agent -->
+                <div class="dialogue-bubble-row">
+                  <div class="dialogue-avatar-ai">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+                  </div>
+                  <div class="dialogue-bubble-ai">
+                    <p class="dialogue-text-ar">تمام اسمحي لي أتحقق من المواعيد المتاحة لك...</p>
+                    <span class="dialogue-timestamp-text">01:25 AM</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Detected Intent Card -->
+              <div class="detected-intent-box">
+                <span class="detected-intent-header">Detected Intent</span>
+                <div class="detected-intent-row">
+                  <span class="intent-badge-blue" id="handleIntentBadge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span id="handleIntentText">Book Appointment</span>
+                  </span>
+                  <span class="confidence-rate" id="handleConfidenceRate">92%</span>
+                </div>
+              </div>
+
+              <!-- Extracted Entities Card -->
+              <div class="extracted-entities-box">
+                <span class="detected-intent-header">Entities</span>
+                <div class="entity-item-line">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                  <span id="handleEntityDept">Department: Cardiology</span>
+                </div>
+                <div class="entity-item-line">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span id="handleEntityDate">Date: Thursday, 14 Nov</span>
+                </div>
+                <div class="entity-item-line">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span id="handleEntityTime">Time: Afternoon</span>
+                </div>
+              </div>
+
+              <!-- Call Controls Row (LISTEN ONLY REMOVED AS REQUESTED) -->
+              <div class="live-controls-section">
+                <span class="live-controls-title">Call Controls</span>
+                <div class="live-controls-buttons-grid">
+                  
+                  <!-- Button 1: Mute -->
+                  <button class="round-control-btn" id="btnHandleMute" onclick="toggleHandleMute(this)">
+                    <div class="round-control-circle">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                      </svg>
+                    </div>
+                    <span class="round-control-label">Mute</span>
+                  </button>
+
+                  <!-- Button 2: Hold -->
+                  <button class="round-control-btn" id="btnHandleHold" onclick="toggleHandleHold(this)">
+                    <div class="round-control-circle">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                      </svg>
+                    </div>
+                    <span class="round-control-label">Hold</span>
+                  </button>
+
+                  <!-- Button 3: Take Over Call / End Call (LISTEN ONLY WAS REMOVED) -->
+                  <button class="btn-take-over-large" id="btnHandleTakeOver" onclick="handlePrimaryCallAction()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <line x1="19" y1="8" x2="19" y2="14"/>
+                      <line x1="22" y1="11" x2="16" y2="11"/>
+                    </svg>
+                    <span id="handleActionBtnText">Take Over Call</span>
+                  </button>
+
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Panel Minimized Placeholder Notice -->
+            <div id="liveHandleEmptyNotice" style="display:none; padding:40px 10px; text-align:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="32" height="32" style="margin-bottom:8px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">Panel Minimized</h4>
+              <p style="font-size:12px; color:#64748B; margin-bottom:12px;">Click any call row in the table to monitor and handle live streaming.</p>
+              <button class="modal-btn-secondary" style="font-size:12px; height:32px;" onclick="selectLiveCallRow(currentlySelectedLiveCallId)">Restore Panel</button>
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       MODALS & DIALOGS CONTAINER
+       ========================================================================= -->
+  <div class="admin-modal-backdrop" id="adminModalBackdrop" onclick="closeAdminModal(event)">
+    <div class="admin-modal-container" id="adminModalContainer">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="adminModalTitle">Live Call View</h3>
+        <button class="modal-close-icon-btn" onclick="closeAdminModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="admin-modal-body" id="adminModalBody"></div>
+      <div class="admin-modal-footer" id="adminModalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Toast Stack -->
+  <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Live Calls Controller Script -->
+  <script src="live-calls.js"></script>
+</body>
+</html>
