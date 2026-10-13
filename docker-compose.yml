@@ -68,6 +68,8 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-clinic_user}:${POSTGRES_PASSWORD:-clinic_password}@database:5432/${POSTGRES_DB:-clinic_db}
       DATABASE_SCHEMA: ${DATABASE_SCHEMA:-public}
+      BOOKING_MIN_LEAD_MINUTES: ${BOOKING_MIN_LEAD_MINUTES:-60}
+      BOOKING_HORIZON_DAYS: ${BOOKING_HORIZON_DAYS:-30}
       # Empty disables lifecycle writes; generate locally, never send to a browser.
       AGENT_SERVICE_TOKEN: ${AGENT_SERVICE_TOKEN:-}
       IDENTITY_ENABLED: ${IDENTITY_ENABLED:-false}

@@ -7,8 +7,10 @@ Date: 2026-10-13. Status: proposed implementation design.
 Build the next Phase 1 increment: public, deterministic availability in Arabic
 and English, ready for later transactional appointment writes. The user approved
 the proposed rule values and selected Supabase as the shared database platform.
-The user reports Oracle Docker and Supabase are installed; server access and
-database configuration have not been independently verified.
+Oracle access and migration are now verified: the backend uses Supabase PostgreSQL
+17.6, database postgres, private clinic schema and restricted clinic_runtime role.
+Patient OTP through the authenticated n8n workflow was verified on 2026-10-14.
+The user requested proceeding to availability after committing email delivery.
 
 Thirty-minute slots start on :00/:30 and finish inside each doctor's daily shift.
 Each doctor has one shift, identical on their working weekdays, between 07:00
@@ -77,9 +79,10 @@ Alembic remains the single clinic migration history; do not introduce competing
 Supabase migration files. No server migrations or seeds until target and access
 are verified. Keep credentials in ignored configuration and out of documentation.
 
-Local PostgreSQL development and isolated-schema integration tests continue while
-server connection details are gathered. Shared-server integration is separately
-verified and is not implied by local tests.
+Local PostgreSQL development and isolated-schema integration tests continue.
+Prepare the new private-schema grants/RLS alongside the migration. Do not apply
+the new revision to Oracle until this increment is reviewed; deployed readiness
+requires the image and database migration heads to match.
 
 ## Acceptance
 
@@ -93,9 +96,8 @@ verified and is not implied by local tests.
 - Ruff, Black, strict mypy, repository validator and Docker smoke pass.
 - User can inspect API results locally; changes remain uncommitted for review.
 
-## Server information needed
+## Review boundary
 
-Obtain the SSH host or configured SSH alias, server login username, the path of
-the Supabase Docker Compose deployment, and confirmation whether the shared
-clinic database already contains clinic tables/data. Passwords and private keys
-must not be sent in chat. Inspect non-secret metadata before any remote changes.
+Keep implementation uncommitted and the current Oracle service unchanged until
+review. The migration contains no real patient seeds or changes to existing OTP
+records. Existing credentials stay in protected server configuration.

@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir . && useradd --create-home clinic
 COPY alembic.ini ./
 COPY database/migrations database/migrations
 COPY database/seed/catalog.json database/seed/catalog.json
+COPY database/seed/scheduling.json database/seed/scheduling.json
 RUN chmod -R a+rX /app/database/migrations /app/database/seed
 USER clinic
 EXPOSE 8000

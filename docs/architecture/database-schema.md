@@ -9,7 +9,7 @@
 
 ## 1. Entity-Relationship Overview
 
-**Implementation status (2026-10-10):** migrations 0001–0003 implement catalog, conversations, rate events, patients, verification challenges and patient sessions. Appointment/ticket/idempotency tables remain target contracts. Synthetic seeds are bilingual and idempotent; identity uses submitted forms, never seeded real personal data. See [identity review notes](../development/phase1-identity-changes.md). The full target schema is not yet deployed.
+**Implementation status (2026-10-14):** migrations 0001–0003 are implemented and deployed to the private Oracle/Supabase clinic schema. Revision 0004 is prepared locally for review: clinic closures, doctor time off, appointments and appointment history, with slot checks, scheduled-slot uniqueness and backend-only private-schema RLS. Appointment writes, ticket/idempotency tables remain planned. Synthetic scheduling seeds are opt-in and contain no patients/bookings. See [availability review notes](../development/phase1-availability-changes.md). The full target schema is not yet deployed.
 
 ```
                          ┌──────────────┐
@@ -278,16 +278,25 @@ CHECK (EXTRACT(MINUTE FROM start_time) IN (0, 30) AND EXTRACT(SECOND FROM start_
 CHECK (end_time = start_time + INTERVAL '30 minutes'),
 
 -- Inside the bookable day window (ADR-003 R8)
-CHECK (start_time >= TIME '07:00' AND end_time <= TIME '22:00'),
+CHECK (start_time >= TIME '07:00' AND end_time <= TIME '22:00' AND end_time > start_time),
 
 -- Never on a Friday (ADR-003 R7)
 CHECK (EXTRACT(ISODOW FROM appointment_date) <> 5),
 
 -- Cancellation fields are consistent with status
-CHECK ((status = 'cancelled') = (cancelled_at IS NOT NULL AND cancelled_by IS NOT NULL))
+CHECK (
+    (status = 'cancelled' AND cancelled_at IS NOT NULL AND cancelled_by IS NOT NULL)
+    OR
+    (status <> 'cancelled' AND cancelled_at IS NULL AND cancelled_by IS NULL)
+)
 ```
 
 **Overlap prevention (partial unique indexes)**
+
+Revision 0004 explicitly rejects wrapped TIME intervals and requires both
+cancellation fields to be absent for every non-cancelled status. These checks
+close loopholes in the earlier SQL shorthand without changing booking policy.
+
 ```sql
 CREATE UNIQUE INDEX uq_doctor_slot_active
     ON appointments (doctor_id, appointment_date, start_time)

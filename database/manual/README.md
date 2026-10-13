@@ -1,6 +1,9 @@
 # Manual Supabase installation
 
-These scripts export the implemented backend at Alembic revision 0003_identity.
+These scripts are a historical installation checkpoint at revision 0003_identity.
+The current local backend head is 0004_scheduling. Existing installations must
+use Alembic with the migration owner to upgrade; see the availability review
+notes. Do not rerun this fresh-install export over the shared database.
 Availability/booking tables and endpoints are not implemented by these scripts.
 No credentials or actual patient data are included.
 

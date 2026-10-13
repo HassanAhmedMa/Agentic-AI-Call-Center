@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     database_url: SecretStr
     database_schema: str = Field(default="public", pattern=r"^[a-z_][a-z0-9_]{0,62}$")
     public_rate_limit: int = Field(default=60, ge=1, le=1000)
+    booking_min_lead_minutes: int = Field(default=60, ge=60, le=1440)
+    booking_horizon_days: int = Field(default=30, ge=1, le=30)
     migrations_dir: Path = Path("database/migrations")
     agent_service_token: SecretStr | None = None
     identity_enabled: bool = False

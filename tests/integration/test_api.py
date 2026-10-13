@@ -69,7 +69,7 @@ async def test_http_catalog_on_real_postgres(engine: AsyncEngine) -> None:
         assert (await http.get("/api/v1/services?category=laboratory&limit=2")).json()[
             "total"
         ] == 7
-        assert (await http.get("/api/v1/availability/search")).status_code == 404
+        assert (await http.get("/api/v1/availability/search")).status_code == 400
         async with engine.begin() as conn:
             await conn.execute(
                 text("UPDATE alembic_version SET version_num='old_revision'")

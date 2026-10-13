@@ -1,6 +1,6 @@
 # Clinic Backend Service (`services/clinic-backend`)
 
-Deterministic FastAPI backend with catalog, conversations and patient identity. Bookings remain pending. Run commands below from the repository root.
+Deterministic FastAPI backend with catalog, conversations, patient identity and doctor availability. Booking writes remain pending. Run commands below from the repository root.
 
 ## Architecture Status
 - **Current Phase:** Phase 1 — Catalog, conversations and patient identity
@@ -21,9 +21,11 @@ English and Arabic names/descriptions are returned together. Doctor search accep
 
 Registration/email verification, conversation lifecycle, patient sessions/profile/logout and the bilingual registration form are implemented. Email delivery supports direct SMTP or authenticated n8n; see [n8n setup](../../docs/development/n8n-email-setup.md).
 
-Not implemented yet: availability, booking, support tickets, AI tools, RAG and voice. There are no placeholder action endpoints. Working hours are catalog information, not bookable availability.
+Public `/api/v1/doctors/{id}/availability` and `/api/v1/availability/search` are implemented locally for review. Both require `from_date`; see [availability review notes](../../docs/development/phase1-availability-changes.md) for rules, examples and deployment steps. The database head is `0004_scheduling`; Oracle remains at `0003_identity` until the paired migration/image deployment is approved.
 
-The three-table migration is intentionally incremental. Later migrations add the remaining schema before the corresponding API is exposed. The backend owns database access; the LLM never receives database credentials.
+Not implemented yet: booking writes, support tickets, AI tools, RAG and voice. Availability is a snapshot; booking must revalidate it transactionally.
+
+Migrations remain incremental. Revision 0004 adds scheduling persistence; later migrations add ticket and idempotency storage. The backend owns database access; the LLM never receives database credentials.
 
 ## Run with Docker (recommended for the team)
 

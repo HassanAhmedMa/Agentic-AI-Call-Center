@@ -6,6 +6,7 @@ import time
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
+from datetime import UTC, datetime
 from pathlib import Path as FilePath
 from typing import Annotated, Any, Literal
 from uuid import uuid4
@@ -20,6 +21,7 @@ from starlette.exceptions import HTTPException
 from starlette.responses import FileResponse, Response
 from starlette.staticfiles import StaticFiles
 
+from clinic_backend.availability_routes import availability_router
 from clinic_backend.catalog import Catalog
 from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
@@ -71,6 +73,7 @@ def create_app(
     *,
     engine: AsyncEngine | None = None,
     mailer: Delivery | None = None,
+    clock: Callable[[], datetime] | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     owns_engine = engine is None
@@ -113,7 +116,12 @@ def create_app(
             else uuid4().hex
         )
         if request.url.path.startswith(
-            ("/api/v1/doctors", "/api/v1/services", "/api/v1/specialties")
+            (
+                "/api/v1/doctors",
+                "/api/v1/services",
+                "/api/v1/specialties",
+                "/api/v1/availability",
+            )
         ):
             retry = limiter.retry_after(
                 request.client.host if request.client else "unknown"
@@ -157,6 +165,10 @@ def create_app(
         request: Request, exc: RequestValidationError
     ) -> Response:
         known_fields = {
+            "from_date",
+            "to_date",
+            "earliest_time",
+            "latest_time",
             "specialty_id",
             "q",
             "limit",
@@ -297,6 +309,9 @@ def create_app(
             raise APIError(404, "SERVICE_NOT_FOUND", "Service not found.")
         return item
 
+    app.include_router(
+        availability_router(sessions, settings, clock or (lambda: datetime.now(UTC)))
+    )
     app.include_router(conversation_router(sessions, settings))
     if settings.identity_enabled:
         from clinic_backend.identity_routes import identity_router

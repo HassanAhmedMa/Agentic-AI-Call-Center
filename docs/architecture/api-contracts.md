@@ -10,7 +10,7 @@
 
 ## 1. Callers & Authentication
 
-**Implementation status (2026-10-10):** local catalog, conversations and identity (§4, §6.1) are implemented, including SMTP verification, sessions and bilingual registration. Availability, appointments, tickets and idempotency remain planned. Mailpit delivery is tested; real SMTP needs sender configuration. Public catalog limits remain single-process, while identity limits are atomic in PostgreSQL. Trusted ingress and gateway transport ownership remain deployment work. See [identity review notes](../development/phase1-identity-changes.md). These markers do not change ADR acceptance.
+**Implementation status (2026-10-14):** catalog, conversations and identity are implemented; shared Oracle registration/email verification through n8n is tested. Doctor availability and earliest-slot search (§5.4–5.5) are implemented locally for review, with migration 0004 prepared but not deployed to Oracle. Appointment writes, tickets and idempotency remain planned. Public limits remain single-process; identity limits are atomic in PostgreSQL. See [availability review notes](../development/phase1-availability-changes.md). These markers do not change ADR acceptance.
 
 ### 1.1. Who calls the backend
 
@@ -422,11 +422,12 @@ Free slots for one doctor.
 
 - **Access:** Public
 - **Query:**
-  - `specialty_id` (optional) or `doctor_id` (optional)
+  - `specialty_id` and `doctor_id` (optional; when both are supplied, filters intersect)
   - `from_date` (required), `to_date` (optional, at most 6 days after `from_date` (7 inclusive dates))
   - `earliest_time`, `latest_time` (optional `HH:MM`, filter on slot start)
   - `limit` (default 5, max 20)
 - **Response `200`:** earliest slots first.
+- **Validation:** dates strictly `YYYY-MM-DD`; times strictly `HH:MM`. Reject unknown or duplicate query keys. Earliest time is inclusive; latest exclusive. Sort ties by doctor ID and apply the limit after filters. Unmatched search filters return an empty result list.
   ```json
   {
     "results": [

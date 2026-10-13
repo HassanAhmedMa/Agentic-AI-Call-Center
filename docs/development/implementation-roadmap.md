@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Date: 2026-10-10. Current state: initial Phase 1 public catalog implemented locally, with packaging, three-table migration, synthetic seeds, health/readiness, bilingual catalog and PostgreSQL tests. Awaiting human review; local Docker build/migration/seed/bilingual smoke checks passed, while GitHub CI verification remains pending. This sequence is not evidence of accepted ADR scope or completed Phase 1 acceptance.
+Date: 2026-10-14. Catalog, conversations and patient identity run on shared Oracle/Supabase with n8n verification emails. Doctor availability/search and scheduling migration 0004 are prepared locally for review; Docker migration/seed/bilingual smoke checks passed. Appointment writes, tickets, idempotency and Phase 1 acceptance remain. GitHub CI for this uncommitted increment has not run. This sequence does not imply completed Phase 1 acceptance.
 
 ## Start decision
 
@@ -26,11 +26,13 @@ Avoid another round of broad design documents. Existing API/schema/tool contract
 
 ## First implementation PR
 
-**Current local increment:** catalog, conversation lifecycle and patient identity
-now exist. See [identity review notes](phase1-identity-changes.md) for registration,
-SMTP verification, sessions and bilingual forms. Next implement doctor availability
-and appointment transactions. Real SMTP and shared Oracle deployment remain
-configuration/deployment work.
+**Current increment (2026-10-14):** catalog, conversation lifecycle and patient
+identity run on shared Oracle/Supabase; n8n sends verified registration emails.
+Doctor availability/search and scheduling persistence are prepared locally for
+review; see [availability review notes](phase1-availability-changes.md).
+Next implement transactional booking with identity ownership, patient limits,
+history, slot conflict handling and idempotent retries; then reschedule/cancel,
+support tickets and Phase 1 acceptance scenarios.
 
 The user authorized building the first catalog slice locally for review on the existing branch. Its packaging/settings, PostgreSQL migration/seed, health endpoints and bilingual catalog now exist. Obtain human review and Docker/CI validation before landing it. Next implement conversation + email verification + minimal text form page, then booking transactions. ADR acceptance and business/channel decisions remain gates for their affected later features; implementing this public slice does not mark them approved.
 
