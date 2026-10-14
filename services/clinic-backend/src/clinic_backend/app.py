@@ -13,6 +13,7 @@ from uuid import uuid4
 from clinic_schemas import catalog as dto
 from fastapi import Depends, FastAPI, Path, Query, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
@@ -99,6 +100,14 @@ def create_app(
 
     app = FastAPI(
         title="Agentic Clinic — Phase 1 Backend", version="0.2.0", lifespan=lifespan
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
+        allow_credentials=False,
+        allow_methods=["GET", "OPTIONS"],
+        allow_headers=["Accept", "Content-Type"],
     )
 
     @app.middleware("http")

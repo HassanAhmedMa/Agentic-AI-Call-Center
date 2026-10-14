@@ -95,3 +95,55 @@ def test_openapi_documents_actual_validation_status() -> None:
         ]
         assert "400" in responses
         assert "422" not in responses
+
+
+def test_cors_allows_loopback_and_rejects_external_origins() -> None:
+    with client() as http:
+        # 1. Allowed: Dashboard Live Server origin (http://127.0.0.1:57296)
+        res_allowed_ip = http.get(
+            "/api/v1/health",
+            headers={"Origin": "http://127.0.0.1:57296"},
+        )
+        assert res_allowed_ip.status_code == 200
+        assert res_allowed_ip.headers.get("access-control-allow-origin") == "http://127.0.0.1:57296"
+        assert "access-control-allow-credentials" not in res_allowed_ip.headers
+
+        # 2. Allowed: Localhost with changing port (e.g. 8002, 3000)
+        res_allowed_host = http.get(
+            "/api/v1/health",
+            headers={"Origin": "http://localhost:8002"},
+        )
+        assert res_allowed_host.status_code == 200
+        assert res_allowed_host.headers.get("access-control-allow-origin") == "http://localhost:8002"
+
+        # 3. Allowed: CORS preflight (OPTIONS)
+        res_preflight = http.options(
+            "/api/v1/health",
+            headers={
+                "Origin": "http://127.0.0.1:57296",
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "Accept",
+            },
+        )
+        assert res_preflight.status_code == 200
+        assert res_preflight.headers.get("access-control-allow-origin") == "http://127.0.0.1:57296"
+        assert "GET" in res_preflight.headers.get("access-control-allow-methods", "")
+
+        # 4. Rejected: Unrelated external origin
+        res_rejected = http.get(
+            "/api/v1/health",
+            headers={"Origin": "https://malicious.example.com"},
+        )
+        assert res_rejected.status_code == 200
+        assert "access-control-allow-origin" not in res_rejected.headers
+
+        # 5. Rejected: Preflight from external origin
+        res_rejected_preflight = http.options(
+            "/api/v1/health",
+            headers={
+                "Origin": "https://malicious.example.com",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert "access-control-allow-origin" not in res_rejected_preflight.headers
+
