@@ -15,6 +15,7 @@ from fastapi import Depends, FastAPI, Path, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from starlette.exceptions import HTTPException
@@ -25,6 +26,7 @@ from clinic_backend.catalog import Catalog
 from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
 from clinic_backend.errors import APIError, ErrorEnvelope, error_response
+from clinic_backend.identity_models import Patient
 from clinic_backend.mail import Delivery, SMTPDelivery
 from clinic_backend.settings import Settings
 
@@ -106,8 +108,8 @@ def create_app(
         CORSMiddleware,
         allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
         allow_credentials=False,
-        allow_methods=["GET", "OPTIONS"],
-        allow_headers=["Accept", "Content-Type"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
     )
 
     @app.middleware("http")
@@ -305,6 +307,220 @@ def create_app(
         if item is None:
             raise APIError(404, "SERVICE_NOT_FOUND", "Service not found.")
         return item
+
+    @app.get("/api/v1/patients", tags=["Patients"])
+    async def list_patients(
+        q: str | None = Query(default=None),
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+    ) -> dict[str, Any]:
+        async with sessions() as session:
+            stmt = select(Patient)
+            if q and q.strip():
+                term = f"%{q.strip()}%"
+                stmt = stmt.where(
+                    (Patient.full_name.ilike(term))
+                    | (Patient.phone.like(term))
+                    | (Patient.customer_number.like(term))
+                    | (Patient.email.ilike(term))
+                )
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = await session.scalar(count_stmt) or 0
+
+            stmt = stmt.order_by(Patient.created_at.desc()).offset(offset).limit(limit)
+            result = await session.scalars(stmt)
+            rows = result.all()
+
+            return {
+                "total": total,
+                "patients": [
+                    {
+                        "id": p.id,
+                        "customer_number": p.customer_number,
+                        "full_name": p.full_name,
+                        "email": p.email,
+                        "phone": p.phone,
+                        "date_of_birth": (
+                            p.date_of_birth.isoformat() if p.date_of_birth else None
+                        ),
+                        "preferred_language": p.preferred_language,
+                        "gender": p.gender,
+                        "insurance_provider": p.insurance_provider,
+                        "insurance_policy_number": p.insurance_policy_number,
+                        "created_at": (
+                            p.created_at.isoformat() if p.created_at else None
+                        ),
+                        "updated_at": (
+                            p.updated_at.isoformat() if p.updated_at else None
+                        ),
+                    }
+                    for p in rows
+                ],
+            }
+
+    @app.get("/api/v1/patients/{patient_id}", tags=["Patients"])
+    async def get_patient_detail(patient_id: str) -> dict[str, Any]:
+        async with sessions() as session:
+            stmt = select(Patient)
+            if patient_id.isdigit():
+                stmt = stmt.where(or_(Patient.id == int(patient_id), Patient.customer_number == patient_id))
+            else:
+                stmt = stmt.where(Patient.customer_number == patient_id)
+            patient = await session.scalar(stmt)
+            if not patient:
+                raise APIError(404, "PATIENT_NOT_FOUND", "Patient not found.")
+            return {
+                "id": patient.id,
+                "customer_number": patient.customer_number,
+                "full_name": patient.full_name,
+                "email": patient.email,
+                "phone": patient.phone,
+                "date_of_birth": (
+                    patient.date_of_birth.isoformat() if patient.date_of_birth else None
+                ),
+                "preferred_language": patient.preferred_language,
+                "gender": patient.gender,
+                "insurance_provider": patient.insurance_provider,
+                "insurance_policy_number": patient.insurance_policy_number,
+                "created_at": (
+                    patient.created_at.isoformat() if patient.created_at else None
+                ),
+                "updated_at": (
+                    patient.updated_at.isoformat() if patient.updated_at else None
+                ),
+            }
+
+    @app.post("/api/v1/patients", tags=["Patients"])
+    async def create_patient(payload: dict[str, Any]) -> dict[str, Any]:
+        import random
+        from datetime import date as dt_date, datetime, timezone
+
+        full_name = str(payload.get("full_name") or payload.get("name") or "").strip()
+        phone = str(payload.get("phone") or "").strip()
+        email = str(payload.get("email") or "").strip().lower()
+        if not full_name or not phone:
+            raise APIError(400, "INVALID_INPUT", "Full name and phone are required.")
+
+        if not phone.startswith("+"):
+            phone = f"+{phone}"
+
+        gender = str(payload.get("gender") or "male").strip().lower()
+        if gender not in ("male", "female"):
+            gender = "male"
+
+        raw_dob = payload.get("date_of_birth") or payload.get("dob")
+        dob = None
+        if raw_dob:
+            try:
+                dob = dt_date.fromisoformat(str(raw_dob)[:10])
+            except Exception:
+                dob = None
+        if not dob:
+            dob = dt_date(2000, 1, 1)
+
+        async with sessions() as session:
+            for _ in range(20):
+                candidate_num = f"{random.randint(100000, 999999)}"
+                existing = await session.scalar(
+                    select(Patient).where(Patient.customer_number == candidate_num)
+                )
+                if not existing:
+                    break
+            else:
+                candidate_num = f"{random.randint(100000, 999999)}"
+
+            now = datetime.now(timezone.utc)
+            patient = Patient(
+                customer_number=candidate_num,
+                full_name=full_name,
+                email=email or f"patient.{candidate_num}@clinic.local",
+                email_verified_at=now,
+                phone=phone,
+                date_of_birth=dob,
+                preferred_language="ar" if payload.get("preferred_language") == "ar" else "en",
+                gender=gender,
+                insurance_provider=payload.get("insurance_provider"),
+                insurance_policy_number=payload.get("insurance_policy_number"),
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(patient)
+            await session.commit()
+            await session.refresh(patient)
+
+            return {
+                "id": patient.id,
+                "customer_number": patient.customer_number,
+                "full_name": patient.full_name,
+                "email": patient.email,
+                "phone": patient.phone,
+                "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+                "preferred_language": patient.preferred_language,
+                "gender": patient.gender,
+                "insurance_provider": patient.insurance_provider,
+                "insurance_policy_number": patient.insurance_policy_number,
+                "created_at": patient.created_at.isoformat() if patient.created_at else None,
+                "updated_at": patient.updated_at.isoformat() if patient.updated_at else None,
+            }
+
+    @app.put("/api/v1/patients/{patient_id}", tags=["Patients"])
+    async def update_patient(patient_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        from datetime import datetime, timezone
+
+        async with sessions() as session:
+            stmt = select(Patient)
+            if patient_id.isdigit():
+                stmt = stmt.where(or_(Patient.id == int(patient_id), Patient.customer_number == patient_id))
+            else:
+                stmt = stmt.where(Patient.customer_number == patient_id)
+            patient = await session.scalar(stmt)
+            if not patient:
+                raise APIError(404, "PATIENT_NOT_FOUND", "Patient not found.")
+
+            if "full_name" in payload or "name" in payload:
+                patient.full_name = str(payload.get("full_name") or payload.get("name")).strip()
+            if "phone" in payload:
+                new_phone = str(payload["phone"]).strip()
+                if not new_phone.startswith("+"):
+                    new_phone = f"+{new_phone}"
+                patient.phone = new_phone
+            if "email" in payload and payload["email"]:
+                patient.email = str(payload["email"]).strip().lower()
+            if "gender" in payload and str(payload["gender"]).lower() in ("male", "female"):
+                patient.gender = str(payload["gender"]).lower()
+            if "insurance_provider" in payload:
+                patient.insurance_provider = str(payload["insurance_provider"]).strip() if payload["insurance_provider"] else None
+            if "insurance_policy_number" in payload:
+                patient.insurance_policy_number = str(payload["insurance_policy_number"]).strip() if payload["insurance_policy_number"] else None
+            if "date_of_birth" in payload or "dob" in payload:
+                raw_dob = payload.get("date_of_birth") or payload.get("dob")
+                if raw_dob:
+                    try:
+                        from datetime import date as dt_date
+                        patient.date_of_birth = dt_date.fromisoformat(str(raw_dob)[:10])
+                    except Exception:
+                        pass
+            if "preferred_language" in payload and str(payload["preferred_language"]).lower() in ("ar", "en"):
+                patient.preferred_language = str(payload["preferred_language"]).lower()
+
+            patient.updated_at = datetime.now(timezone.utc)
+            await session.commit()
+            await session.refresh(patient)
+
+            return {
+                "id": patient.id,
+                "customer_number": patient.customer_number,
+                "full_name": patient.full_name,
+                "email": patient.email,
+                "phone": patient.phone,
+                "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+                "preferred_language": patient.preferred_language,
+                "gender": patient.gender,
+                "insurance_provider": patient.insurance_provider,
+                "insurance_policy_number": patient.insurance_policy_number,
+                "created_at": patient.created_at.isoformat() if patient.created_at else None,
+                "updated_at": patient.updated_at.isoformat() if patient.updated_at else None,
+            }
 
     app.include_router(conversation_router(sessions, settings))
     if settings.identity_enabled:

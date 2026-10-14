@@ -3,14 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Nile Clinics - Patients Management</title>
+  <script>
+    // Self-healing cache buster: Ensures live database version loads immediately without manual force-refresh
+    (function() {
+      try {
+        localStorage.removeItem('clinic_admin_patients_store');
+        localStorage.removeItem('clinic_patients_cache');
+      } catch(e) {}
+      var p = new URLSearchParams(window.location.search);
+      if (p.get('v') !== 'live_v3') {
+        p.set('v', 'live_v3');
+        p.set('_t', String(Date.now()));
+        window.location.replace(window.location.pathname + '?' + p.toString());
+      }
+    })();
+  </script>
 
   <!-- Typography: Inter for UI & Cairo for Arabic details -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=live_v3">
 </head>
 <body>
 
@@ -80,7 +98,7 @@
         </a>
 
         <!-- 5. Patients (Active) -->
-        <a href="patients.html" class="nav-link active" id="nav-patients">
+        <a href="patients.html?v=live_v3" class="nav-link active" id="nav-patients">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
@@ -249,11 +267,10 @@
             <div class="metric-data-col">
               <span class="metric-label">Total Patients</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricTotalPatients">1,284</span>
+                <span class="metric-number" id="metricTotalPatients">0</span>
                 <span class="metric-trend text-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  <span>8%</span>
-                  <span class="trend-sub">this month</span>
+                  <span>Live</span>
+                  <span class="trend-sub">database</span>
                 </span>
               </div>
             </div>
@@ -272,10 +289,9 @@
             <div class="metric-data-col">
               <span class="metric-label">New Patients</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricNewPatients">42</span>
+                <span class="metric-number" id="metricNewPatients">0</span>
                 <span class="metric-trend text-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  <span>12%</span>
+                  <span>Recent</span>
                   <span class="trend-sub">this month</span>
                 </span>
               </div>
@@ -295,11 +311,10 @@
             <div class="metric-data-col">
               <span class="metric-label">Active Patients</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricActivePatients">892</span>
+                <span class="metric-number" id="metricActivePatients">0</span>
                 <span class="metric-trend text-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  <span>5%</span>
-                  <span class="trend-sub">with appointments</span>
+                  <span>Active</span>
+                  <span class="trend-sub">status</span>
                 </span>
               </div>
             </div>
@@ -317,11 +332,9 @@
             <div class="metric-data-col">
               <span class="metric-label">Inactive Patients</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricInactivePatients">392</span>
+                <span class="metric-number" id="metricInactivePatients">0</span>
                 <span class="metric-trend text-red">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                  <span>3%</span>
-                  <span class="trend-sub">no recent activity</span>
+                  <span>Archived</span>
                 </span>
               </div>
             </div>
@@ -339,9 +352,9 @@
             <div class="patients-panel-header">
               <div style="display:flex; align-items:center; gap:10px;">
                 <h2 class="patients-panel-title">Patients</h2>
-                <span class="demo-mode-pill" title="Protected Patient Mode: Backend Administrative Authorization required to query live patient database records.">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  <span>Demo Preview Data</span>
+                <span class="live-status-pill" style="display:inline-flex; align-items:center; gap:5px; background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:12px; border:1px solid #BBF7D0;" title="Live Patient Directory connected to backend database">
+                  <span style="width:7px; height:7px; border-radius:50%; background:#16A34A; display:inline-block;"></span>
+                  <span>Live Database Synced</span>
                 </span>
               </div>
               <div class="patients-header-actions">
@@ -365,10 +378,10 @@
 
             <!-- Segmented Filter Tabs -->
             <div class="patients-nav-tabs">
-              <button class="patient-tab-item active" onclick="filterPatientTab('all', this)">All Patients (1,284)</button>
-              <button class="patient-tab-item" onclick="filterPatientTab('active', this)">Active (892)</button>
-              <button class="patient-tab-item" onclick="filterPatientTab('new', this)">New (42)</button>
-              <button class="patient-tab-item" onclick="filterPatientTab('inactive', this)">Inactive (392)</button>
+              <button class="patient-tab-item active" onclick="filterPatientTab('all', this)">All Patients (<span id="tabCountAll">0</span>)</button>
+              <button class="patient-tab-item" onclick="filterPatientTab('active', this)">Active (<span id="tabCountActive">0</span>)</button>
+              <button class="patient-tab-item" onclick="filterPatientTab('new', this)">New (<span id="tabCountNew">0</span>)</button>
+              <button class="patient-tab-item" onclick="filterPatientTab('inactive', this)">Inactive (<span id="tabCountInactive">0</span>)</button>
             </div>
 
             <!-- Search and Filter Funnel Bar -->
@@ -441,243 +454,12 @@
                   </tr>
                 </thead>
                 <tbody id="patientsTableBody">
-                  <!-- Row 1: Mona Ahmed (Selected by default) -->
-                  <tr class="selected-row" onclick="selectPatientRow(1, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#EDE9FE; color:#7C3AED;">M</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Mona Ahmed</span>
-                          <span class="patient-table-id">PT-2024-001</span>
-                        </div>
+                  <tr id="patientsLoadingRow">
+                    <td colspan="9" style="text-align:center; padding:40px 20px; color:#64748B;">
+                      <div style="display:inline-flex; align-items:center; gap:10px;">
+                        <span class="status-indicator-dot dot-connecting" style="width:10px; height:10px;"></span>
+                        <span style="font-size:13.5px; font-weight:500;">Loading live patients from database...</span>
                       </div>
-                    </td>
-                    <td>+20 101 234 5678</td>
-                    <td>30102123456789</td>
-                    <td>22</td>
-                    <td>Female</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">14 Nov 2024</span>
-                        <span class="appt-dept-text">Cardiology</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-active">Active</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(1, 'Mona Ahmed')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 2: Ahmed Hassan -->
-                  <tr onclick="selectPatientRow(2, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#EFF6FF; color:#2563EB;">A</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Ahmed Hassan</span>
-                          <span class="patient-table-id">PT-2024-002</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>+20 100 987 6543</td>
-                    <td>29901098765432</td>
-                    <td>25</td>
-                    <td>Male</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">10 Nov 2024</span>
-                        <span class="appt-dept-text">Dermatology</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-active">Active</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(2, 'Ahmed Hassan')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 3: Sara Mohamed -->
-                  <tr onclick="selectPatientRow(3, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#EFF6FF; color:#2563EB;">S</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Sara Mohamed</span>
-                          <span class="patient-table-id">PT-2024-003</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>+20 106 543 2198</td>
-                    <td>30203054321987</td>
-                    <td>28</td>
-                    <td>Female</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">12 Nov 2024</span>
-                        <span class="appt-dept-text">Orthopedics</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-active">Active</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(3, 'Sara Mohamed')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 4: Youssef Ali -->
-                  <tr onclick="selectPatientRow(4, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#EEF2FF; color:#4F46E5;">Y</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Youssef Ali</span>
-                          <span class="patient-table-id">PT-2024-004</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>+20 112 345 6789</td>
-                    <td>29802112345678</td>
-                    <td>26</td>
-                    <td>Male</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">05 Nov 2024</span>
-                        <span class="appt-dept-text">General Medicine</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-active">Active</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(4, 'Youssef Ali')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 5: Nour Khaled (Inactive) -->
-                  <tr onclick="selectPatientRow(5, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#FEE2E2; color:#DC2626;">N</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Nour Khaled</span>
-                          <span class="patient-table-id">PT-2024-005</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>+20 109 876 5432</td>
-                    <td>30111098765432</td>
-                    <td>23</td>
-                    <td>Female</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">01 Nov 2024</span>
-                        <span class="appt-dept-text">Cardiology</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-inactive">Inactive</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(5, 'Nour Khaled')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 6: Omar Ibrahim -->
-                  <tr onclick="selectPatientRow(6, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#DCFCE7; color:#15803D;">O</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Omar Ibrahim</span>
-                          <span class="patient-table-id">PT-2024-006</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>+20 120 456 7890</td>
-                    <td>29904045678901</td>
-                    <td>24</td>
-                    <td>Male</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">08 Nov 2024</span>
-                        <span class="appt-dept-text">ENT</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-active">Active</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(6, 'Omar Ibrahim')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 7: Salma Ahmed (Inactive) -->
-                  <tr onclick="selectPatientRow(7, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#FEE2E2; color:#DC2626;">S</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Salma Ahmed</span>
-                          <span class="patient-table-id">PT-2024-007</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>+20 111 234 5678</td>
-                    <td>30207012345678</td>
-                    <td>27</td>
-                    <td>Female</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">21 Oct 2024</span>
-                        <span class="appt-dept-text">Dermatology</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-inactive">Inactive</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(7, 'Salma Ahmed')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 8: Hassan Mostafa -->
-                  <tr onclick="selectPatientRow(8, this)">
-                    <td class="td-checkbox"><input type="checkbox" class="custom-checkbox" onclick="event.stopPropagation()"></td>
-                    <td>
-                      <div class="patient-cell-profile">
-                        <div class="patient-avatar-circle" style="background:#EDE9FE; color:#7C3AED;">H</div>
-                        <div class="patient-name-col">
-                          <span class="patient-table-name">Hassan Mostafa</span>
-                          <span class="patient-table-id">PT-2024-008</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>+20 115 678 9012</td>
-                    <td>29803098765432</td>
-                    <td>29</td>
-                    <td>Male</td>
-                    <td>
-                      <div class="td-last-appt">
-                        <span class="appt-date-text">04 Nov 2024</span>
-                        <span class="appt-dept-text">Orthopedics</span>
-                      </div>
-                    </td>
-                    <td><span class="badge-patient-active">Active</span></td>
-                    <td>
-                      <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(8, 'Hassan Mostafa')">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -696,18 +478,14 @@
 
             <!-- Pagination Footer -->
             <div class="patients-pagination-footer">
-              <span id="paginationText">Showing 1 to 8 of 1,284 patients</span>
-              <div class="pagination-controls">
+              <span id="paginationText">Showing 0 patients</span>
+              <div class="pagination-controls" id="patientsPaginationControls" style="display: none;">
                 <button class="page-arrow-btn" onclick="goToPage('prev')">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
-                <button class="page-num-btn active" onclick="goToPage(1, this)">1</button>
-                <button class="page-num-btn" onclick="goToPage(2, this)">2</button>
-                <button class="page-num-btn" onclick="goToPage(3, this)">3</button>
-                <button class="page-num-btn" onclick="goToPage(4, this)">4</button>
-                <button class="page-num-btn" onclick="goToPage(5, this)">5</button>
-                <span class="page-ellipsis">...</span>
-                <button class="page-num-btn" onclick="goToPage(161, this)">161</button>
+                <div id="paginationPageNumbers" style="display:inline-flex; gap:4px;">
+                  <button class="page-num-btn active" onclick="goToPage(1, this)">1</button>
+                </div>
                 <button class="page-arrow-btn" onclick="goToPage('next')">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
                 </button>
@@ -740,22 +518,22 @@
             </div>
 
             <!-- Patient Hero Row -->
-            <div class="patient-hero-row">
+            <div class="patient-hero-row" id="patientHeroRow" style="display:none;">
               <div class="patient-hero-left">
-                <div class="patient-hero-avatar" id="detailAvatar">M</div>
+                <div class="patient-hero-avatar" id="detailAvatar">—</div>
                 <div class="patient-hero-info">
-                  <h3 class="patient-hero-name" id="detailName">Mona Ahmed</h3>
-                  <span class="patient-hero-id" id="detailId">PT-2024-001</span>
+                  <h3 class="patient-hero-name" id="detailName">—</h3>
+                  <span class="patient-hero-id" id="detailId">—</span>
                 </div>
               </div>
               <div class="badge-active-patient-pill" id="detailStatusBadge">
                 <span class="dot"></span>
-                <span id="detailStatusText">Active Patient</span>
+                <span id="detailStatusText">Active</span>
               </div>
             </div>
 
             <!-- Patient Details Sub Tabs -->
-            <div class="patient-sub-tabs">
+            <div class="patient-sub-tabs" id="patientSubTabs" style="display:none;">
               <button class="sub-tab-btn active" onclick="switchDetailSubTab('overview', this)">Overview</button>
               <button class="sub-tab-btn" onclick="switchDetailSubTab('appointments', this)">Appointments</button>
               <button class="sub-tab-btn" onclick="switchDetailSubTab('records', this)">Medical Records</button>
@@ -763,7 +541,7 @@
             </div>
 
             <!-- Dynamic Tab Content: Overview -->
-            <div id="subTabContentOverview" style="display:flex; flex-direction:column; gap:14px;">
+            <div id="subTabContentOverview" style="display:none; flex-direction:column; gap:14px;">
               
               <!-- SECTION A: Personal Information -->
               <div class="details-card-section">
@@ -781,31 +559,31 @@
                 <div class="details-fields-grid">
                   <div class="details-field-item">
                     <span class="field-label">Full Name</span>
-                    <span class="field-value" id="fieldFullName">Mona Ahmed</span>
+                    <span class="field-value" id="fieldFullName">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">Phone Number</span>
-                    <span class="field-value" id="fieldPhone">+20 101 234 5678</span>
+                    <span class="field-value" id="fieldPhone">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">National ID</span>
-                    <span class="field-value" id="fieldNationalId">30102123456789</span>
+                    <span class="field-value" id="fieldNationalId">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">Date of Birth</span>
-                    <span class="field-value" id="fieldDob">14 March 2002 (22 years)</span>
+                    <span class="field-value" id="fieldDob">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">Gender</span>
-                    <span class="field-value" id="fieldGender">Female</span>
+                    <span class="field-value" id="fieldGender">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">Email</span>
-                    <span class="field-value" id="fieldEmail">mona.ahmed@example.com</span>
+                    <span class="field-value" id="fieldEmail">—</span>
                   </div>
                   <div class="details-field-item full-width">
                     <span class="field-label">Address</span>
-                    <span class="field-value" id="fieldAddress">Heliopolis, Cairo, Egypt</span>
+                    <span class="field-value" id="fieldAddress">—</span>
                   </div>
                 </div>
               </div>
@@ -826,19 +604,19 @@
                 <div class="details-fields-grid">
                   <div class="details-field-item">
                     <span class="field-label">Blood Type</span>
-                    <span class="field-value" id="fieldBloodType">O+</span>
+                    <span class="field-value" id="fieldBloodType">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">Known Allergies</span>
-                    <span class="field-value" id="fieldAllergies">None</span>
+                    <span class="field-value" id="fieldAllergies">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">Chronic Conditions</span>
-                    <span class="field-value" id="fieldChronic">None</span>
+                    <span class="field-value" id="fieldChronic">—</span>
                   </div>
                   <div class="details-field-item">
                     <span class="field-label">Preferred Pharmacy</span>
-                    <span class="field-value" id="fieldPharmacy">Nile Pharmacy - Heliopolis</span>
+                    <span class="field-value" id="fieldPharmacy">—</span>
                   </div>
                 </div>
               </div>
@@ -859,58 +637,92 @@
                 </div>
 
                 <div class="recent-activity-list" id="detailActivityList">
-                  <!-- Item 1: Completed Appointment (Green) -->
-                  <div class="activity-timeline-item">
-                    <div class="activity-dot-circle dot-green"></div>
-                    <div class="activity-content-col">
-                      <div>
-                        <div class="activity-title">Appointment Completed</div>
-                        <div class="activity-sub">Cardiology - Dr. Ahmed Mohamed</div>
-                      </div>
-                      <div class="activity-timestamp">
-                        <div class="activity-date">14 Nov 2024</div>
-                        <div>02:00 PM</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Item 2: Medical Record Updated (Blue) -->
-                  <div class="activity-timeline-item">
-                    <div class="activity-dot-circle dot-blue"></div>
-                    <div class="activity-content-col">
-                      <div>
-                        <div class="activity-title">Medical Record Updated</div>
-                        <div class="activity-sub">Lab Results</div>
-                      </div>
-                      <div class="activity-timestamp">
-                        <div class="activity-date">10 Nov 2024</div>
-                        <div>11:30 AM</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Item 3: New Appointment Booked (Gray) -->
-                  <div class="activity-timeline-item">
-                    <div class="activity-dot-circle dot-gray"></div>
-                    <div class="activity-content-col">
-                      <div>
-                        <div class="activity-title">New Appointment Booked</div>
-                        <div class="activity-sub">Dermatology - Dr. Sara Elsayed</div>
-                      </div>
-                      <div class="activity-timestamp">
-                        <div class="activity-date">01 Nov 2024</div>
-                        <div>04:00 PM</div>
-                      </div>
-                    </div>
+                  <div style="font-size:12.5px; color:#94A3B8; text-align:center; padding:18px 0;">
+                    No past activity recorded for this patient.
                   </div>
                 </div>
               </div>
 
             </div>
 
+            <!-- Dynamic Tab Content: Appointments -->
+            <div id="subTabContentAppointments" style="display:none; flex-direction:column; gap:14px;">
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                    </svg>
+                    <span>Patient Appointments</span>
+                  </div>
+                  <a href="appointments.html" class="section-link-action" style="text-decoration:none;">+ Book Appointment</a>
+                </div>
+                <div id="patientAppointmentsList">
+                  <div style="text-align:center; padding:28px 12px; color:#64748B;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="28" height="28" style="margin-bottom:6px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+                    <div style="font-size:13px; font-weight:600; color:#334155;">No Scheduled Appointments</div>
+                    <div style="font-size:12px; margin-top:2px;">This patient has no upcoming visits scheduled.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Tab Content: Medical Records -->
+            <div id="subTabContentRecords" style="display:none; flex-direction:column; gap:14px;">
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <span>Medical Summary & Clinical Notes</span>
+                  </div>
+                  <button class="section-link-action" onclick="openEditPatientModal('medical')">Edit Medical Info</button>
+                </div>
+                <div class="details-fields-grid">
+                  <div class="details-field-item">
+                    <span class="field-label">Blood Type</span>
+                    <span class="field-value" id="fieldRecordsBloodType">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Insurance Provider</span>
+                    <span class="field-value" id="fieldRecordsInsurance">—</span>
+                  </div>
+                  <div class="details-field-item full-width">
+                    <span class="field-label">Known Allergies</span>
+                    <span class="field-value" id="fieldRecordsAllergies">—</span>
+                  </div>
+                  <div class="details-field-item full-width">
+                    <span class="field-label">Chronic Conditions</span>
+                    <span class="field-value" id="fieldRecordsChronic">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Tab Content: History -->
+            <div id="subTabContentHistory" style="display:none; flex-direction:column; gap:14px;">
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Audit History & Log</span>
+                  </div>
+                  <button class="section-link-action" onclick="openAllPatientActivityModal()">Expand Full Log</button>
+                </div>
+                <div class="recent-activity-list" id="detailFullHistoryList">
+                  <div style="font-size:12.5px; color:#94A3B8; text-align:center; padding:18px 0;">
+                    No past activity logged for this patient.
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Placeholder if panel closed / empty state -->
-            <div id="patientDetailsEmptyNotice" style="display:none; padding:40px 10px; text-align:center;">
-              <p style="color:#64748B; font-size:13px;">Select a patient from the directory to review their comprehensive profile.</p>
+            <div id="patientDetailsEmptyNotice" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">No Patient Selected</h4>
+              <p style="color:#64748B; font-size:13px; margin:0;">Select a patient from the live database directory to review their profile.</p>
             </div>
 
           </div>
@@ -942,10 +754,10 @@
   <div class="toast-stack" id="adminToastContainer"></div>
 
   <!-- Centralized Config & API Client -->
-  <script src="config.js"></script>
-  <script src="api.js"></script>
+  <script src="config.js?v=live_v3"></script>
+  <script src="api.js?v=live_v3"></script>
 
   <!-- Patients Controller Script -->
-  <script src="patients.js"></script>
+  <script src="patients.js?v=live_v3"></script>
 </body>
 </html>

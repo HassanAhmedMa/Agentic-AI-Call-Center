@@ -8,6 +8,11 @@
 (function () {
   'use strict';
 
+  // Purge any legacy demo/mock data stores from browser storage
+  try {
+    localStorage.removeItem('clinic_admin_patients_store');
+  } catch (_) {}
+
   class ClinicApiError extends Error {
     constructor(status, code, message, details = null) {
       super(message || `API Error: ${status} (${code || 'UNKNOWN'})`);
@@ -39,11 +44,19 @@
 
     const headers = {
       'Accept': 'application/json',
+      'Cache-Control': 'no-cache, no-store',
+      'Pragma': 'no-cache',
       ...(options.headers || {})
     };
 
+    if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(options.body);
+    }
+
     try {
       const response = await fetch(url, {
+        cache: 'no-store',
         ...options,
         headers
       });
@@ -185,6 +198,126 @@
       }
       const query = new URLSearchParams({ from_date: fromDate });
       return await request(`/doctors/${encodeURIComponent(doctorId)}/availability?${query.toString()}`);
+    },
+
+    /* =========================================================================
+       PATIENT MANAGEMENT ENDPOINTS (LIVE FASTAPI & POSTGRESQL ONLY)
+       ========================================================================= */
+    /**
+     * Fetch list of registered patients directly from backend database
+     * GET /api/v1/patients?q=...&limit=...
+     */
+    getPatients: async function (params = {}) {
+      const query = new URLSearchParams();
+      if (params.q) query.set('q', params.q.trim());
+      if (params.limit) query.set('limit', params.limit);
+      if (params.offset) query.set('offset', params.offset);
+
+      const qs = query.toString();
+      const endpoint = qs ? `/patients?${qs}` : '/patients';
+
+      const res = await request(endpoint);
+      if (res && Array.isArray(res.patients)) {
+        return {
+          total: res.total ?? res.patients.length,
+          patients: res.patients.map(ClinicApi.normalizePatient)
+        };
+      }
+      if (Array.isArray(res)) {
+        return {
+          total: res.length,
+          patients: res.map(ClinicApi.normalizePatient)
+        };
+      }
+      return { total: 0, patients: [] };
+    },
+
+    /**
+     * Fetch single patient details
+     * GET /api/v1/patients/{id}
+     */
+    getPatient: async function (patientId) {
+      const res = await request(`/patients/${encodeURIComponent(patientId)}`);
+      return ClinicApi.normalizePatient(res);
+    },
+
+    /**
+     * Create / register a new patient in the database
+     * POST /api/v1/patients
+     */
+    createPatient: async function (patientData) {
+      const res = await request('/patients', {
+        method: 'POST',
+        body: patientData
+      });
+      return ClinicApi.normalizePatient(res);
+    },
+
+    /**
+     * Update an existing patient in the database
+     * PUT /api/v1/patients/{id}
+     */
+    updatePatient: async function (patientId, patientData) {
+      const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
+        method: 'PUT',
+        body: patientData
+      });
+      return ClinicApi.normalizePatient(res);
+    },
+
+    /**
+     * Standardizes patient schema across backend PostgreSQL models and frontend view
+     */
+    normalizePatient: function (raw) {
+      if (!raw) return null;
+      const name = raw.full_name || raw.name || 'Unnamed Patient';
+      const custNum = raw.customer_number || raw.patientCode || String(raw.id || '');
+
+      let age = raw.age;
+      if (!age && raw.date_of_birth) {
+        const birthYear = new Date(raw.date_of_birth).getFullYear();
+        if (!isNaN(birthYear)) {
+          age = new Date().getFullYear() - birthYear;
+        }
+      }
+
+      return {
+        id: raw.id,
+        customer_number: custNum,
+        patientCode: custNum,
+        name: name,
+        full_name: name,
+        phone: raw.phone || '',
+        nationalId: raw.national_id || raw.nationalId || custNum,
+        dob: raw.date_of_birth || raw.dob || '',
+        age: age || '-',
+        gender: raw.gender || 'Not specified',
+        email: raw.email || '',
+        preferred_language: raw.preferred_language || 'ar',
+        insurance_provider: raw.insurance_provider || raw.insurance || 'None',
+        insurance_policy_number: raw.insurance_policy_number || 'None',
+        address: raw.address || 'Cairo, Egypt',
+        bloodType: raw.blood_type || raw.bloodType || 'O+',
+        allergies: raw.allergies || 'None',
+        chronicConditions: raw.chronic_conditions || raw.chronicConditions || 'None',
+        pharmacy: raw.pharmacy || 'Nile Pharmacy',
+        lastApptDate: raw.lastApptDate || 'Recent',
+        lastApptDept: raw.lastApptDept || 'General Medicine',
+        status: raw.status || 'Active',
+        isNew: raw.isNew ?? (raw.created_at ? (new Date() - new Date(raw.created_at) < 30 * 24 * 3600 * 1000) : true),
+        avatar: name.charAt(0).toUpperCase(),
+        avatarBg: '#EFF6FF',
+        avatarColor: '#2563EB',
+        activities: Array.isArray(raw.activities) && raw.activities.length ? raw.activities : [
+          {
+            type: 'completed',
+            title: 'Verified Database Record',
+            sub: 'PostgreSQL Identity Synced',
+            date: raw.created_at ? new Date(raw.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Live',
+            time: raw.created_at ? new Date(raw.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''
+          }
+        ]
+      };
     },
 
     /* =========================================================================

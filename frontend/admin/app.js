@@ -258,9 +258,10 @@ function shiftWeek(dir) {
 async function loadLiveOverviewCatalog() {
   if (!window.ClinicApi) return;
   try {
-    const [specData, docData] = await Promise.all([
+    const [specData, docData, patientData] = await Promise.all([
       ClinicApi.getSpecialties().catch(() => []),
-      ClinicApi.getDoctors({ limit: 50 }).catch(() => ({ total: 0, doctors: [] }))
+      ClinicApi.getDoctors({ limit: 50 }).catch(() => ({ total: 0, doctors: [] })),
+      ClinicApi.getPatients({ limit: 1 }).catch(() => ({ total: 0, patients: [] }))
     ]);
 
     const specialties = Array.isArray(specData) ? specData : [];
@@ -268,6 +269,11 @@ async function loadLiveOverviewCatalog() {
 
     const badgeEl = document.getElementById('doctorsCountBadge');
     if (badgeEl && liveDoctors.length > 0) badgeEl.textContent = liveDoctors.length;
+
+    const totalPatientsEl = document.getElementById('metricTotalPatients');
+    if (totalPatientsEl && patientData) {
+      totalPatientsEl.textContent = (patientData.total ?? (patientData.patients ? patientData.patients.length : 0)).toLocaleString();
+    }
 
     if (liveDoctors.length > 0) {
       // Enrich schedule items with real doctor names and specialties from Supabase
@@ -832,7 +838,7 @@ function initSidebarNav() {
       } else if (label === 'Doctors') {
         window.location.href = 'doctors.html';
       } else if (label === 'Patients') {
-        window.location.href = 'patients.html';
+        window.location.href = 'patients.html?v=live_v3';
       } else if (label === 'Knowledge Base' || label === 'Documents') {
         openAddKnowledgeModal();
       } else if (label === 'Analytics') {

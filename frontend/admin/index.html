@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Nile Clinics - Admin Dashboard</title>
 
   <!-- Clean Typography: Inter for Admin Metrics & Cairo for Arabic Live Transcripts -->
@@ -10,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.2">
 </head>
 <body>
 
@@ -80,7 +83,7 @@
         </a>
 
         <!-- 5. Patients -->
-        <a href="patients.html" class="nav-link" id="nav-patients">
+        <a href="patients.html?v=live_v3" class="nav-link" id="nav-patients">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
@@ -270,11 +273,10 @@
             <div class="metric-data-col">
               <span class="metric-label">Total Patients</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricTotalPatients">1,284</span>
+                <span class="metric-number" id="metricTotalPatients">0</span>
                 <span class="metric-trend text-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  <span>8%</span>
-                  <span class="trend-sub">this month</span>
+                  <span>Live</span>
+                  <span class="trend-sub">database</span>
                 </span>
               </div>
             </div>
@@ -847,10 +849,10 @@
   <div class="toast-stack" id="adminToastContainer"></div>
 
   <!-- Centralized Config & API Client -->
-  <script src="config.js"></script>
-  <script src="api.js"></script>
+  <script src="config.js?v=2.2"></script>
+  <script src="api.js?v=2.2"></script>
 
   <!-- Admin Interaction Script -->
-  <script src="app.js"></script>
+  <script src="app.js?v=2.2"></script>
 </body>
 </html>

@@ -7,6 +7,9 @@
 *.cert
 *.crt
 secrets/
+# SSH Keys
+/KEY2.pub
+/KEY2.key
 
 # Operating System Files
 .DS_Store
