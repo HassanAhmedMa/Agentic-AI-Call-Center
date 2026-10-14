@@ -258,17 +258,27 @@ function shiftWeek(dir) {
 async function loadLiveOverviewCatalog() {
   if (!window.ClinicApi) return;
   try {
-    const docData = await ClinicApi.getDoctors({ limit: 50 });
-    if (docData && Array.isArray(docData.doctors) && docData.doctors.length > 0) {
-      const liveDoctors = docData.doctors;
-      // Enrich schedule items with real doctor names and specialties from FastAPI
+    const [specData, docData] = await Promise.all([
+      ClinicApi.getSpecialties().catch(() => []),
+      ClinicApi.getDoctors({ limit: 50 }).catch(() => ({ total: 0, doctors: [] }))
+    ]);
+
+    const specialties = Array.isArray(specData) ? specData : [];
+    const liveDoctors = Array.isArray(docData?.doctors) ? docData.doctors : [];
+
+    const badgeEl = document.getElementById('doctorsCountBadge');
+    if (badgeEl && liveDoctors.length > 0) badgeEl.textContent = liveDoctors.length;
+
+    if (liveDoctors.length > 0) {
+      // Enrich schedule items with real doctor names and specialties from Supabase
       Object.keys(dailyAppointmentsData).forEach((dayKey) => {
         const slots = dailyAppointmentsData[dayKey];
         slots.forEach((slot, idx) => {
           const doc = liveDoctors[idx % liveDoctors.length];
           if (doc) {
             slot.doctor = doc.name_en;
-            if (doc.specialty) slot.dept = doc.specialty.name_en;
+            const spec = specialties.find(s => s.id === doc.specialty_id);
+            slot.dept = doc.specialty?.name_en || (spec ? spec.name_en : 'Cardiology');
           }
         });
       });
@@ -819,6 +829,8 @@ function initSidebarNav() {
         window.location.href = 'live-calls.html';
       } else if (label === 'Appointments') {
         openAllAppointmentsModal();
+      } else if (label === 'Doctors') {
+        window.location.href = 'doctors.html';
       } else if (label === 'Patients') {
         window.location.href = 'patients.html';
       } else if (label === 'Knowledge Base' || label === 'Documents') {

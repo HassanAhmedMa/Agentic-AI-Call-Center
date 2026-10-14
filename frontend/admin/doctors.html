@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nile Clinics - Doctors Directory</title>
+
+  <!-- Typography: Inter for UI & Cairo for Arabic details -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Admin Main Layout Grid -->
+  <div class="admin-layout">
+
+    <!-- =========================================================================
+         LEFT SIDEBAR NAVIGATION
+         ========================================================================= -->
+    <aside class="admin-sidebar">
+      
+      <!-- Top Brand Header -->
+      <div class="sidebar-brand-box">
+        <div class="brand-logo-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+          </svg>
+        </div>
+        <div class="brand-text-col">
+          <h2 class="brand-title">Nile Clinics</h2>
+          <span class="brand-subtitle">AI Call Center</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <!-- 1. Dashboard -->
+        <a href="index.html" class="nav-link" id="nav-dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="nav-text">Dashboard</span>
+        </a>
+
+        <!-- 2. Live Calls -->
+        <a href="live-calls.html" class="nav-link" id="nav-live-calls">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="nav-text">Live Calls</span>
+          <span class="nav-badge-red" id="liveCallsCountBadge">2</span>
+        </a>
+
+        <!-- 3. Appointments -->
+        <a href="appointments.html" class="nav-link" id="nav-appointments">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="nav-text">Appointments</span>
+        </a>
+
+        <!-- 4. Doctors (Active) -->
+        <a href="doctors.html" class="nav-link active" id="nav-doctors">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M3 11h6"/>
+            <path d="M6 8v6"/>
+          </svg>
+          <span class="nav-text">Doctors</span>
+          <span class="nav-badge-blue" id="doctorsCountBadge">10</span>
+        </a>
+
+        <!-- 5. Patients -->
+        <a href="patients.html" class="nav-link" id="nav-patients">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="nav-text">Patients</span>
+        </a>
+
+        <!-- 6. Knowledge Base -->
+        <a href="index.html#knowledge" class="nav-link" id="nav-knowledge">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+          <span class="nav-text">Knowledge Base</span>
+        </a>
+
+        <!-- 7. Documents -->
+        <a href="index.html#documents" class="nav-link" id="nav-documents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          <span class="nav-text">Documents</span>
+        </a>
+
+        <!-- 8. Analytics -->
+        <a href="index.html#analytics" class="nav-link" id="nav-analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <!-- 9. Settings -->
+        <a href="index.html#settings" class="nav-link" id="nav-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom Cluster -->
+      <div class="sidebar-bottom-cluster">
+        <!-- Branch Switcher Card -->
+        <div class="branch-switcher-pill" onclick="handleBranchChange()">
+          <div class="branch-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="branch-name" id="currentBranchName">Main Clinic</span>
+          <svg class="branch-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </div>
+
+        <!-- Admin Profile -->
+        <div class="admin-profile-pill">
+          <div class="admin-avatar-circle">A</div>
+          <div class="admin-profile-meta">
+            <span class="admin-user-name">Ahmed Salah</span>
+            <span class="admin-user-role">Administrator</span>
+          </div>
+        </div>
+
+        <!-- Logout Action -->
+        <button class="logout-btn" onclick="handleLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================================
+         MAIN ADMIN CONTENT WORKSPACE
+         ========================================================================= -->
+    <div class="admin-main-viewport">
+      
+      <!-- Top Search & Status Bar -->
+      <header class="admin-top-bar">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="doctorsGlobalSearch" placeholder="Search doctors by English or Arabic name, specialty, or title..." autocomplete="off">
+          <span class="shortcut-tag">Ctrl K</span>
+        </div>
+
+        <div class="top-bar-right">
+          <!-- Backend API Connection Badge -->
+          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
+            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
+            <span class="status-indicator-text" id="apiStatusText">API: Initializing</span>
+          </div>
+
+          <!-- Notification Bell -->
+          <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="bell-red-badge"></span>
+          </button>
+
+          <!-- Current Date & Time -->
+          <div class="live-clock-box">
+            <span class="live-date" id="liveDateText">Tue, 12 Nov 2024</span>
+            <span class="live-time" id="liveTimeText">10:24 AM</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Doctors Workspace Body -->
+      <main class="dashboard-scroll-body">
+        
+        <!-- Live Data Banner -->
+        <div class="live-source-banner" style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; border-radius:50%; background:#2563EB; color:#fff; display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+                <path d="M3 11h6"/>
+                <path d="M7 8v6"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight:700; color:#1E3A8A; font-size:14px;">Live Doctor Catalog Active</div>
+              <div style="font-size:12.5px; color:#3B82F6;">
+                Real data mapped live from Supabase PostgreSQL schema <code style="font-family:monospace; background:#DBEAFE; padding:1px 5px; border-radius:4px;">clinic.doctors</code> through FastAPI.
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <a href="appointments.html" class="btn-primary-outline" style="text-decoration:none; padding:7px 14px; font-size:12.5px; border-radius:8px; background:#FFFFFF;">View Appointment Slots</a>
+          </div>
+        </div>
+
+        <!-- SECTION 1: TOP 4 METRICS CARDS -->
+        <section class="metrics-grid">
+          
+          <!-- Metric 1: Total Doctors -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-blue-subtle text-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Total Doctors</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricTotalDoctors">10</span>
+                <span class="metric-trend text-green">
+                  <span>Supabase Live</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 2: Active Specialists -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-green-subtle text-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Active Consultants</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricActiveDoctors">10</span>
+                <span class="metric-trend text-green">
+                  <span>100% On-Duty</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 3: Clinical Specialties -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-purple-subtle text-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Medical Specialties</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricSpecialtiesCount">5</span>
+                <span class="metric-trend text-purple">
+                  <span>Departments</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 4: Standard Fee -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-orange-subtle text-orange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Consultation Fee</span>
+              <div class="metric-value-row">
+                <span class="metric-number">350</span>
+                <span class="metric-trend text-orange">
+                  <span>EGP Standard</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- SECTION 2: DOCTORS DIRECTORY PANEL -->
+        <section class="card-panel" style="margin-top: 18px; padding: 22px 24px;">
+          
+          <div class="panel-header-row" style="margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h3 class="panel-title" style="font-size: 18px; margin: 0;">Clinical Staff & Specialists</h3>
+                <span class="badge-total-records" style="background: #EFF6FF; color: #1D4ED8; font-weight: 700; padding: 3px 10px; border-radius: 20px; font-size: 12px;">
+                  <span id="doctorsFilteredCount">10</span> Doctors
+                </span>
+              </div>
+              <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">
+                Real-time doctor profiles, availability shifts, consultation fees, and department specialties.
+              </p>
+            </div>
+
+            <!-- Controls: Search & Department Filter -->
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <div class="table-search-box" style="position: relative; width: 260px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="16" height="16" style="position: absolute; left: 10px; top: 11px;">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="doctorsInlineSearch" placeholder="Search doctor or specialty..." style="width: 100%; height: 38px; border: 1px solid var(--border-light); border-radius: 8px; padding: 0 12px 0 34px; font-size: 13px;">
+              </div>
+
+              <select id="deptFilterSelect" class="filter-select" style="height: 38px; border: 1px solid var(--border-light); border-radius: 8px; padding: 0 12px; font-size: 13px; background: #FFFFFF; color: var(--text-dark);">
+                <option value="all">All Specialties / التخصصات</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div id="doctorsLoadingState" style="display: none; padding: 48px; text-align: center; color: var(--text-muted); flex-direction: column; align-items: center; gap: 12px;">
+            <div class="status-indicator-dot dot-connecting" style="width: 14px; height: 14px;"></div>
+            <span>Fetching live doctors from FastAPI and Supabase database...</span>
+          </div>
+
+          <!-- Error State -->
+          <div id="doctorsErrorState" style="display: none; padding: 20px; background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 10px; color: #B91C1C; margin-bottom: 16px;">
+            <strong style="display: block; font-size: 14px; margin-bottom: 4px;">Error Loading Doctors:</strong>
+            <span id="doctorsErrorMessage">Could not reach FastAPI backend. Please ensure the SSH tunnel on port 8002 is active.</span>
+          </div>
+
+          <!-- Doctors Responsive Grid -->
+          <div class="doctors-cards-grid" id="doctorsGridContainer">
+            <!-- Dynamically populated by doctors.js -->
+          </div>
+
+        </section>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       ADMIN INTERACTIVE MODALS
+       ========================================================================= -->
+  <div class="admin-modal-backdrop" id="adminModalBackdrop" onclick="closeDoctorModal()">
+    <div class="admin-modal-container" id="adminModalContainer" onclick="event.stopPropagation()">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="adminModalTitle">Doctor Profile</h3>
+        <button class="modal-close-icon-btn" onclick="closeDoctorModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="admin-modal-body" id="adminModalBody">
+        <!-- Content injected dynamically -->
+      </div>
+      <div class="admin-modal-footer" id="adminModalFooter">
+        <!-- Footer buttons -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Stack -->
+  <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Centralized Config & API Client -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+
+  <!-- Doctors Controller -->
+  <script src="doctors.js"></script>
+</body>
+</html>

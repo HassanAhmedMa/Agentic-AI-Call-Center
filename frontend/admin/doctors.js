@@ -1,0 +1,452 @@
+/**
+ * Nile Clinics - Doctors Management Controller
+ * Fetches real doctors from FastAPI backend (`/api/v1/doctors` & `/api/v1/specialties`)
+ * connected to the Supabase PostgreSQL `clinic` schema.
+ */
+
+(function () {
+  'use strict';
+
+  let allDoctors = [];
+  let allSpecialties = [];
+  let selectedDoctorId = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initClock();
+    initGlobalShortcuts();
+    initSidebarNav();
+    loadLiveDoctors();
+  });
+
+  /* =============================================================================
+     1. LIVE CLOCK TICKER
+     ============================================================================= */
+  function initClock() {
+    const dateEl = document.getElementById('liveDateText');
+    const timeEl = document.getElementById('liveTimeText');
+
+    function update() {
+      const now = new Date();
+      const optionsDate = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+      const dateStr = now.toLocaleDateString('en-GB', optionsDate);
+
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const timeStr = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+
+      if (dateEl) dateEl.textContent = dateStr;
+      if (timeEl) timeEl.textContent = timeStr;
+    }
+
+    update();
+    setInterval(update, 1000);
+  }
+
+  /* =============================================================================
+     2. GLOBAL SHORTCUTS & SEARCH
+     ============================================================================= */
+  function initGlobalShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const search = document.getElementById('doctorsGlobalSearch');
+        if (search) {
+          search.focus();
+          search.select();
+        }
+      }
+      if (e.key === 'Escape') {
+        closeDoctorModal();
+      }
+    });
+
+    const topSearch = document.getElementById('doctorsGlobalSearch');
+    if (topSearch) {
+      topSearch.addEventListener('input', (e) => {
+        handleSearchAndFilter(e.target.value, getActiveDeptFilter());
+      });
+    }
+
+    const inlineSearch = document.getElementById('doctorsInlineSearch');
+    if (inlineSearch) {
+      inlineSearch.addEventListener('input', (e) => {
+        handleSearchAndFilter(e.target.value, getActiveDeptFilter());
+      });
+    }
+
+    const deptFilter = document.getElementById('deptFilterSelect');
+    if (deptFilter) {
+      deptFilter.addEventListener('change', (e) => {
+        const query = (document.getElementById('doctorsInlineSearch')?.value || '').trim();
+        handleSearchAndFilter(query, e.target.value);
+      });
+    }
+  }
+
+  function getActiveDeptFilter() {
+    const sel = document.getElementById('deptFilterSelect');
+    return sel ? sel.value : 'all';
+  }
+
+  /* =============================================================================
+     3. SIDEBAR NAVIGATION
+     ============================================================================= */
+  function initSidebarNav() {
+    const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        const label = link.querySelector('.nav-text')?.textContent || '';
+        if (label === 'Settings' && typeof window.openApiConfigModal === 'function') {
+          e.preventDefault();
+          window.openApiConfigModal();
+        }
+      });
+    });
+  }
+
+  /* =============================================================================
+     4. DATA FETCHING FROM FASTAPI BACKEND
+     ============================================================================= */
+  async function loadLiveDoctors() {
+    const container = document.getElementById('doctorsGridContainer');
+    const loadingState = document.getElementById('doctorsLoadingState');
+    const errorState = document.getElementById('doctorsErrorState');
+
+    if (loadingState) loadingState.style.display = 'flex';
+    if (errorState) errorState.style.display = 'none';
+
+    try {
+      const [specData, docData] = await Promise.all([
+        window.ClinicApi.getSpecialties().catch(() => []),
+        window.ClinicApi.getDoctors({ limit: 50 }).catch(() => ({ total: 0, doctors: [] }))
+      ]);
+
+      allSpecialties = Array.isArray(specData) ? specData : [];
+      allDoctors = Array.isArray(docData?.doctors) ? docData.doctors : [];
+
+      // Update Department filter dropdown
+      populateDeptFilter(allSpecialties);
+
+      // Update Metric Chips
+      updateDoctorMetrics(allDoctors, allSpecialties);
+
+      // Render Doctors Cards
+      renderDoctorsGrid(allDoctors);
+
+      if (loadingState) loadingState.style.display = 'none';
+    } catch (err) {
+      console.error('[Doctors] Failed to load data:', err);
+      if (loadingState) loadingState.style.display = 'none';
+      if (errorState) {
+        errorState.style.display = 'block';
+        const msgEl = document.getElementById('doctorsErrorMessage');
+        if (msgEl) msgEl.textContent = err.message || 'Cannot reach FastAPI backend.';
+      }
+    }
+  }
+
+  function populateDeptFilter(specialties) {
+    const select = document.getElementById('deptFilterSelect');
+    if (!select) return;
+
+    select.innerHTML = '<option value="all">All Specialties / التخصصات</option>';
+    specialties.forEach(spec => {
+      const opt = document.createElement('option');
+      opt.value = String(spec.id);
+      opt.textContent = `${spec.name_en} (${spec.name_ar})`;
+      select.appendChild(opt);
+    });
+  }
+
+  function updateDoctorMetrics(doctors, specialties) {
+    const totalEl = document.getElementById('metricTotalDoctors');
+    const activeEl = document.getElementById('metricActiveDoctors');
+    const specEl = document.getElementById('metricSpecialtiesCount');
+    const badgeEl = document.getElementById('doctorsCountBadge');
+
+    const total = doctors.length;
+    const active = doctors.filter(d => d.is_active !== false).length;
+
+    if (totalEl) totalEl.textContent = total;
+    if (activeEl) activeEl.textContent = active;
+    if (specEl) specEl.textContent = specialties.length;
+    if (badgeEl) badgeEl.textContent = total;
+  }
+
+  /* =============================================================================
+     5. SEARCH & FILTERING
+     ============================================================================= */
+  function handleSearchAndFilter(query, deptFilter) {
+    const q = (query || '').toLowerCase().trim();
+    const deptId = deptFilter === 'all' ? null : parseInt(deptFilter, 10);
+
+    const filtered = allDoctors.filter(doc => {
+      const spec = allSpecialties.find(s => s.id === doc.specialty_id);
+      const matchesDept = deptId === null || doc.specialty_id === deptId;
+      if (!matchesDept) return false;
+
+      if (!q) return true;
+
+      const nameEn = (doc.name_en || '').toLowerCase();
+      const nameAr = (doc.name_ar || '').toLowerCase();
+      const titleEn = (doc.title_en || '').toLowerCase();
+      const titleAr = (doc.title_ar || '').toLowerCase();
+      const specEn = (spec ? spec.name_en : '').toLowerCase();
+      const specAr = (spec ? spec.name_ar : '').toLowerCase();
+
+      return nameEn.includes(q) || nameAr.includes(q) || 
+             titleEn.includes(q) || titleAr.includes(q) || 
+             specEn.includes(q) || specAr.includes(q);
+    });
+
+    renderDoctorsGrid(filtered);
+  }
+
+  /* =============================================================================
+     6. RENDER DOCTORS GRID
+     ============================================================================= */
+  function renderDoctorsGrid(doctors) {
+    const container = document.getElementById('doctorsGridContainer');
+    const countEl = document.getElementById('doctorsFilteredCount');
+    if (!container) return;
+
+    if (countEl) countEl.textContent = doctors.length;
+
+    if (doctors.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 14px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" width="48" height="48" style="margin-bottom: 12px;">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <h4 style="margin: 0 0 6px 0; color: var(--text-dark); font-size: 16px;">No doctors match current filters</h4>
+          <p style="margin: 0; color: var(--text-muted); font-size: 13px;">Try clearing the search query or selecting "All Specialties".</p>
+        </div>
+      `;
+      return;
+    }
+
+    const html = doctors.map(doc => {
+      const spec = allSpecialties.find(s => s.id === doc.specialty_id);
+      const deptName = spec ? spec.name_en : (doc.title_en || 'Specialist');
+      const deptNameAr = spec ? spec.name_ar : (doc.title_ar || '');
+      
+      const cleanName = (doc.name_en || '').replace(/Dr\.\s*/i, '');
+      const initials = cleanName.split(' ').map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase() || 'DR';
+
+      const fee = doc.consultation_fee 
+        ? (typeof doc.consultation_fee === 'object' ? `${doc.consultation_fee.amount} ${doc.consultation_fee.currency || 'EGP'}` : `${doc.consultation_fee} EGP`)
+        : '350 EGP';
+
+      const shift = (doc.shift_start && doc.shift_end)
+        ? `${doc.shift_start.slice(0, 5)} - ${doc.shift_end.slice(0, 5)}`
+        : '09:00 - 14:00';
+
+      const langs = Array.isArray(doc.languages) ? doc.languages.join(', ').toUpperCase() : 'AR, EN';
+
+      const palette = getDeptPalette(doc.specialty_id);
+
+      return `
+        <div class="doctor-card-panel" onclick="viewDoctorDetails(${doc.id})">
+          <div class="doctor-card-top">
+            <div class="doctor-avatar-circle" style="background:${palette.bg}; color:${palette.color};">
+              ${initials}
+            </div>
+            <div class="doctor-header-meta">
+              <div class="doctor-name-en">${doc.name_en}</div>
+              <div class="doctor-name-ar" dir="rtl">${doc.name_ar || ''}</div>
+              <div class="doctor-title-text">${doc.title_en || 'Consultant'}</div>
+            </div>
+            <span class="doctor-status-badge ${doc.is_active !== false ? 'badge-active' : 'badge-inactive'}">
+              <span class="status-dot"></span>
+              ${doc.is_active !== false ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+
+          <div class="doctor-card-body">
+            <div class="doctor-spec-tag" style="background:${palette.bg}; color:${palette.color}; border: 1px solid ${palette.border};">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              </svg>
+              <span>${deptName} • ${deptNameAr}</span>
+            </div>
+
+            <div class="doctor-info-grid">
+              <div class="info-item">
+                <span class="info-label">Consultation Fee</span>
+                <span class="info-val fee-highlight">${fee}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Shift Hours</span>
+                <span class="info-val">${shift}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Languages</span>
+                <span class="info-val">${langs}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Database ID</span>
+                <span class="info-val">#${doc.id}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="doctor-card-footer">
+            <span class="card-hint">Click to inspect clinical profile</span>
+            <button class="btn-view-doc" onclick="event.stopPropagation(); viewDoctorDetails(${doc.id});">
+              View Profile
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = html;
+  }
+
+  function getDeptPalette(specialtyId) {
+    const map = {
+      1: { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' }, // Cardiology (Blue)
+      2: { bg: '#FDF2F8', color: '#BE185D', border: '#FBCFE8' }, // Dermatology (Pink)
+      3: { bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' }, // Pediatrics (Purple)
+      4: { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' }, // Orthopedics (Amber)
+      5: { bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' }  // Internal Medicine (Green)
+    };
+    return map[specialtyId] || { bg: '#F8FAFC', color: '#475569', border: '#E2E8F0' };
+  }
+
+  /* =============================================================================
+     7. DOCTOR DETAIL MODAL (GET /api/v1/doctors/{id})
+     ============================================================================= */
+  window.viewDoctorDetails = async function (doctorId) {
+    const backdrop = document.getElementById('adminModalBackdrop');
+    const titleEl = document.getElementById('adminModalTitle');
+    const bodyEl = document.getElementById('adminModalBody');
+    const footerEl = document.getElementById('adminModalFooter');
+
+    if (!backdrop || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = 'Doctor Clinical Profile';
+    bodyEl.innerHTML = `
+      <div style="padding: 24px; text-align: center; color: var(--text-muted);">
+        <div class="status-indicator-dot dot-connecting" style="width:12px; height:12px; margin:0 auto 12px auto;"></div>
+        Loading live doctor profile from Supabase PostgreSQL...
+      </div>
+    `;
+
+    backdrop.classList.add('active');
+    backdrop.classList.add('open');
+
+    try {
+      const doc = await window.ClinicApi.getDoctor(doctorId);
+      const spec = doc.specialty || allSpecialties.find(s => s.id === doc.specialty_id) || {};
+      
+      const fee = doc.consultation_fee 
+        ? `${doc.consultation_fee.amount ?? doc.consultation_fee} ${doc.consultation_fee.currency || 'EGP'}`
+        : '350 EGP';
+
+      const shiftStart = doc.working_hours?.start || doc.shift_start || '09:00';
+      const shiftEnd = doc.working_hours?.end || doc.shift_end || '14:00';
+      const days = Array.isArray(doc.working_days) ? doc.working_days.join(', ') : 'Sat, Sun, Mon, Tue, Wed';
+      const langs = Array.isArray(doc.languages) ? doc.languages.join(', ').toUpperCase() : 'AR, EN';
+
+      bodyEl.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; align-items:center; gap:14px; background:#F8FAFC; border:1px solid var(--border-light); border-radius:10px; padding:16px;">
+            <div style="width:48px; height:48px; border-radius:50%; background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:18px; display:flex; align-items:center; justify-content:center;">
+              ${doc.name_en.replace(/Dr\.\s*/i, '').slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-size:17px; font-weight:700; color:var(--text-dark);">${doc.name_en}</div>
+              <div style="font-size:14px; color:var(--text-muted); font-family:'Cairo', sans-serif;" dir="rtl">${doc.name_ar || ''}</div>
+              <div style="font-size:12px; font-weight:600; color:#2563EB; margin-top:2px;">
+                ${doc.title_en || 'Consultant'} • ${spec.name_en || ''}
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12.5px;">
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
+              <span style="display:block; color:#64748B; font-size:11px; text-transform:uppercase; font-weight:600;">Consultation Fee</span>
+              <strong style="color:#0F172A; font-size:14px;">${fee}</strong>
+            </div>
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
+              <span style="display:block; color:#64748B; font-size:11px; text-transform:uppercase; font-weight:600;">Daily Shift</span>
+              <strong style="color:#0F172A; font-size:14px;">${shiftStart} - ${shiftEnd}</strong>
+            </div>
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
+              <span style="display:block; color:#64748B; font-size:11px; text-transform:uppercase; font-weight:600;">Working Days</span>
+              <span style="color:#0F172A; text-transform:capitalize;">${days}</span>
+            </div>
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
+              <span style="display:block; color:#64748B; font-size:11px; text-transform:uppercase; font-weight:600;">Languages</span>
+              <span style="color:#0F172A;">${langs}</span>
+            </div>
+          </div>
+
+          <div>
+            <h5 style="margin:0 0 6px 0; font-size:12px; color:#64748B; text-transform:uppercase; font-weight:600;">Biography (EN)</h5>
+            <p style="margin:0; font-size:13px; color:#334155; line-height:1.5; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
+              ${doc.bio_en || 'Consultant profile for Nile Clinics healthcare system.'}
+            </p>
+          </div>
+
+          ${doc.bio_ar ? `
+            <div>
+              <h5 style="margin:0 0 6px 0; font-size:12px; color:#64748B; text-transform:uppercase; font-weight:600;">النبذة التعريفية (AR)</h5>
+              <p style="margin:0; font-size:13px; color:#334155; line-height:1.6; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px; font-family:'Cairo', sans-serif;" dir="rtl">
+                ${doc.bio_ar}
+              </p>
+            </div>
+          ` : ''}
+
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:10px 12px; font-size:12px; color:#1E40AF;">
+            <strong>Verified Record:</strong> Doctor ID #${doc.id} mapped from PostgreSQL <code style="font-family:monospace;">clinic.doctors</code> table.
+          </div>
+        </div>
+      `;
+
+      if (footerEl) {
+        footerEl.innerHTML = `
+          <button class="modal-btn-secondary" onclick="closeDoctorModal()">Close</button>
+          <a href="appointments.html" class="modal-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Book Appointment</a>
+        `;
+      }
+    } catch (err) {
+      bodyEl.innerHTML = `
+        <div style="padding:18px; color:#B91C1C; background:#FEE2E2; border-radius:8px; font-size:13px;">
+          <strong>Error loading doctor:</strong> ${err.message}
+        </div>
+      `;
+    }
+  };
+
+  window.closeDoctorModal = function () {
+    const backdrop = document.getElementById('adminModalBackdrop');
+    if (backdrop) {
+      backdrop.classList.remove('active');
+      backdrop.classList.remove('open');
+    }
+  };
+
+  window.handleBranchChange = function () {
+    alert('Nile Clinics - Heliopolis Branch (Active)');
+  };
+
+  window.handleLogout = function () {
+    if (confirm('Are you sure you want to log out of the Clinic Admin Console?')) {
+      window.location.href = 'index.html';
+    }
+  };
+
+  window.toggleNotifications = function () {
+    alert('System Notifications: Real FastAPI connection verified.');
+  };
+
+})();

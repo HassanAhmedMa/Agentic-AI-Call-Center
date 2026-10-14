@@ -946,8 +946,9 @@ function populateDoctorsFilter(doctors) {
   doctors.forEach(doc => {
     const opt = document.createElement('option');
     opt.value = doc.name_en;
-    const deptName = doc.specialty ? doc.specialty.name_en : '';
-    opt.textContent = `${doc.name_en} (${deptName || doc.title_en})`;
+    const spec = liveSpecialtiesCache.find(s => s.id === doc.specialty_id);
+    const deptName = doc.specialty?.name_en || (spec ? spec.name_en : doc.title_en || 'Consultant');
+    opt.textContent = `${doc.name_en} (${deptName})`;
     select.appendChild(opt);
   });
 
@@ -970,14 +971,54 @@ function updateDoctorScheduleColumns(doctors) {
     const deptEl = th.querySelector('.doctor-header-dept');
     const avatarEl = th.querySelector('.doctor-header-avatar');
 
+    const spec = liveSpecialtiesCache.find(s => s.id === doc.specialty_id);
+    const deptName = doc.specialty?.name_en || (spec ? spec.name_en : 'Consultant');
+
     if (nameEl) nameEl.textContent = doc.name_en;
-    if (deptEl && doc.specialty) deptEl.textContent = doc.specialty.name_en;
+    if (deptEl) deptEl.textContent = deptName;
     if (avatarEl) {
       const cleanName = doc.name_en.replace(/Dr\.\s*/i, '');
       const initials = cleanName.split(' ').map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase();
       avatarEl.textContent = initials || 'DR';
     }
   });
+
+  // Map appointmentsData to match real doctors
+  if (Array.isArray(appointmentsData)) {
+    appointmentsData.forEach((appt, idx) => {
+      const doc = doctors[idx % doctors.length];
+      if (doc) {
+        const spec = liveSpecialtiesCache.find(s => s.id === doc.specialty_id);
+        appt.doctor = doc.name_en;
+        appt.doctorDept = doc.specialty?.name_en || (spec ? spec.name_en : appt.doctorDept);
+      }
+    });
+  }
+
+  // Update Right Panel Upcoming Agenda
+  const upcomingDocs = document.querySelectorAll('.upcoming-doctor-text');
+  const upcomingDepts = document.querySelectorAll('.upcoming-dept-text');
+  upcomingDocs.forEach((el, idx) => {
+    const doc = doctors[idx % doctors.length];
+    if (doc) {
+      el.textContent = doc.name_en;
+      const spec = liveSpecialtiesCache.find(s => s.id === doc.specialty_id);
+      if (upcomingDepts[idx]) {
+        upcomingDepts[idx].textContent = doc.specialty?.name_en || (spec ? spec.name_en : 'Consultant');
+      }
+    }
+  });
+
+  // Update active selected appointment card if displayed
+  const apptDoctorField = document.getElementById('apptFieldDoctor');
+  const apptDeptField = document.getElementById('apptFieldDept');
+  if (apptDoctorField && doctors[0]) {
+    apptDoctorField.textContent = doctors[0].name_en;
+    if (apptDeptField) {
+      const spec = liveSpecialtiesCache.find(s => s.id === doctors[0].specialty_id);
+      apptDeptField.textContent = doctors[0].specialty?.name_en || (spec ? spec.name_en : 'Cardiology');
+    }
+  }
 }
 
 async function syncLiveAvailability() {
