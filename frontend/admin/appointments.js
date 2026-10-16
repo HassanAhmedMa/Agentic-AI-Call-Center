@@ -864,8 +864,6 @@ function updateMetricsDisplay() {
    11. MODAL DIALOGS
    ============================================================================= */
 
-let livePatientsCache = [];
-
 window.handleSelectRegisteredPatient = function(selectEl) {
   const selectedOpt = selectEl.options[selectEl.selectedIndex];
   if (!selectedOpt || !selectedOpt.value) return;
