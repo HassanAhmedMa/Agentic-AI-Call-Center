@@ -11,7 +11,15 @@ from typing import Annotated, Any, Literal
 from uuid import uuid4
 
 from clinic_schemas import catalog as dto
-from fastapi import Depends, FastAPI, Path, Query, Request
+from fastapi import (
+    Depends,
+    FastAPI,
+    Path,
+    Query,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -29,6 +37,7 @@ from clinic_backend.errors import APIError, ErrorEnvelope, error_response
 from clinic_backend.identity_models import Patient
 from clinic_backend.mail import Delivery, SMTPDelivery
 from clinic_backend.settings import Settings
+from clinic_backend.websocket_manager import ws_manager
 
 logger = logging.getLogger("clinic_backend")
 
@@ -448,6 +457,15 @@ def create_app(
             await session.commit()
             await session.refresh(patient)
 
+            await ws_manager.broadcast(
+                "PATIENT_CREATED",
+                {
+                    "id": patient.id,
+                    "customer_number": patient.customer_number,
+                    "full_name": patient.full_name,
+                },
+            )
+
             return {
                 "id": patient.id,
                 "customer_number": patient.customer_number,
@@ -507,6 +525,15 @@ def create_app(
             await session.commit()
             await session.refresh(patient)
 
+            await ws_manager.broadcast(
+                "PATIENT_UPDATED",
+                {
+                    "id": patient.id,
+                    "customer_number": patient.customer_number,
+                    "full_name": patient.full_name,
+                },
+            )
+
             return {
                 "id": patient.id,
                 "customer_number": patient.customer_number,
@@ -521,6 +548,41 @@ def create_app(
                 "created_at": patient.created_at.isoformat() if patient.created_at else None,
                 "updated_at": patient.updated_at.isoformat() if patient.updated_at else None,
             }
+
+    @app.websocket("/api/v1/ws")
+    @app.websocket("/ws")
+    async def websocket_realtime_endpoint(websocket: WebSocket) -> None:
+        await ws_manager.connect(websocket)
+        try:
+            from datetime import datetime, timezone
+
+            await websocket.send_json(
+                {
+                    "event": "CONNECTED",
+                    "data": {
+                        "status": "ready",
+                        "server_time": datetime.now(timezone.utc).isoformat(),
+                    },
+                }
+            )
+            while True:
+                data = await websocket.receive_text()
+                if data == "ping":
+                    await websocket.send_text("pong")
+                elif data == "heartbeat":
+                    await websocket.send_json({"event": "PONG"})
+        except (WebSocketDisconnect, Exception):
+            await ws_manager.disconnect(websocket)
+
+    @app.post("/api/v1/ws/broadcast", tags=["Realtime"])
+    async def broadcast_realtime_event(payload: dict[str, Any]) -> dict[str, Any]:
+        event_type = str(payload.get("event") or "SYSTEM_NOTIFICATION")
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        await ws_manager.broadcast(event_type, data)
+        return {
+            "status": "broadcasted",
+            "active_clients": len(ws_manager.active_connections),
+        }
 
     app.include_router(conversation_router(sessions, settings))
     if settings.identity_enabled:

@@ -7,8 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initGlobalShortcuts();
   initLiveCallTimers();
-  selectLiveCallRow(1);
+  if (liveCallsDatabase.length > 0) selectLiveCallRow(liveCallsDatabase[0].id);
+  initRealtimeLiveCallsSync();
 });
+
+function initRealtimeLiveCallsSync() {
+  if (!window.ClinicRealtime) return;
+  window.ClinicRealtime.on('CALL_INCOMING', (call) => {
+    if (typeof showToast === 'function') {
+      showToast(`Incoming call from ${call?.caller || 'Patient'}`, 'info');
+    }
+  });
+  window.ClinicRealtime.on('CALL_ENDED', () => {
+    if (typeof showToast === 'function') {
+      showToast('Live call completed and logged.', 'info');
+    }
+  });
+}
 
 /* =============================================================================
    1. LIVE CLOCK TICKER
@@ -40,219 +55,9 @@ function initClock() {
 /* =============================================================================
    2. LIVE CALLS DATA STORE (Deterministic Mock Data matching UI Specs)
    ============================================================================= */
-const liveCallsDatabase = [
-  {
-    id: 1,
-    caller: "Mona Ahmed",
-    phone: "+20 101 234 5678",
-    patientCode: "PT-2024-001",
-    patientStatus: "Known Patient",
-    dept: "Cardiology",
-    deptIcon: "heart",
-    durationSeconds: 166, // 02:46
-    status: "AI Handling",
-    intent: "Book Appointment",
-    intentColor: "intent-blue",
-    confidence: "92%",
-    transcriptSnippet: "عايزه احجز مع دكتور القلب",
-    callerMeta: "PT-2024-001 | 22 years | Female",
-    entityDept: "Department: Cardiology",
-    entityDate: "Date: Thursday, 14 Nov",
-    entityTime: "Time: Afternoon",
-    avatar: "M",
-    avatarBg: "#EDE9FE",
-    avatarColor: "#7C3AED",
-    dialogue: [
-      { sender: "ai", text: "مرحباً! ازاي اقدر اساعدك النهارده؟", time: "01:24 AM" },
-      { sender: "caller", text: "عايزه احجز مع دكتور القلب يوم الخميس بعد الضهر", time: "01:25 AM" },
-      { sender: "ai", text: "تمام اسمحي لي أتحقق من المواعيد المتاحة لك...", time: "01:25 AM" }
-    ]
-  },
-  {
-    id: 2,
-    caller: "Unknown",
-    phone: "+20 112 345 6789",
-    patientCode: "Not Found",
-    patientStatus: "New Caller",
-    dept: "General",
-    deptIcon: "building",
-    durationSeconds: 72, // 01:12
-    status: "Waiting",
-    intent: "General Inquiry",
-    intentColor: "intent-gray",
-    confidence: "88%",
-    transcriptSnippet: "مواعيد العيادة ايه ؟",
-    callerMeta: "New Caller | Unregistered",
-    entityDept: "Department: General Medicine",
-    entityDate: "Date: Today",
-    entityTime: "Time: Immediate Assistance",
-    avatar: "U",
-    avatarBg: "#F1F5F9",
-    avatarColor: "#475569",
-    dialogue: [
-      { sender: "ai", text: "أهلاً بك في عيادات النيل. كيف أستطيع مساعدتك؟", time: "01:25 AM" },
-      { sender: "caller", text: "مواعيد العيادة ايه ومين متاح دلوقتي؟", time: "01:26 AM" }
-    ]
-  },
-  {
-    id: 3,
-    caller: "Sara Mohamed",
-    phone: "+20 106 543 2198",
-    patientCode: "PT-2024-003",
-    patientStatus: "Known Patient",
-    dept: "Dermatology",
-    deptIcon: "heart",
-    durationSeconds: 321, // 05:21
-    status: "Human Agent",
-    intent: "Medical Advice",
-    intentColor: "intent-green",
-    confidence: "95%",
-    transcriptSnippet: "عندي التهاب في الجلد ...",
-    callerMeta: "PT-2024-003 | 28 years | Female",
-    entityDept: "Department: Dermatology",
-    entityDate: "Date: Today",
-    entityTime: "Time: Urgent Consultation",
-    avatar: "S",
-    avatarBg: "#EFF6FF",
-    avatarColor: "#2563EB",
-    dialogue: [
-      { sender: "caller", text: "عندي التهاب شديد في الجلد بعد استخدام المرهم", time: "01:21 AM" },
-      { sender: "agent", text: "معاكي دكتورة سارة من الاستقبال الطبي، هحولك فوراً لطبيب الجلدية المناوب", time: "01:22 AM" }
-    ]
-  },
-  {
-    id: 4,
-    caller: "Ahmed Hassan",
-    phone: "+20 100 987 6543",
-    patientCode: "PT-2024-002",
-    patientStatus: "Known Patient",
-    dept: "Orthopedics",
-    deptIcon: "bone",
-    durationSeconds: 190, // 03:10
-    status: "AI Handling",
-    intent: "Reschedule",
-    intentColor: "intent-purple",
-    confidence: "91%",
-    transcriptSnippet: "عايز اغير الموعد ...",
-    callerMeta: "PT-2024-002 | 25 years | Male",
-    entityDept: "Department: Orthopedics",
-    entityDate: "Date: Sunday, 17 Nov",
-    entityTime: "Time: 11:30 AM",
-    avatar: "A",
-    avatarBg: "#EFF6FF",
-    avatarColor: "#2563EB",
-    dialogue: [
-      { sender: "caller", text: "عايز اغير موعد استشارة العظام ليوم الأحد", time: "01:23 AM" },
-      { sender: "ai", text: "تم العثور على حجزك الحالي. هل ترغب بنقله للساعة 11:30 صباحاً؟", time: "01:24 AM" }
-    ]
-  },
-  {
-    id: 5,
-    caller: "Youssef Ali",
-    phone: "+20 112 345 6789",
-    patientCode: "Not Found",
-    patientStatus: "New Caller",
-    dept: "General",
-    deptIcon: "building",
-    durationSeconds: 58, // 00:58
-    status: "AI Handling",
-    intent: "Insurance Inquiry",
-    intentColor: "intent-orange",
-    confidence: "94%",
-    transcriptSnippet: "التأمين بتاعك متعاقد مع ...",
-    callerMeta: "New Caller | Insurance Inquiry",
-    entityDept: "Department: Insurance & Billing",
-    entityDate: "Date: Today",
-    entityTime: "Time: Office Hours",
-    avatar: "Y",
-    avatarBg: "#EEF2FF",
-    avatarColor: "#4F46E5",
-    dialogue: [
-      { sender: "caller", text: "التأمين بتاعكم متعاقد مع شركة أكسا الطبية؟", time: "01:26 AM" },
-      { sender: "ai", text: "نعم، عيادات النيل معتمدة لشبكة أكسا الطبية من الفئة الذهبية والفضية.", time: "01:26 AM" }
-    ]
-  },
-  {
-    id: 6,
-    caller: "Nour Khaled",
-    phone: "+20 109 876 5432",
-    patientCode: "PT-2024-005",
-    patientStatus: "Known Patient",
-    dept: "Cardiology",
-    deptIcon: "heart",
-    durationSeconds: 433, // 07:13
-    status: "Human Agent",
-    intent: "Follow-up",
-    intentColor: "intent-red",
-    confidence: "96%",
-    transcriptSnippet: "كنت عايزه اسأل عن نتيجة ...",
-    callerMeta: "PT-2024-005 | 23 years | Female",
-    entityDept: "Department: Cardiology",
-    entityDate: "Date: 14 Nov 2024",
-    entityTime: "Time: Lab Reports Review",
-    avatar: "N",
-    avatarBg: "#FEE2E2",
-    avatarColor: "#DC2626",
-    dialogue: [
-      { sender: "caller", text: "كنت عايزه اسأل عن نتيجة رسم القلب اللي عملته إمبارح", time: "01:19 AM" },
-      { sender: "agent", text: "أهلاً أستاذة نور، نتيجة الفحص جاهزة وتم رفعها لملفك مع دكتور محمود", time: "01:20 AM" }
-    ]
-  },
-  {
-    id: 7,
-    caller: "Omar Ibrahim",
-    phone: "+20 120 456 7890",
-    patientCode: "PT-2024-006",
-    patientStatus: "Known Patient",
-    dept: "ENT",
-    deptIcon: "steth",
-    durationSeconds: 105, // 01:45
-    status: "AI Handling",
-    intent: "Clinic Information",
-    intentColor: "intent-green",
-    confidence: "89%",
-    transcriptSnippet: "فين فرع مصر الجديدة ؟",
-    callerMeta: "PT-2024-006 | 24 years | Male",
-    entityDept: "Department: Clinic Locations",
-    entityDate: "Date: Heliopolis Branch",
-    entityTime: "Time: Open until 10 PM",
-    avatar: "O",
-    avatarBg: "#DCFCE7",
-    avatarColor: "#15803D",
-    dialogue: [
-      { sender: "caller", text: "فين فرع مصر الجديدة بالظبط والمواعيد لحد كام؟", time: "01:25 AM" },
-      { sender: "ai", text: "فرع مصر الجديدة يقع في شارع الميرغني، العيادات تعمل يومياً حتى العاشرة مساءً.", time: "01:25 AM" }
-    ]
-  },
-  {
-    id: 8,
-    caller: "Hassan Mostafa",
-    phone: "+20 115 678 9012",
-    patientCode: "PT-2024-008",
-    patientStatus: "Known Patient",
-    dept: "Pediatrics",
-    deptIcon: "baby",
-    durationSeconds: 249, // 04:09
-    status: "AI Handling",
-    intent: "Book Appointment",
-    intentColor: "intent-blue",
-    confidence: "93%",
-    transcriptSnippet: "احجز لطفلي مع دكتور الأطفال",
-    callerMeta: "PT-2024-008 | 29 years | Male",
-    entityDept: "Department: Pediatrics",
-    entityDate: "Date: Monday, 18 Nov",
-    entityTime: "Time: 05:00 PM",
-    avatar: "H",
-    avatarBg: "#EDE9FE",
-    avatarColor: "#7C3AED",
-    dialogue: [
-      { sender: "caller", text: "عايز احجز لطفلي مع دكتور الأطفال عشان عنده تطعيم وسخونية", time: "01:22 AM" },
-      { sender: "ai", text: "سلامته ألف سلامة. دكتور طارق عمر استشاري الأطفال متاح يوم الإثنين.", time: "01:23 AM" }
-    ]
-  }
-];
+const liveCallsDatabase = [];
 
-let currentlySelectedLiveCallId = 1;
+let currentlySelectedLiveCallId = null;
 let currentLiveCallsTab = 'all';
 let isHandleMuted = false;
 let isHandleOnHold = false;

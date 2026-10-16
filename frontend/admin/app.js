@@ -10,7 +10,26 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebarNav();
   initSearchFilter();
   loadLiveOverviewCatalog();
+  initRealtimeDashboardSync();
 });
+
+function initRealtimeDashboardSync() {
+  if (!window.ClinicRealtime) return;
+  window.ClinicRealtime.on('PATIENT_CREATED', (data) => {
+    if (window.ClinicCache) window.ClinicCache.invalidate('patients');
+    if (typeof showToast === 'function') {
+      showToast(`Real-time: New patient ${data.full_name || ''} registered.`, 'info');
+    }
+  });
+  window.ClinicRealtime.on('PATIENT_UPDATED', () => {
+    if (window.ClinicCache) window.ClinicCache.invalidate('patients');
+  });
+  window.ClinicRealtime.on('CALL_INCOMING', (data) => {
+    if (typeof showToast === 'function') {
+      showToast(`Incoming Call: ${data.caller || 'Patient'}`, 'info');
+    }
+  });
+}
 
 /* =============================================================================
    1. LIVE CLOCK & DATE TICKER
@@ -45,11 +64,11 @@ function initClock() {
 /* =============================================================================
    2. LIVE CALL TIMER & CONTROLS
    ============================================================================= */
-let callTimerSeconds = 154; // 00:02:34 base matching reference
+let callTimerSeconds = 0;
 let callTimerInterval = null;
 let isCallMuted = false;
 let isCallOnHold = false;
-let isCallActive = true;
+let isCallActive = false;
 
 function initLiveCallTimer() {
   const timerEl = document.getElementById('liveCallTimer');
@@ -165,33 +184,13 @@ function simulateNewIncomingCall() {
    3. CALENDAR STRIP & APPOINTMENTS SELECTION
    ============================================================================= */
 const dailyAppointmentsData = {
-  10: [], // Empty state demonstration: Sunday has no clinic slots
-  11: [
-    { time: '09:00 AM', doctor: 'Dr. Mahmoud Taha', dept: 'Cardiology', status: 'confirmed' },
-    { time: '11:00 AM', doctor: 'Dr. Mona Khaled', dept: 'Cardiology', status: 'confirmed' },
-    { time: '01:30 PM', doctor: 'Dr. Youssef Hassan', dept: 'General Medicine', status: 'confirmed' }
-  ],
-  12: [
-    { time: '09:00 AM', doctor: 'Ahmed Mohamed', dept: 'Cardiology', status: 'confirmed' },
-    { time: '10:30 AM', doctor: 'Sara Elsaid', dept: 'Dermatology', status: 'inclinic' },
-    { time: '12:00 PM', doctor: 'Mohamed Ali', dept: 'Orthopedics', status: 'confirmed' },
-    { time: '02:30 PM', doctor: 'Mona Khaled', dept: 'Cardiology', status: 'pending' },
-    { time: '04:00 PM', doctor: 'Youssef Hassan', dept: 'General Medicine', status: 'confirmed' }
-  ],
-  13: [
-    { time: '10:00 AM', doctor: 'Sara Elsaid', dept: 'Dermatology', status: 'confirmed' },
-    { time: '11:30 AM', doctor: 'Dr. Tarek Omar', dept: 'Pediatrics', status: 'confirmed' },
-    { time: '03:00 PM', doctor: 'Ahmed Mohamed', dept: 'Cardiology', status: 'pending' }
-  ],
-  14: [
-    { time: '09:30 AM', doctor: 'Dr. Ahmed Ezz', dept: 'Dentistry', status: 'confirmed' },
-    { time: '02:00 PM', doctor: 'Dr. Mahmoud Taha', dept: 'Cardiology', status: 'confirmed' }
-  ],
-  15: [
-    { time: '01:00 PM', doctor: 'Sara Elsaid', dept: 'Dermatology', status: 'confirmed' },
-    { time: '03:30 PM', doctor: 'Mohamed Ali', dept: 'Orthopedics', status: 'confirmed' }
-  ],
-  16: [] // Empty state demonstration: Saturday clinic closed
+  10: [],
+  11: [],
+  12: [],
+  13: [],
+  14: [],
+  15: [],
+  16: []
 };
 
 function selectCalendarDay(dayNum, cellEl) {
@@ -275,26 +274,20 @@ async function loadLiveOverviewCatalog() {
       totalPatientsEl.textContent = (patientData.total ?? (patientData.patients ? patientData.patients.length : 0)).toLocaleString();
     }
 
-    if (liveDoctors.length > 0) {
-      // Enrich schedule items with real doctor names and specialties from Supabase
-      Object.keys(dailyAppointmentsData).forEach((dayKey) => {
-        const slots = dailyAppointmentsData[dayKey];
-        slots.forEach((slot, idx) => {
-          const doc = liveDoctors[idx % liveDoctors.length];
-          if (doc) {
-            slot.doctor = doc.name_en;
-            const spec = specialties.find(s => s.id === doc.specialty_id);
-            slot.dept = doc.specialty?.name_en || (spec ? spec.name_en : 'Cardiology');
-          }
-        });
-      });
+    const metricActiveCalls = document.getElementById('metricActiveCalls');
+    if (metricActiveCalls) metricActiveCalls.textContent = '0';
 
-      // Re-render currently active day
-      const activeCell = document.querySelector('.cal-day-cell.active');
-      if (activeCell) {
-        const dayNum = parseInt(activeCell.textContent.trim());
-        if (dayNum) selectCalendarDay(dayNum, activeCell);
-      }
+    const metricTodayAppts = document.getElementById('metricTodayAppts');
+    if (metricTodayAppts) metricTodayAppts.textContent = '0';
+
+    const metricPendingFollowups = document.getElementById('metricPendingFollowups');
+    if (metricPendingFollowups) metricPendingFollowups.textContent = '0';
+
+    // Render active day (clean empty state)
+    const activeCell = document.querySelector('.cal-day-cell.active');
+    if (activeCell) {
+      const dayNum = parseInt(activeCell.textContent.trim(), 10);
+      if (dayNum) selectCalendarDay(dayNum, activeCell);
     }
   } catch (err) {
     console.debug('[ClinicApi] Overview catalog load warning:', err.message);

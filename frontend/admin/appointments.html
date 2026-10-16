@@ -212,10 +212,7 @@
           <div class="live-calls-title-group">
             <div style="display:flex; align-items:center; gap:10px;">
               <h1 class="live-calls-main-title">Appointments</h1>
-              <span class="live-badge-green" title="FastAPI Clinic Backend: Real Doctor Catalog & Shift Times Active">
-                <span class="status-indicator-dot dot-connected" style="width:6px; height:6px;"></span>
-                <span>Live Catalog Active</span>
-              </span>
+              
             </div>
             <p class="live-calls-subtext">Manage clinic appointments, view schedules, and handle bookings across all doctors and departments.</p>
           </div>
@@ -253,7 +250,7 @@
             <div class="metric-data-col">
               <span class="metric-label">Today's Appointments</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricTodayTotal">18</span>
+                <span class="metric-number" id="metricTodayTotal">0</span>
                 <span class="metric-trend text-green">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
                   <span>12%</span>
@@ -275,7 +272,7 @@
             <div class="metric-data-col">
               <span class="metric-label">Confirmed</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricConfirmedCount">14</span>
+                <span class="metric-number" id="metricConfirmedCount">0</span>
                 <span class="trend-sub" style="font-weight:700; color:var(--text-muted); margin-left:4px;">78% of today</span>
               </div>
             </div>
@@ -292,7 +289,7 @@
             <div class="metric-data-col">
               <span class="metric-label">Pending</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricPendingCount">3</span>
+                <span class="metric-number" id="metricPendingCount">0</span>
                 <span class="metric-trend text-orange">
                   <span>-17%</span>
                   <span class="trend-sub">of today</span>
@@ -312,7 +309,7 @@
             <div class="metric-data-col">
               <span class="metric-label">Cancelled</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricCancelledCount">1</span>
+                <span class="metric-number" id="metricCancelledCount">0</span>
                 <span class="metric-trend text-red">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
                   <span>6%</span>
@@ -476,224 +473,16 @@
                   </tr>
                 </thead>
                 <tbody id="scheduleGridBody">
-                  
-                  <!-- Slot 08:00 AM -->
-                  <tr>
-                    <td class="time-slot-cell">08:00 AM</td>
-                    <td></td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(301, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">08:30</span><span class="slot-patient-name">Sara Mohamed</span></div>
-                        <span class="slot-sub-type">Consultation</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-
-                  <!-- Slot 09:00 AM -->
-                  <tr>
-                    <td class="time-slot-cell">09:00 AM</td>
-                    <td>
-                      <!-- Selected Slot: Mona Ahmed -->
-                      <div class="appt-slot-card card-confirmed-green selected-appt-card" onclick="selectScheduleSlot(101, this)">
-                        <div class="slot-top-row">
-                          <span class="slot-time-text">✔ Mona Ahmed</span>
-                        </div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(201, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">09:30</span><span class="slot-patient-name">Ahmed Hassan</span></div>
-                        <span class="slot-sub-type">New Patient</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(401, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">09:00</span><span class="slot-patient-name">Malak Ahmed</span></div>
-                        <span class="slot-sub-type">New Patient</span>
-                      </div>
-                    </td>
-                    <td></td>
-                  </tr>
-
-                  <!-- Slot 10:00 AM -->
-                  <tr>
-                    <td class="time-slot-cell">10:00 AM</td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(102, this)">
-                        <div class="slot-top-row">
-                          <span class="slot-time-text">10:30 Khaled Mahmoud</span>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                        </div>
-                        <span class="slot-sub-type">New Patient</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-confirmed-green" onclick="selectScheduleSlot(302, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">10:00</span><span class="slot-patient-name">Tarek Ali</span></div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(501, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">10:30</span><span class="slot-patient-name">Hassan Mohamed</span></div>
-                        <span class="slot-sub-type">Consultation</span>
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- Slot 11:00 AM -->
-                  <tr>
-                    <td class="time-slot-cell">11:00 AM</td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-confirmed-green" onclick="selectScheduleSlot(202, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">11:00</span><span class="slot-patient-name">Laila Mohamed</span></div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-confirmed-green" onclick="selectScheduleSlot(402, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">11:30</span><span class="slot-patient-name">Omar Samir</span></div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                    <td></td>
-                  </tr>
-
-                  <!-- Slot 12:00 PM -->
-                  <tr>
-                    <td class="time-slot-cell">12:00 PM</td>
-                    <td>
-                      <div class="appt-slot-card card-orange" onclick="selectScheduleSlot(103, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">12:00</span><span class="slot-patient-name">Nour Ibrahim</span></div>
-                        <span class="slot-sub-type">Consultation</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-purple" onclick="selectScheduleSlot(303, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">12:30</span><span class="slot-patient-name">Mariam Adel</span></div>
-                        <span class="slot-sub-type">New Patient</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(502, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">12:00</span><span class="slot-patient-name">Dina Ahmed</span></div>
-                        <span class="slot-sub-type">New Patient</span>
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- Slot 01:00 PM -->
-                  <tr>
-                    <td class="time-slot-cell">01:00 PM</td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(203, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">01:00</span><span class="slot-patient-name">Omar Khaled</span></div>
-                        <span class="slot-sub-type">Consultation</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-
-                  <!-- Slot 02:00 PM -->
-                  <tr>
-                    <td class="time-slot-cell">02:00 PM</td>
-                    <td>
-                      <div class="appt-slot-card card-confirmed-green" onclick="selectScheduleSlot(104, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">02:00</span><span class="slot-patient-name">Youssef Ali</span></div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-orange" onclick="selectScheduleSlot(403, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">02:00</span><span class="slot-patient-name">Nour Khaled</span></div>
-                        <span class="slot-sub-type">Consultation</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(503, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">02:30</span><span class="slot-patient-name">Mohamed Tarek</span></div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- Slot 03:00 PM -->
-                  <tr>
-                    <td class="time-slot-cell">03:00 PM</td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(204, this)">
-                        <div class="slot-top-row">
-                          <span class="slot-time-text">03:30 Mona Samir</span>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                        </div>
-                        <span class="slot-sub-type">New Patient</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(304, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">03:00</span><span class="slot-patient-name">Ahmed Ibrahim</span></div>
-                        <span class="slot-sub-type">Consultation</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-
-                  <!-- Slot 04:00 PM -->
-                  <tr>
-                    <td class="time-slot-cell">04:00 PM</td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(105, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">04:00</span><span class="slot-patient-name">Salma Hassan</span></div>
-                        <span class="slot-sub-type">Consultation</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="appt-slot-card card-blue" onclick="selectScheduleSlot(205, this)">
-                        <div class="slot-top-row"><span class="slot-time-text">04:30</span><span class="slot-patient-name">Hassan Mostafa</span></div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                    <td></td>
-                    <td>
-                      <div class="appt-slot-card card-confirmed-green" onclick="selectScheduleSlot(404, this)">
-                        <div class="slot-top-row">
-                          <span class="slot-time-text">04:00 Salma Ali</span>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" width="12" height="12"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        </div>
-                        <span class="slot-sub-type">Follow-up</span>
-                      </div>
-                    </td>
-                    <td></td>
-                  </tr>
-
-                  <!-- Slot 05:00 PM -->
-                  <tr>
-                    <td class="time-slot-cell">05:00 PM</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-
+                  <tr><td class="time-slot-cell">08:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">09:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">10:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">11:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">12:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">01:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">02:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">03:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">04:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
+                  <tr><td class="time-slot-cell">05:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
                 </tbody>
               </table>
             </div>
@@ -747,58 +536,15 @@
               </div>
             </div>
 
-            <!-- 2. Upcoming (3) Agenda -->
+            <!-- 2. Upcoming (0) Agenda -->
             <div class="upcoming-appts-panel">
               <div class="upcoming-header-row">
-                <h4 class="upcoming-title">Upcoming (3)</h4>
+                <h4 class="upcoming-title">Upcoming (0)</h4>
                 <button class="section-link-action" onclick="openAllUpcomingModal()">View All</button>
               </div>
 
               <div class="upcoming-items-list">
-                <!-- Item 1 -->
-                <div class="upcoming-row-item" onclick="loadUpcomingDetails('Sara Elsaid', 'Dermatology', '10:30 AM', 'In Clinic')">
-                  <div class="upcoming-item-left">
-                    <span class="upcoming-time-tag">10:30 AM</span>
-                    <div>
-                      <div class="upcoming-doctor-text">Sara Elsaid</div>
-                      <div class="upcoming-dept-text">Dermatology</div>
-                    </div>
-                  </div>
-                  <div class="upcoming-item-right">
-                    <span class="status-pill status-inclinic">• In Clinic</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="14" height="14"><path d="m9 18 6-6-6-6"/></svg>
-                  </div>
-                </div>
-
-                <!-- Item 2 -->
-                <div class="upcoming-row-item" onclick="loadUpcomingDetails('Mohamed Ali', 'Orthopedics', '12:00 PM', 'Confirmed')">
-                  <div class="upcoming-item-left">
-                    <span class="upcoming-time-tag">12:00 PM</span>
-                    <div>
-                      <div class="upcoming-doctor-text">Mohamed Ali</div>
-                      <div class="upcoming-dept-text">Orthopedics</div>
-                    </div>
-                  </div>
-                  <div class="upcoming-item-right">
-                    <span class="status-pill status-confirmed">• Confirmed</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="14" height="14"><path d="m9 18 6-6-6-6"/></svg>
-                  </div>
-                </div>
-
-                <!-- Item 3 -->
-                <div class="upcoming-row-item" onclick="loadUpcomingDetails('Mona Khaled', 'Pediatrics', '02:30 PM', 'Pending')">
-                  <div class="upcoming-item-left">
-                    <span class="upcoming-time-tag">02:30 PM</span>
-                    <div>
-                      <div class="upcoming-doctor-text">Mona Khaled</div>
-                      <div class="upcoming-dept-text">Pediatrics</div>
-                    </div>
-                  </div>
-                  <div class="upcoming-item-right">
-                    <span class="status-pill status-pending">• Pending</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="14" height="14"><path d="m9 18 6-6-6-6"/></svg>
-                  </div>
-                </div>
+                <div style="padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 13px;">No upcoming appointments scheduled</div>
               </div>
             </div>
 
@@ -808,85 +554,16 @@
                 <h4 class="appt-details-title">Appointment Details</h4>
               </div>
 
-              <!-- Hero Info -->
-              <div class="appt-hero-card">
-                <div class="appt-hero-left">
-                  <div class="patient-avatar-circle" id="apptHeroAvatar" style="background:#EDE9FE; color:#7C3AED; width:38px; height:38px; font-size:15px;">M</div>
-                  <div class="patient-name-col">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                      <h4 class="patient-table-name" id="apptHeroName" style="font-size:14px;">Mona Ahmed</h4>
-                      <span class="status-pill status-confirmed" id="apptHeroStatus">• Confirmed</span>
-                    </div>
-                    <span class="patient-table-id" id="apptHeroPhone" style="font-size:12px;">+20 101 234 5678</span>
-                  </div>
-                </div>
-                <button class="btn-details-edit" onclick="openEditSelectedApptModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  <span>Edit</span>
-                </button>
+              <div id="apptDetailsEmptyState" style="padding: 40px 16px; text-align: center; color: var(--text-muted);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" width="40" height="40" style="margin-bottom: 10px;">
+                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <div style="font-weight: 600; color: var(--text-dark); font-size: 14px; margin-bottom: 4px;">No Appointment Selected</div>
+                <div style="font-size: 12px;">No appointments are currently scheduled in the database.</div>
               </div>
-
-              <!-- Sub Tabs -->
-              <div class="patient-sub-tabs">
-                <button class="sub-tab-btn active" onclick="switchApptDetailTab('details', this)">Details</button>
-                <button class="sub-tab-btn" onclick="switchApptDetailTab('patientInfo', this)">Patient Info</button>
-                <button class="sub-tab-btn" onclick="switchApptDetailTab('history', this)">History</button>
-                <button class="sub-tab-btn" onclick="switchApptDetailTab('notes', this)">Notes</button>
-              </div>
-
-              <!-- 2-Column Info Grid -->
-              <div class="appt-details-grid-2col" id="apptInfoGrid">
-                
-                <!-- Date & Time -->
-                <div class="appt-info-block">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <div class="appt-info-text">
-                    <span class="appt-info-label">Date & Time</span>
-                    <span class="appt-info-value" id="apptFieldDate">Thursday, 14 Nov 2024</span>
-                    <span class="appt-info-sub" id="apptFieldTime">09:00 AM - 09:30 AM</span>
-                  </div>
-                </div>
-
-                <!-- Doctor -->
-                <div class="appt-info-block">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                  <div class="appt-info-text">
-                    <span class="appt-info-label">Doctor</span>
-                    <span class="appt-info-value" id="apptFieldDoctor">Dr. Ahmed Mohamed</span>
-                    <span class="appt-info-sub" id="apptFieldDept">Cardiology</span>
-                  </div>
-                </div>
-
-                <!-- Type -->
-                <div class="appt-info-block">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <div class="appt-info-text">
-                    <span class="appt-info-label">Type</span>
-                    <span class="appt-info-value" id="apptFieldType">Follow-up</span>
-                  </div>
-                </div>
-
-                <!-- Location / Branch -->
-                <div class="appt-info-block">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <div class="appt-info-text">
-                    <span class="appt-info-label">Branch</span>
-                    <span class="appt-info-value" id="apptFieldBranch">Main Branch - Heliopolis</span>
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- Bottom Actions Row -->
-              <div class="appt-bottom-actions">
-                <button class="btn-appt-reschedule" onclick="openRescheduleModal()">Reschedule</button>
-                <button class="btn-appt-cancel" onclick="handleCancelAppointment()">Cancel</button>
-                <button class="btn-appt-start-call" onclick="handleStartCallWithPatient()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                  <span>Start Call</span>
-                </button>
-              </div>
-
             </div>
 
           </div>

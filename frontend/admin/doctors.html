@@ -188,12 +188,6 @@
         </div>
 
         <div class="top-bar-right">
-          <!-- Backend API Connection Badge -->
-          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
-            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
-            <span class="status-indicator-text" id="apiStatusText">API: Initializing</span>
-          </div>
-
           <!-- Notification Bell -->
           <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
             <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -213,29 +207,6 @@
 
       <!-- Scrollable Doctors Workspace Body -->
       <main class="dashboard-scroll-body">
-        
-        <!-- Live Data Banner -->
-        <div class="live-source-banner" style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:36px; height:36px; border-radius:50%; background:#2563EB; color:#fff; display:flex; align-items:center; justify-content:center;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-                <path d="M3 11h6"/>
-                <path d="M7 8v6"/>
-              </svg>
-            </div>
-            <div>
-              <div style="font-weight:700; color:#1E3A8A; font-size:14px;">Live Doctor Catalog Active</div>
-              <div style="font-size:12.5px; color:#3B82F6;">
-                Real data mapped live from Supabase PostgreSQL schema <code style="font-family:monospace; background:#DBEAFE; padding:1px 5px; border-radius:4px;">clinic.doctors</code> through FastAPI.
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <a href="appointments.html" class="btn-primary-outline" style="text-decoration:none; padding:7px 14px; font-size:12.5px; border-radius:8px; background:#FFFFFF;">View Appointment Slots</a>
-          </div>
-        </div>
 
         <!-- SECTION 1: TOP 4 METRICS CARDS -->
         <section class="metrics-grid">

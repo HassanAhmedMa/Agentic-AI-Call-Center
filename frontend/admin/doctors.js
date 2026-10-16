@@ -115,7 +115,22 @@
     const loadingState = document.getElementById('doctorsLoadingState');
     const errorState = document.getElementById('doctorsErrorState');
 
-    if (loadingState) loadingState.style.display = 'flex';
+    // Fast Cache Check: If doctors are already in sessionStorage, render IMMEDIATELY!
+    const cachedDocs = window.ClinicCache ? window.ClinicCache.get('doctors_all') : null;
+    const cachedSpecs = window.ClinicCache ? window.ClinicCache.get('specialties') : null;
+
+    if (cachedDocs && Array.isArray(cachedDocs.doctors) && cachedSpecs && Array.isArray(cachedSpecs)) {
+      allSpecialties = cachedSpecs;
+      allDoctors = cachedDocs.doctors;
+      populateDeptFilter(allSpecialties);
+      updateDoctorMetrics(allDoctors, allSpecialties);
+      renderDoctorsGrid(allDoctors);
+      if (loadingState) loadingState.style.display = 'none';
+    } else {
+      // Only display loading state if cache is empty
+      if (loadingState) loadingState.style.display = 'flex';
+    }
+
     if (errorState) errorState.style.display = 'none';
 
     try {
@@ -139,11 +154,13 @@
       if (loadingState) loadingState.style.display = 'none';
     } catch (err) {
       console.error('[Doctors] Failed to load data:', err);
-      if (loadingState) loadingState.style.display = 'none';
-      if (errorState) {
-        errorState.style.display = 'block';
-        const msgEl = document.getElementById('doctorsErrorMessage');
-        if (msgEl) msgEl.textContent = err.message || 'Cannot reach FastAPI backend.';
+      if (!allDoctors.length) {
+        if (loadingState) loadingState.style.display = 'none';
+        if (errorState) {
+          errorState.style.display = 'block';
+          const msgEl = document.getElementById('doctorsErrorMessage');
+          if (msgEl) msgEl.textContent = err.message || 'Cannot reach FastAPI backend.';
+        }
       }
     }
   }

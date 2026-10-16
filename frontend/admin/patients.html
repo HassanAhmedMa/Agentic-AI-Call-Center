@@ -203,12 +203,6 @@
         </div>
 
         <div class="top-bar-right">
-          <!-- Backend API Connection Badge -->
-          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
-            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
-            <span class="status-indicator-text" id="apiStatusText">API: Initializing</span>
-          </div>
-
           <!-- Notification Bell -->
           <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
             <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -228,28 +222,6 @@
 
       <!-- Scrollable Patients Workspace Body -->
       <main class="dashboard-scroll-body">
-        
-        <!-- Live Data Bridge Banner -->
-        <div class="live-source-banner" style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:12px 18px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:34px; height:34px; border-radius:50%; background:#2563EB; color:#fff; display:flex; align-items:center; justify-content:center;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-            <div>
-              <div style="font-weight:700; color:#1E3A8A; font-size:13.5px;">Live Supabase Database Connected</div>
-              <div style="font-size:12px; color:#3B82F6;">
-                Real clinic data (10 doctors, 5 specialties, 15 services) is actively synced from Supabase.
-              </div>
-            </div>
-          </div>
-          <a href="doctors.html" class="btn-primary-outline" style="text-decoration:none; padding:7px 14px; font-size:12.5px; border-radius:8px; background:#FFFFFF; display:inline-flex; align-items:center; gap:6px;">
-            <span>View 10 Live Doctors</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="m9 18 6-6-6-6"/></svg>
-          </a>
-        </div>
 
         <!-- SECTION 1: TOP 4 METRICS CARDS (Exact match to Patients Screen) -->
         <section class="metrics-grid">
@@ -445,17 +417,18 @@
                     </th>
                     <th>Patient</th>
                     <th>Phone</th>
-                    <th>National ID</th>
+                    <th>Email</th>
+                    <th>Patient ID</th>
                     <th>Age</th>
                     <th>Gender</th>
-                    <th>Last Appointment</th>
+                    <th>Registration Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="patientsTableBody">
                   <tr id="patientsLoadingRow">
-                    <td colspan="9" style="text-align:center; padding:40px 20px; color:#64748B;">
+                    <td colspan="10" style="text-align:center; padding:40px 20px; color:#64748B;">
                       <div style="display:inline-flex; align-items:center; gap:10px;">
                         <span class="status-indicator-dot dot-connecting" style="width:10px; height:10px;"></span>
                         <span style="font-size:13.5px; font-weight:500;">Loading live patients from database...</span>
@@ -566,7 +539,7 @@
                     <span class="field-value" id="fieldPhone">—</span>
                   </div>
                   <div class="details-field-item">
-                    <span class="field-label">National ID</span>
+                    <span class="field-label">Patient ID (رقم المريض)</span>
                     <span class="field-value" id="fieldNationalId">—</span>
                   </div>
                   <div class="details-field-item">

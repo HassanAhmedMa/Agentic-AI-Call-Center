@@ -56,7 +56,6 @@
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
           <span class="nav-text">Live Calls</span>
-          <span class="nav-badge-red" id="liveCallsCountBadge">2</span>
         </a>
 
         <!-- 3. Appointments -->
@@ -188,12 +187,6 @@
         </div>
 
         <div class="top-bar-right">
-          <!-- Backend API Connection Badge -->
-          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
-            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
-            <span class="status-indicator-text" id="apiStatusText">API: Initializing</span>
-          </div>
-
           <!-- Notification Bell -->
           <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
             <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -227,11 +220,10 @@
             <div class="metric-data-col">
               <span class="metric-label">Active Calls</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricActiveCalls">2</span>
+                <span class="metric-number" id="metricActiveCalls">0</span>
                 <span class="metric-trend text-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  <span>1</span>
-                  <span class="trend-sub">vs. last hour</span>
+                  <span>0</span>
+                  <span class="trend-sub">active calls</span>
                 </span>
               </div>
             </div>
@@ -250,11 +242,10 @@
             <div class="metric-data-col">
               <span class="metric-label">Today's Appointments</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricTodayAppts">18</span>
+                <span class="metric-number" id="metricTodayAppts">0</span>
                 <span class="metric-trend text-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  <span>12%</span>
-                  <span class="trend-sub">vs. yesterday</span>
+                  <span>0</span>
+                  <span class="trend-sub">today</span>
                 </span>
               </div>
             </div>
@@ -293,11 +284,10 @@
             <div class="metric-data-col">
               <span class="metric-label">Pending Follow-ups</span>
               <div class="metric-value-row">
-                <span class="metric-number" id="metricPendingFollowups">5</span>
+                <span class="metric-number" id="metricPendingFollowups">0</span>
                 <span class="metric-trend text-red">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  <span>2</span>
-                  <span class="trend-sub">need attention</span>
+                  <span>0</span>
+                  <span class="trend-sub">pending</span>
                 </span>
               </div>
             </div>
@@ -314,16 +304,16 @@
             <div class="panel-header-row">
               <div class="panel-title-left">
                 <h3 class="panel-title">Live Call</h3>
-                <span class="live-pill-badge" id="liveCallBadge">
-                  <span class="live-blinking-dot"></span>
-                  <span>Live</span>
+                <span class="live-pill-badge" id="liveCallBadge" style="background:#F1F5F9; color:#64748B;">
+                  <span class="status-indicator-dot dot-disconnected" style="width:6px; height:6px;"></span>
+                  <span>Idle</span>
                 </span>
               </div>
-              <div class="live-timer-counter" id="liveCallTimer">00:02:34</div>
+              <div class="live-timer-counter" id="liveCallTimer">00:00:00</div>
             </div>
 
             <!-- Active Call Content Box -->
-            <div class="live-call-content-box" id="liveCallContent">
+            <div class="live-call-content-box" id="liveCallContent" style="display: none;">
               <!-- Caller Top Meta & Form Grid -->
               <div class="caller-meta-grid">
                 
@@ -454,15 +444,14 @@
             </div>
 
             <!-- Empty Standby State (Shown if no active live call) -->
-            <div class="empty-state-card" id="liveCallEmptyState" style="display: none;">
+            <div class="empty-state-card" id="liveCallEmptyState" style="display: flex;">
               <div class="empty-state-icon text-green">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
                 </svg>
               </div>
               <h4 class="empty-state-title">No Live Calls in Progress</h4>
-              <p class="empty-state-desc">AI Agent is active in standby mode, ready to receive incoming patient calls.</p>
-              <button class="simulate-call-btn" onclick="simulateNewIncomingCall()">Simulate Incoming Call</button>
+              <p class="empty-state-desc">AI Voice Agent is in standby mode, ready to receive incoming patient calls.</p>
             </div>
 
           </div>
@@ -499,31 +488,26 @@
                 <div class="cal-day-cell" onclick="selectCalendarDay(11, this)">
                   <span class="day-name">Mon</span>
                   <span class="day-num">11</span>
-                  <span class="day-dot-green"></span>
                 </div>
                 <!-- Day 12 (Active) -->
                 <div class="cal-day-cell active" onclick="selectCalendarDay(12, this)">
                   <span class="day-name">Tue</span>
                   <span class="day-num-active">12</span>
-                  <span class="day-dot-green"></span>
                 </div>
                 <!-- Day 13 -->
                 <div class="cal-day-cell" onclick="selectCalendarDay(13, this)">
                   <span class="day-name">Wed</span>
                   <span class="day-num">13</span>
-                  <span class="day-dot-green"></span>
                 </div>
                 <!-- Day 14 -->
                 <div class="cal-day-cell" onclick="selectCalendarDay(14, this)">
                   <span class="day-name">Thu</span>
                   <span class="day-num">14</span>
-                  <span class="day-dot-green"></span>
                 </div>
                 <!-- Day 15 -->
                 <div class="cal-day-cell" onclick="selectCalendarDay(15, this)">
                   <span class="day-name">Fri</span>
                   <span class="day-num">15</span>
-                  <span class="day-dot-green"></span>
                 </div>
                 <!-- Day 16 -->
                 <div class="cal-day-cell" onclick="selectCalendarDay(16, this)">
@@ -534,56 +518,15 @@
             </div>
 
             <!-- Appointments List Rows -->
-            <div class="appointments-list-table" id="appointmentsListContainer">
-              <!-- Item 1 -->
-              <div class="appointment-row-item">
-                <span class="appt-time-cell">09:00 AM</span>
-                <span class="appt-doctor-cell">Ahmed Mohamed</span>
-                <span class="appt-dept-cell">Cardiology</span>
-                <span class="status-pill status-confirmed">• Confirmed</span>
-              </div>
-
-              <!-- Item 2 -->
-              <div class="appointment-row-item">
-                <span class="appt-time-cell">10:30 AM</span>
-                <span class="appt-doctor-cell">Sara Elsaid</span>
-                <span class="appt-dept-cell">Dermatology</span>
-                <span class="status-pill status-inclinic">• In Clinic</span>
-              </div>
-
-              <!-- Item 3 -->
-              <div class="appointment-row-item">
-                <span class="appt-time-cell">12:00 PM</span>
-                <span class="appt-doctor-cell">Mohamed Ali</span>
-                <span class="appt-dept-cell">Orthopedics</span>
-                <span class="status-pill status-confirmed">• Confirmed</span>
-              </div>
-
-              <!-- Item 4 -->
-              <div class="appointment-row-item">
-                <span class="appt-time-cell">02:30 PM</span>
-                <span class="appt-doctor-cell">Mona Khaled</span>
-                <span class="appt-dept-cell">Cardiology</span>
-                <span class="status-pill status-pending">• Pending</span>
-              </div>
-
-              <!-- Item 5 -->
-              <div class="appointment-row-item">
-                <span class="appt-time-cell">04:00 PM</span>
-                <span class="appt-doctor-cell">Youssef Hassan</span>
-                <span class="appt-dept-cell">General Medicine</span>
-                <span class="status-pill status-confirmed">• Confirmed</span>
-              </div>
-            </div>
+            <div class="appointments-list-table" id="appointmentsListContainer" style="display: none;"></div>
 
             <!-- Empty appointments state (if day has no bookings) -->
-            <div class="empty-state-card" id="appointmentsEmptyState" style="display: none;">
+            <div class="empty-state-card" id="appointmentsEmptyState" style="display: flex;">
               <div class="empty-state-icon text-blue">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
               <h4 class="empty-state-title">No Appointments Scheduled</h4>
               <p class="empty-state-desc">No bookings scheduled for the selected date.</p>
-              <button class="simulate-call-btn" onclick="openNewAppointmentModal()">Schedule Appointment</button>
             </div>
 
           </div>
@@ -598,10 +541,6 @@
             <div class="panel-header-row">
               <div style="display:flex; align-items:center; gap:8px;">
                 <h3 class="panel-title">Recent Calls</h3>
-                <span class="demo-mode-pill" title="Phase 2 Telephony & Voice Service Simulation">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  <span>Demo Call Telemetry</span>
-                </span>
               </div>
               <button class="header-link-btn" onclick="openAllCallsModal()">View All</button>
             </div>
@@ -620,118 +559,9 @@
                   </tr>
                 </thead>
                 <tbody id="recentCallsTbody">
-                  <!-- Row 1: Mona Ahmed (Active) -->
                   <tr>
-                    <td class="col-time">10:22 AM</td>
-                    <td class="col-caller">
-                      <div class="caller-cell-flex">
-                        <div class="caller-avatar-sm bg-purple-avatar">M</div>
-                        <div>
-                          <div class="caller-row-name">Mona Ahmed</div>
-                          <div class="caller-row-phone">+20 101 234 5678</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="col-intent">Book Appointment</td>
-                    <td class="col-dept">Cardiology</td>
-                    <td><span class="badge-status-active">Active</span></td>
-                    <td class="col-duration">02:34</td>
-                    <td class="col-action">
-                      <button class="action-call-btn text-green" title="Listen / Manage Call" onclick="openCallDetails('Mona Ahmed')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 2: Unknown (Completed) -->
-                  <tr>
-                    <td class="col-time">10:15 AM</td>
-                    <td class="col-caller">
-                      <div class="caller-cell-flex">
-                        <div class="caller-avatar-sm bg-gray-avatar">U</div>
-                        <div>
-                          <div class="caller-row-name">Unknown</div>
-                          <div class="caller-row-phone">+20 112 345 6789</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="col-intent">General Inquiry</td>
-                    <td class="col-dept">General</td>
-                    <td><span class="badge-status-completed">Completed</span></td>
-                    <td class="col-duration">03:12</td>
-                    <td class="col-action">
-                      <button class="action-call-btn text-green" title="Call back" onclick="openCallDetails('Unknown')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 3: Ahmed Hassan (Completed) -->
-                  <tr>
-                    <td class="col-time">09:48 AM</td>
-                    <td class="col-caller">
-                      <div class="caller-cell-flex">
-                        <div class="caller-avatar-sm bg-blue-avatar">A</div>
-                        <div>
-                          <div class="caller-row-name">Ahmed Hassan</div>
-                          <div class="caller-row-phone">+20 100 987 6543</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="col-intent">Reschedule</td>
-                    <td class="col-dept">Dermatology</td>
-                    <td><span class="badge-status-completed">Completed</span></td>
-                    <td class="col-duration">04:21</td>
-                    <td class="col-action">
-                      <button class="action-call-btn text-green" title="Call back" onclick="openCallDetails('Ahmed Hassan')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 4: Sara Mohamed (Completed) -->
-                  <tr>
-                    <td class="col-time">09:30 AM</td>
-                    <td class="col-caller">
-                      <div class="caller-cell-flex">
-                        <div class="caller-avatar-sm bg-blue-avatar">S</div>
-                        <div>
-                          <div class="caller-row-name">Sara Mohamed</div>
-                          <div class="caller-row-phone">+20 106 543 2198</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="col-intent">Clinic Information</td>
-                    <td class="col-dept">General</td>
-                    <td><span class="badge-status-completed">Completed</span></td>
-                    <td class="col-duration">02:15</td>
-                    <td class="col-action">
-                      <button class="action-call-btn text-green" title="Call back" onclick="openCallDetails('Sara Mohamed')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                      </button>
-                    </td>
-                  </tr>
-
-                  <!-- Row 5: Unknown (Missed) -->
-                  <tr>
-                    <td class="col-time">09:12 AM</td>
-                    <td class="col-caller">
-                      <div class="caller-cell-flex">
-                        <div class="caller-avatar-sm bg-red-avatar">U</div>
-                        <div>
-                          <div class="caller-row-name">Unknown</div>
-                          <div class="caller-row-phone">+20 109 876 5432</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="col-intent">Cancel Appointment</td>
-                    <td class="col-dept">Orthopedics</td>
-                    <td><span class="badge-status-missed">Missed</span></td>
-                    <td class="col-duration">-</td>
-                    <td class="col-action">
-                      <button class="action-call-btn text-red" title="Missed Call" onclick="openCallDetails('Unknown')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" y1="2" x2="2" y2="22"/></svg>
-                      </button>
+                    <td colspan="7" style="text-align:center; padding:36px 16px; color:#64748B; font-size:13px;">
+                      No recent call activity recorded. Completed patient calls will appear here.
                     </td>
                   </tr>
                 </tbody>

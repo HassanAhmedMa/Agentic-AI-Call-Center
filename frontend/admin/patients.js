@@ -6,13 +6,6 @@
 (function () {
   'use strict';
 
-  // Self-healing check: If the page DOM contains legacy dummy data (from browser disk cache), force reload!
-  if (document.querySelector('.demo-mode-pill') || document.body.innerHTML.includes('Mona Ahmed') || document.body.innerHTML.includes('1,284')) {
-    console.warn('[Cache Buster] Detected legacy dummy HTML from browser cache. Purging cache and reloading live version...');
-    window.location.replace('patients.html?v=live_v3&_t=' + Date.now());
-    return;
-  }
-
   // Wipe any legacy mock storage immediately
   try {
     localStorage.removeItem('clinic_admin_patients_store');
@@ -30,12 +23,58 @@
     initClock();
     initGlobalShortcuts();
     loadLivePatients();
+    initRealtimeSync();
   });
 
   // Re-fetch on pageshow (Back/Forward browser cache traversal)
   window.addEventListener('pageshow', () => {
     loadLivePatients();
   });
+
+  /* =============================================================================
+     REAL-TIME MULTI-OPERATOR SYNCHRONIZATION
+     ============================================================================= */
+  function initRealtimeSync() {
+    if (!window.ClinicRealtime) return;
+
+    window.ClinicRealtime.on('PATIENT_UPDATED', (payload) => {
+      if (window.ClinicCache) window.ClinicCache.invalidate('patients');
+      loadLivePatients().then(() => {
+        const id = payload.customer_number || payload.patient_id || payload.id;
+        highlightPatientRow(id);
+        if (typeof showToast === 'function') {
+          showToast(`Patient #${id} was updated in real-time.`, 'info');
+        }
+      });
+    });
+
+    window.ClinicRealtime.on('PATIENT_CREATED', (payload) => {
+      if (window.ClinicCache) window.ClinicCache.invalidate('patients');
+      loadLivePatients().then(() => {
+        const id = payload.customer_number || payload.patient_id || payload.id;
+        highlightPatientRow(id);
+        if (typeof showToast === 'function') {
+          showToast(`New patient registered: ${payload.full_name || ('#' + id)}`, 'success');
+        }
+      });
+    });
+  }
+
+  function highlightPatientRow(patientIdentifier) {
+    if (!patientIdentifier) return;
+    const targetStr = String(patientIdentifier).toLowerCase();
+    const rows = document.querySelectorAll('#patientsTableBody tr');
+    rows.forEach(tr => {
+      const codeEl = tr.querySelector('.patient-code-text, .patient-id-badge');
+      const text = tr.textContent.toLowerCase();
+      if ((codeEl && codeEl.textContent.trim().toLowerCase() === targetStr) || text.includes(targetStr)) {
+        tr.classList.remove('row-pulse-highlight');
+        void tr.offsetWidth;
+        tr.classList.add('row-pulse-highlight');
+        tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
 
   /* =============================================================================
      1. LIVE CLOCK TICKER
@@ -74,10 +113,22 @@
       return;
     }
 
-    const apiDot = document.getElementById('apiStatusDot');
-    const apiText = document.getElementById('apiStatusText');
-    if (apiDot) apiDot.className = 'status-indicator-dot dot-connecting';
-    if (apiText) apiText.textContent = 'API: Connecting...';
+    // Fast Cache Check: If patients are cached, render IMMEDIATELY with zero loading flicker!
+    const cachedPatients = window.ClinicCache ? window.ClinicCache.get('patients_all') : null;
+    const cachedSpecs = window.ClinicCache ? window.ClinicCache.get('specialties') : null;
+
+    if (cachedPatients && Array.isArray(cachedPatients.patients)) {
+      allPatients = cachedPatients.patients;
+      if (cachedSpecs && Array.isArray(cachedSpecs)) {
+        allSpecialties = cachedSpecs;
+        populateDeptFilter(allSpecialties);
+      }
+      updatePatientMetrics(allPatients);
+      applyFilters();
+      if (allPatients.length > 0) {
+        selectPatientRow(allPatients[0].id);
+      }
+    }
 
     try {
       const [specs, patientsRes] = await Promise.all([
@@ -87,9 +138,6 @@
 
       allSpecialties = Array.isArray(specs) ? specs : [];
       allPatients = Array.isArray(patientsRes?.patients) ? patientsRes.patients : [];
-
-      if (apiDot) apiDot.className = 'status-indicator-dot dot-connected';
-      if (apiText) apiText.textContent = `Live DB (${allPatients.length} Patients)`;
 
       // 1. Populate Department filter dropdown from live database specialties
       populateDeptFilter(allSpecialties);
@@ -123,13 +171,10 @@
       }
     } catch (err) {
       console.error('[Patients] Load error:', err);
-      if (apiDot) apiDot.className = 'status-indicator-dot dot-disconnected';
-      if (apiText) apiText.textContent = 'API: Disconnected';
-
-      if (tableBody) {
+      if (!allPatients.length && tableBody) {
         tableBody.innerHTML = `
           <tr>
-            <td colspan="9" style="text-align:center; padding:35px 20px;">
+            <td colspan="10" style="text-align:center; padding:35px 20px;">
               <div style="color:#DC2626; font-size:14px; font-weight:700; margin-bottom:6px;">
                 Failed to load patients from database
               </div>
@@ -142,23 +187,15 @@
             </td>
           </tr>
         `;
-      }
-
-      const heroRow = document.getElementById('patientHeroRow');
-      const subTabs = document.getElementById('patientSubTabs');
-      const overviewContent = document.getElementById('subTabContentOverview');
-      const emptyNotice = document.getElementById('patientDetailsEmptyNotice');
-      if (heroRow) heroRow.style.display = 'none';
-      if (subTabs) subTabs.style.display = 'none';
-      if (overviewContent) overviewContent.style.display = 'none';
-      if (emptyNotice) {
-        emptyNotice.style.display = 'flex';
-        emptyNotice.innerHTML = `
-          <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">Database Connection Offline</h4>
-          <p style="color:#64748B; font-size:13px; margin:0 0 12px 0;">Please ensure SSH tunnel on port 8002 and clinic backend container are active.</p>
-          <button class="modal-btn-secondary" style="font-size:12px; height:32px;" onclick="loadLivePatients()">Retry</button>
-        `;
+        if (emptyNotice) {
+          emptyNotice.style.display = 'flex';
+          emptyNotice.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">Database Connection Offline</h4>
+            <p style="color:#64748B; font-size:13px; margin:0 0 12px 0;">Please ensure SSH tunnel on port 8002 and clinic backend container are active.</p>
+            <button class="modal-btn-secondary" style="font-size:12px; height:32px;" onclick="loadLivePatients()">Retry</button>
+          `;
+        }
       }
       showToast('Error syncing with database: ' + err.message, 'warning');
     }
@@ -257,16 +294,12 @@
               </div>
             </div>
           </td>
-          <td>${escapeHtml(p.phone || '-')}</td>
-          <td>${escapeHtml(p.nationalId || '-')}</td>
-          <td>${escapeHtml(String(p.age || '-'))}</td>
-          <td>${escapeHtml(p.gender || '-')}</td>
-          <td>
-            <div class="td-last-appt">
-              <span class="appt-date-text">${escapeHtml(p.lastApptDate || 'Recent')}</span>
-              <span class="appt-dept-text">${escapeHtml(p.lastApptDept || 'General')}</span>
-            </div>
-          </td>
+          <td>${escapeHtml(p.phone || '—')}</td>
+          <td><span style="color:#2563EB; font-size:12.5px;">${escapeHtml(p.email || '—')}</span></td>
+          <td><span style="font-family:monospace; font-weight:600; color:#334155;">${escapeHtml(p.customer_number || p.patientCode || '—')}</span></td>
+          <td>${escapeHtml(String(p.age || '—'))}</td>
+          <td>${escapeHtml(p.gender || '—')}</td>
+          <td><span style="font-size:12px; color:#64748B;">${escapeHtml(p.regDate || '—')}</span></td>
           <td><span class="${statusClass}">${statusLabel}</span></td>
           <td>
             <button class="btn-row-action" title="Actions" onclick="event.stopPropagation(); openRowActionMenu(${p.id}, '${escapeJs(p.name)}')">
@@ -324,7 +357,7 @@
       avatarEl.style.color = patient.avatarColor || '#2563EB';
     }
     if (nameEl) nameEl.textContent = patient.name;
-    if (idEl) idEl.textContent = patient.patientCode || patient.customer_number || 'PT-2024';
+    if (idEl) idEl.textContent = `Patient ID: ${patient.customer_number || patient.patientCode || '—'}`;
 
     if (statusBadgeEl && statusTextEl) {
       const isActive = (patient.status || 'Active').toLowerCase() === 'active';
@@ -348,17 +381,17 @@
     // Personal Info Fields
     setFieldText('fieldFullName', patient.name);
     setFieldText('fieldPhone', patient.phone);
-    setFieldText('fieldNationalId', patient.nationalId);
-    setFieldText('fieldDob', patient.dob || `${patient.age || 25} years`);
+    setFieldText('fieldNationalId', patient.customer_number || patient.patientCode || '—');
+    setFieldText('fieldDob', patient.dob || `${patient.age || '—'}`);
     setFieldText('fieldGender', patient.gender);
     setFieldText('fieldEmail', patient.email);
-    setFieldText('fieldAddress', patient.address);
+    setFieldText('fieldAddress', patient.address || '—');
 
     // Medical Info Fields
-    setFieldText('fieldBloodType', patient.bloodType);
-    setFieldText('fieldAllergies', patient.allergies);
-    setFieldText('fieldChronic', patient.chronicConditions);
-    setFieldText('fieldPharmacy', patient.pharmacy);
+    setFieldText('fieldBloodType', patient.bloodType || '—');
+    setFieldText('fieldAllergies', patient.allergies || '—');
+    setFieldText('fieldChronic', patient.chronicConditions || '—');
+    setFieldText('fieldPharmacy', patient.pharmacy || '—');
 
     // Recent Activity
     const activityListEl = document.getElementById('detailActivityList');

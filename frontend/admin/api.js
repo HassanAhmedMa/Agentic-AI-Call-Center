@@ -23,6 +23,45 @@
     }
   }
 
+  /* =========================================================================
+     FAST CLIENT-SIDE CACHE (Instant Tab Navigation & Fast Re-renders)
+     ========================================================================= */
+  const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+
+  const ClinicCache = {
+    get: function (key) {
+      try {
+        const item = sessionStorage.getItem('clinic_cache_' + key);
+        if (!item) return null;
+        const parsed = JSON.parse(item);
+        if (Date.now() - parsed.ts < CACHE_TTL_MS) {
+          return parsed.data;
+        }
+      } catch (_) {}
+      return null;
+    },
+    set: function (key, data) {
+      try {
+        sessionStorage.setItem('clinic_cache_' + key, JSON.stringify({ ts: Date.now(), data }));
+      } catch (_) {}
+    },
+    invalidate: function (keyPrefix) {
+      try {
+        if (!keyPrefix) {
+          Object.keys(sessionStorage).forEach(k => {
+            if (k.startsWith('clinic_cache_')) sessionStorage.removeItem(k);
+          });
+          return;
+        }
+        Object.keys(sessionStorage).forEach(k => {
+          if (k.startsWith('clinic_cache_' + keyPrefix)) sessionStorage.removeItem(k);
+        });
+      } catch (_) {}
+    }
+  };
+
+  window.ClinicCache = ClinicCache;
+
   let connectionState = 'untested'; // 'untested' | 'connecting' | 'connected' | 'disconnected'
   let lastCheckedAt = null;
 
@@ -111,8 +150,12 @@
      * Response: { total: number, specialties: Array<{ id, name_en, name_ar }> }
      */
     getSpecialties: async function () {
+      const cached = ClinicCache.get('specialties');
+      if (cached) return cached;
       const data = await request('/specialties');
-      return data?.specialties || [];
+      const specs = data?.specialties || [];
+      ClinicCache.set('specialties', specs);
+      return specs;
     },
 
     /**
@@ -121,6 +164,12 @@
      * Response: { total: number, doctors: Array<Doctor> }
      */
     getDoctors: async function (params = {}) {
+      const isDefault = !params.specialty_id && !params.q && (!params.limit || params.limit >= 50);
+      if (isDefault) {
+        const cached = ClinicCache.get('doctors_all');
+        if (cached) return cached;
+      }
+
       const query = new URLSearchParams();
       if (params.specialty_id) query.set('specialty_id', params.specialty_id);
       if (params.q) query.set('q', params.q.trim());
@@ -130,10 +179,12 @@
       const qs = query.toString();
       const endpoint = qs ? `/doctors?${qs}` : '/doctors';
       const data = await request(endpoint);
-      return {
+      const res = {
         total: data?.total ?? (data?.doctors ? data.doctors.length : 0),
         doctors: data?.doctors || []
       };
+      if (isDefault) ClinicCache.set('doctors_all', res);
+      return res;
     },
 
     /**
@@ -208,6 +259,12 @@
      * GET /api/v1/patients?q=...&limit=...
      */
     getPatients: async function (params = {}) {
+      const isDefault = !params.q && (!params.offset || params.offset === 0);
+      if (isDefault) {
+        const cached = ClinicCache.get('patients_all');
+        if (cached) return cached;
+      }
+
       const query = new URLSearchParams();
       if (params.q) query.set('q', params.q.trim());
       if (params.limit) query.set('limit', params.limit);
@@ -217,19 +274,20 @@
       const endpoint = qs ? `/patients?${qs}` : '/patients';
 
       const res = await request(endpoint);
+      let result = { total: 0, patients: [] };
       if (res && Array.isArray(res.patients)) {
-        return {
+        result = {
           total: res.total ?? res.patients.length,
           patients: res.patients.map(ClinicApi.normalizePatient)
         };
-      }
-      if (Array.isArray(res)) {
-        return {
+      } else if (Array.isArray(res)) {
+        result = {
           total: res.length,
           patients: res.map(ClinicApi.normalizePatient)
         };
       }
-      return { total: 0, patients: [] };
+      if (isDefault) ClinicCache.set('patients_all', result);
+      return result;
     },
 
     /**
@@ -250,6 +308,7 @@
         method: 'POST',
         body: patientData
       });
+      ClinicCache.invalidate('patients');
       return ClinicApi.normalizePatient(res);
     },
 
@@ -262,6 +321,7 @@
         method: 'PUT',
         body: patientData
       });
+      ClinicCache.invalidate('patients');
       return ClinicApi.normalizePatient(res);
     },
 
@@ -281,28 +341,33 @@
         }
       }
 
+      const regDate = raw.created_at
+        ? new Date(raw.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : '—';
+
       return {
         id: raw.id,
         customer_number: custNum,
         patientCode: custNum,
         name: name,
         full_name: name,
-        phone: raw.phone || '',
-        nationalId: raw.national_id || raw.nationalId || custNum,
-        dob: raw.date_of_birth || raw.dob || '',
-        age: age || '-',
-        gender: raw.gender || 'Not specified',
-        email: raw.email || '',
+        phone: raw.phone || '—',
+        nationalId: custNum,
+        dob: raw.date_of_birth || raw.dob || '—',
+        age: age ? `${age} years` : '—',
+        gender: raw.gender ? (raw.gender.charAt(0).toUpperCase() + raw.gender.slice(1)) : 'Not specified',
+        email: raw.email || '—',
         preferred_language: raw.preferred_language || 'ar',
-        insurance_provider: raw.insurance_provider || raw.insurance || 'None',
-        insurance_policy_number: raw.insurance_policy_number || 'None',
-        address: raw.address || 'Cairo, Egypt',
-        bloodType: raw.blood_type || raw.bloodType || 'O+',
-        allergies: raw.allergies || 'None',
-        chronicConditions: raw.chronic_conditions || raw.chronicConditions || 'None',
-        pharmacy: raw.pharmacy || 'Nile Pharmacy',
-        lastApptDate: raw.lastApptDate || 'Recent',
-        lastApptDept: raw.lastApptDept || 'General Medicine',
+        insurance_provider: raw.insurance_provider || '—',
+        insurance_policy_number: raw.insurance_policy_number || '—',
+        address: raw.address || '—',
+        bloodType: raw.blood_type || raw.bloodType || '—',
+        allergies: raw.allergies || '—',
+        chronicConditions: raw.chronic_conditions || raw.chronicConditions || '—',
+        pharmacy: raw.pharmacy || '—',
+        lastApptDate: raw.lastApptDate || '—',
+        lastApptDept: raw.lastApptDept || '—',
+        regDate: regDate,
         status: raw.status || 'Active',
         isNew: raw.isNew ?? (raw.created_at ? (new Date() - new Date(raw.created_at) < 30 * 24 * 3600 * 1000) : true),
         avatar: name.charAt(0).toUpperCase(),
@@ -311,9 +376,9 @@
         activities: Array.isArray(raw.activities) && raw.activities.length ? raw.activities : [
           {
             type: 'completed',
-            title: 'Verified Database Record',
-            sub: 'PostgreSQL Identity Synced',
-            date: raw.created_at ? new Date(raw.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Live',
+            title: 'Patient Registered',
+            sub: 'Database profile verified',
+            date: regDate,
             time: raw.created_at ? new Date(raw.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''
           }
         ]
@@ -349,42 +414,62 @@
     const badge = document.getElementById('apiStatusBadge');
     const dot = document.getElementById('apiStatusDot');
     const text = document.getElementById('apiStatusText');
-    if (!badge || !dot || !text) return;
-    badge.style.cursor = 'pointer';
-    badge.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof window.openApiConfigModal === 'function') {
-        window.openApiConfigModal();
-      }
+    
+    if (badge) {
+      badge.style.cursor = 'pointer';
+      badge.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.openApiConfigModal === 'function') {
+          window.openApiConfigModal();
+        }
+      });
+    }
+
+    // Connect sidebar Settings links across all dashboard pages
+    document.querySelectorAll('#nav-settings, a[href="#settings"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.openApiConfigModal === 'function') {
+          window.openApiConfigModal();
+        }
+      });
     });
+
+    if (window.location.hash === '#settings') {
+      setTimeout(() => {
+        if (typeof window.openApiConfigModal === 'function') {
+          window.openApiConfigModal();
+        }
+      }, 150);
+    }
 
     window.addEventListener('clinic:connection-state', (e) => {
       const state = e.detail.state;
       const baseUrl = window.ClinicConfig ? window.ClinicConfig.getApiBaseUrl() : '/api/v1';
 
-      dot.className = 'status-indicator-dot';
-      if (state === 'connected') {
-        dot.classList.add('dot-connected');
-        text.textContent = 'Live Backend: Connected';
-        badge.title = `Connected to FastAPI Backend at ${baseUrl}\n(Click to view settings)`;
-      } else if (state === 'connecting') {
-        dot.classList.add('dot-connecting');
-        text.textContent = 'API: Connecting...';
-      } else if (state === 'error') {
-        dot.classList.add('dot-error');
-        text.textContent = 'API: Error (Click to view)';
-        badge.title = `Error connecting to ${baseUrl}\n(Click to view details)`;
-      } else {
-        dot.classList.add('dot-disconnected');
-        text.textContent = 'Backend: Offline (Click to setup)';
-        badge.title = `Cannot reach ${baseUrl}\n(Click to configure URL or SSH tunnel)`;
+      if (dot && text && badge) {
+        dot.className = 'status-indicator-dot';
+        if (state === 'connected') {
+          dot.classList.add('dot-connected');
+          text.textContent = 'Live Backend: Connected';
+          badge.title = `Connected to FastAPI Backend at ${baseUrl}\n(Click to view settings)`;
+        } else if (state === 'connecting') {
+          dot.classList.add('dot-connecting');
+          text.textContent = 'API: Connecting...';
+        } else if (state === 'error') {
+          dot.classList.add('dot-error');
+          text.textContent = 'API: Error (Click to view)';
+          badge.title = `Error connecting to ${baseUrl}\n(Click to view details)`;
+        } else {
+          dot.classList.add('dot-disconnected');
+          text.textContent = 'Backend: Offline (Click to setup)';
+          badge.title = `Cannot reach ${baseUrl}\n(Click to configure URL or SSH tunnel)`;
+        }
       }
     });
 
     // Proactively check health on startup
-    ClinicApi.checkHealth().catch(() => {
-      // Handled via event listener
-    });
+    ClinicApi.checkHealth().catch(() => {});
   }
 
   // Hook on DOM ready
@@ -423,6 +508,10 @@
           </div>
           <div style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;">
             All requests communicate strictly with FastAPI (<code style="font-size:11px;">services/clinic-backend</code>). Direct database and Supabase client access are prohibited.
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-light);">
+            <span style="font-size:12px; font-weight:600; color:var(--text-dark);">Real-time Sync (WebSockets):</span>
+            <span id="wsModalStatusPill" class="status-pill status-${window.ClinicRealtime && window.ClinicRealtime.isConnected ? 'confirmed' : 'pending'}">• ${window.ClinicRealtime && window.ClinicRealtime.isConnected ? 'Live Active (WebSocket)' : 'Connecting / Standby'}</span>
           </div>
         </div>
 
@@ -487,6 +576,9 @@
       box.style.background = '#DCFCE7';
       box.style.color = '#15803D';
       box.innerHTML = `<strong>Success (HTTP 200)!</strong> Status: "${res?.status || 'ok'}" • Ping: ${elapsed}ms`;
+      if (window.ClinicRealtime) {
+        window.ClinicRealtime.connect();
+      }
     } catch (err) {
       box.style.background = '#FEE2E2';
       box.style.color = '#B91C1C';
@@ -515,6 +607,153 @@
     window.location.reload();
   };
 
+  /* =========================================================================
+     REAL-TIME WEBSOCKET SYNC LAYER (Multi-Operator Live Synchronization)
+     ========================================================================= */
+  const ClinicRealtime = {
+    socket: null,
+    isConnected: false,
+    reconnectTimer: null,
+    heartbeatInterval: null,
+    reconnectAttempts: 0,
+    maxReconnectDelay: 10000,
+    listeners: {},
+
+    getWsUrl: function () {
+      const httpBase = window.ClinicConfig ? window.ClinicConfig.getApiBaseUrl() : '/api/v1';
+      let wsBase = '';
+      if (httpBase.startsWith('http://') || httpBase.startsWith('https://')) {
+        wsBase = httpBase.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://');
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsBase = `${protocol}//${window.location.host}${httpBase}`;
+      }
+      wsBase = wsBase.replace(/\/+$/, '');
+      return `${wsBase}/ws`;
+    },
+
+    init: function () {
+      this.connect();
+    },
+
+    connect: function () {
+      if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      const url = this.getWsUrl();
+      try {
+        this.socket = new WebSocket(url);
+
+        this.socket.onopen = () => {
+          this.isConnected = true;
+          this.reconnectAttempts = 0;
+          this.startHeartbeat();
+          this.updateUiIndicator(true);
+          this.emit('CONNECTED', { status: 'ready' });
+        };
+
+        this.socket.onmessage = (event) => {
+          try {
+            if (event.data === 'pong') return;
+            const msg = JSON.parse(event.data);
+            if (msg && msg.event) {
+              this.handleIncomingEvent(msg.event, msg.data || {});
+            }
+          } catch (_) {}
+        };
+
+        this.socket.onclose = () => {
+          this.isConnected = false;
+          this.stopHeartbeat();
+          this.updateUiIndicator(false);
+          this.scheduleReconnect();
+        };
+
+        this.socket.onerror = () => {
+          if (this.socket) this.socket.close();
+        };
+      } catch (_) {
+        this.scheduleReconnect();
+      }
+    },
+
+    startHeartbeat: function () {
+      this.stopHeartbeat();
+      this.heartbeatInterval = setInterval(() => {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send('ping');
+        }
+      }, 30000);
+    },
+
+    stopHeartbeat: function () {
+      if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval);
+        this.heartbeatInterval = null;
+      }
+    },
+
+    scheduleReconnect: function () {
+      if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+      const delay = Math.min(1000 * Math.pow(1.5, this.reconnectAttempts), this.maxReconnectDelay);
+      this.reconnectAttempts++;
+      this.reconnectTimer = setTimeout(() => this.connect(), delay);
+    },
+
+    on: function (event, cb) {
+      if (!this.listeners[event]) this.listeners[event] = [];
+      this.listeners[event].push(cb);
+    },
+
+    off: function (event, cb) {
+      if (!this.listeners[event]) return;
+      this.listeners[event] = this.listeners[event].filter(fn => fn !== cb);
+    },
+
+    emit: function (event, data) {
+      if (this.listeners[event]) {
+        this.listeners[event].forEach(fn => {
+          try { fn(data); } catch (err) { console.error('[ClinicRealtime] Callback error:', err); }
+        });
+      }
+      if (this.listeners['*']) {
+        this.listeners['*'].forEach(fn => {
+          try { fn({ event, data }); } catch (_) {}
+        });
+      }
+    },
+
+    handleIncomingEvent: function (event, data) {
+      // 1. Invalidate cache on mutations
+      if (event.startsWith('PATIENT_')) {
+        ClinicCache.invalidate('patients');
+      } else if (event.startsWith('DOCTOR_')) {
+        ClinicCache.invalidate('doctors');
+      }
+
+      // 2. Dispatch to registered listeners
+      this.emit(event, data);
+      window.dispatchEvent(new CustomEvent('clinic:realtime-event', { detail: { event, data } }));
+    },
+
+    updateUiIndicator: function (connected) {
+      const pill = document.getElementById('wsModalStatusPill');
+      if (pill) {
+        pill.className = `status-pill status-${connected ? 'confirmed' : 'cancelled'}`;
+        pill.innerHTML = `• ${connected ? 'Live Active (WebSocket)' : 'Disconnected / Reconnecting'}`;
+      }
+    }
+  };
+
+  // Start WebSocket client on DOM readiness
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => ClinicRealtime.init());
+  } else {
+    ClinicRealtime.init();
+  }
+
+  window.ClinicRealtime = ClinicRealtime;
   window.ClinicApi = ClinicApi;
 })();
 
