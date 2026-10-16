@@ -1004,6 +1004,13 @@
       showToast(`Patient ${patient.name} record updated successfully in database!`, 'success');
     } catch (err) {
       console.error('[Patients] Update failed:', err);
+      if (err.status === 404) {
+        showToast('This record only existed in the old database and does not exist in Supabase. Refreshing live records...', 'warning');
+        if (window.ClinicCache) window.ClinicCache.invalidate('patients');
+        closeAdminModal();
+        loadLivePatients();
+        return;
+      }
       showToast('Database error updating patient: ' + err.message, 'warning');
       if (saveBtn) {
         saveBtn.disabled = false;

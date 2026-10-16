@@ -8,9 +8,12 @@
 (function () {
   'use strict';
 
-  // Purge any legacy demo/mock data stores from browser storage
+  // Purge any legacy demo/mock data stores and stale cache from browser storage
   try {
     localStorage.removeItem('clinic_admin_patients_store');
+    Object.keys(sessionStorage).forEach(k => {
+      if (k.startsWith('clinic_cache_patients')) sessionStorage.removeItem(k);
+    });
   } catch (_) {}
 
   class ClinicApiError extends Error {
