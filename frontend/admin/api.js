@@ -673,7 +673,17 @@
           </label>
           <input type="text" id="cfgApiBaseUrlInput" placeholder="e.g. http://localhost:8000 or http://localhost:8002" value="${rawVal.startsWith('(') ? '' : rawVal}" style="width:100%; height:38px; border:1px solid var(--border-light); border-radius:8px; padding:0 12px; font-size:13px; font-family:inherit;">
           <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:4px;">
-            For local SSH tunnel development, enter your local forward (e.g. <code style="font-size:11px;">http://localhost:8000</code>).
+            For local SSH tunnel development, enter your local forward (e.g. <code style="font-size:11px;">http://localhost:8002</code>).
+          </span>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
+            Administrator Access Token (<code style="font-size:11px;">ADMIN_API_TOKEN</code>)
+          </label>
+          <input type="password" id="cfgAdminTokenInput" placeholder="Paste ADMIN_API_TOKEN here" value="${(function(){ try { return localStorage.getItem('clinic_admin_api_token') || ''; } catch(_){ return ''; } })()}" style="width:100%; height:38px; border:1px solid var(--border-light); border-radius:8px; padding:0 12px; font-size:13px; font-family:inherit;">
+          <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:4px;">
+            Required for adding doctors, managing appointments, and WebSocket live updates.
           </span>
         </div>
 
@@ -755,6 +765,17 @@
     const input = document.getElementById('cfgApiBaseUrlInput');
     if (input && window.ClinicConfig) {
       window.ClinicConfig.setApiBaseUrl(input.value.trim());
+    }
+    const tokenInput = document.getElementById('cfgAdminTokenInput');
+    if (tokenInput) {
+      const val = tokenInput.value.trim();
+      if (val) {
+        try { localStorage.setItem('clinic_admin_api_token', val); } catch (_) {}
+        ClinicApi.setAdminToken(val);
+      } else {
+        try { localStorage.removeItem('clinic_admin_api_token'); } catch (_) {}
+        ClinicApi.setAdminToken(null);
+      }
     }
     window.location.reload();
   };
