@@ -14,6 +14,7 @@ try {
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initGlobalShortcuts();
+  updateDateHeading();
   initAppointmentsStore();
   loadLiveCatalog();
   initRealtimeAppointmentsSync();
@@ -563,64 +564,34 @@ function shiftScheduleDate(delta) {
   highlightCalendarDay(currentActiveDayNumber);
 }
 
+function getSelectedDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + currentDateOffset);
+  return d;
+}
+
+function getSelectedDateIso() {
+  const d = getSelectedDate();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function updateDateHeading() {
   const heading = document.getElementById('scheduleDayHeading');
   const pillText = document.getElementById('activeDatePillText');
-  const baseDate = new Date(2024, 10, 14); // 14 Nov 2024
-  baseDate.setDate(baseDate.getDate() + currentDateOffset);
+  const curDate = getSelectedDate();
 
   const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  const formatted = baseDate.toLocaleDateString('en-GB', options);
-  const shortFormatted = baseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const formatted = curDate.toLocaleDateString('en-GB', options);
+  const shortFormatted = curDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
   if (heading) heading.textContent = formatted;
   if (pillText) pillText.textContent = shortFormatted;
 
-  // Sync live availability for newly selected date
+  // Sync live availability for newly selected date (silent so it doesn't disturb connection indicator)
   syncLiveAvailability();
-}
-
-function shiftMiniMonth(delta) {
-  const monthTitle = document.querySelector('.mini-cal-month-title');
-  if (!monthTitle) return;
-  if (delta > 0) {
-    monthTitle.textContent = 'December 2024';
-  } else {
-    monthTitle.textContent = 'October 2024';
-  }
-  showToast(`Navigated calendar to ${monthTitle.textContent}`, 'info');
-}
-
-function selectCalendarDay(day, el) {
-  currentActiveDayNumber = day;
-  currentDateOffset = day - 14;
-  highlightCalendarDay(day);
-  updateDateHeading();
-  showToast(`Selected date: ${day} Nov 2024`, 'info');
-}
-
-function highlightCalendarDay(day) {
-  document.querySelectorAll('.mini-cal-grid .mini-day-cell').forEach(cell => {
-    cell.classList.remove('active-day');
-    if (parseInt(cell.textContent.trim()) === day && !cell.classList.contains('inactive-month')) {
-      cell.classList.add('active-day');
-    }
-  });
-}
-
-/* =============================================================================
-   8.5 LIVE FASTAPI CATALOG & AVAILABILITY SYNC
-   ============================================================================= */
-let liveDoctorsCache = [];
-let liveSpecialtiesCache = [];
-
-function getSelectedDateIso() {
-  const baseDate = new Date(2024, 10, 14); // 14 Nov 2024
-  baseDate.setDate(baseDate.getDate() + currentDateOffset);
-  const yyyy = baseDate.getFullYear();
-  const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(baseDate.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
 }
 
 async function loadLiveCatalog() {
@@ -776,12 +747,13 @@ async function syncLiveAvailability() {
   const dateIso = getSelectedDateIso();
 
   try {
-    const result = await ClinicApi.searchAvailability(dateIso, 20);
-    if (result && Array.isArray(result.slots) && result.slots.length > 0) {
-      console.info(`[ClinicApi] Found ${result.slots.length} available slots for ${dateIso}`);
+    const result = await ClinicApi.searchAvailability(dateIso, 20, { silent: true });
+    const slots = result?.results || result?.slots || [];
+    if (Array.isArray(slots) && slots.length > 0) {
+      console.info(`[ClinicApi] Found ${slots.length} available slots for ${dateIso}`);
       const pill = document.getElementById('activeDatePillText');
       if (pill) {
-        pill.title = `${result.slots.length} live available slots synced from FastAPI backend.`;
+        pill.title = `${slots.length} live available slots synced from FastAPI backend.`;
       }
     }
   } catch (err) {

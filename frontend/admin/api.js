@@ -125,18 +125,30 @@
         const message = errorData?.message || `Request failed with status ${response.status}`;
         const details = errorData?.details || null;
 
-        updateConnectionState('error', { status: response.status, code, message });
+        // A 4xx response confirms the backend API server is reachable, online, and responding!
+        // Only 5xx indicates an internal server error or gateway breakdown.
+        if (!options.silent) {
+          if (response.status >= 500) {
+            updateConnectionState('error', { status: response.status, code, message });
+          } else {
+            updateConnectionState('connected', { url });
+          }
+        }
         throw new ClinicApiError(response.status, code, message, details);
       }
 
-      updateConnectionState('connected', { url });
+      if (!options.silent) {
+        updateConnectionState('connected', { url });
+      }
       return await response.json();
     } catch (err) {
       if (err instanceof ClinicApiError) {
         throw err;
       }
-      // Network failure, CORS issue, or server offline
-      updateConnectionState('disconnected', { originalError: err.message });
+      // Actual network failure, CORS issue, or server offline
+      if (!options.silent) {
+        updateConnectionState('disconnected', { originalError: err.message });
+      }
       throw new ClinicApiError(0, 'NETWORK_ERROR', `Unable to reach clinic backend at ${url}. (${err.message})`);
     }
   }
@@ -241,7 +253,7 @@
      * Search available slots for a selected date
      * GET /api/v1/availability/search?from_date=YYYY-MM-DD&limit=...
      */
-    searchAvailability: async function (fromDate, limit = 20) {
+    searchAvailability: async function (fromDate, limit = 20, options = {}) {
       if (!fromDate) {
         throw new Error('fromDate (YYYY-MM-DD) is required for availability search.');
       }
@@ -249,7 +261,7 @@
         from_date: fromDate,
         limit: String(limit)
       });
-      return await request(`/availability/search?${query.toString()}`);
+      return await request(`/availability/search?${query.toString()}`, { silent: options.silent || false });
     },
 
     /**
