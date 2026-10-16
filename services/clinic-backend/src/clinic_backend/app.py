@@ -340,6 +340,60 @@ def create_app(
             result = await session.scalars(stmt)
             rows = result.all()
 
+            if total == 0:
+                try:
+                    raw_check = await session.execute(
+                        text(
+                            "SELECT id, customer_number, full_name, email, phone, date_of_birth, "
+                            "preferred_language, gender, insurance_provider, insurance_policy_number, "
+                            "created_at, updated_at FROM clinic.patients ORDER BY id DESC LIMIT :limit OFFSET :offset"
+                        ),
+                        {"limit": limit, "offset": offset},
+                    )
+                    raw_rows = raw_check.mappings().all()
+                    if raw_rows:
+                        total_res = await session.scalar(
+                            text("SELECT count(*) FROM clinic.patients")
+                        )
+                        return {
+                            "total": total_res or len(raw_rows),
+                            "patients": [
+                                {
+                                    "id": r["id"],
+                                    "customer_number": r["customer_number"],
+                                    "full_name": r["full_name"],
+                                    "email": r["email"],
+                                    "phone": r["phone"],
+                                    "date_of_birth": (
+                                        r["date_of_birth"].isoformat()
+                                        if r["date_of_birth"]
+                                        else None
+                                    ),
+                                    "preferred_language": r.get(
+                                        "preferred_language", "en"
+                                    ),
+                                    "gender": r.get("gender"),
+                                    "insurance_provider": r.get("insurance_provider"),
+                                    "insurance_policy_number": r.get(
+                                        "insurance_policy_number"
+                                    ),
+                                    "created_at": (
+                                        r["created_at"].isoformat()
+                                        if r["created_at"]
+                                        else None
+                                    ),
+                                    "updated_at": (
+                                        r["updated_at"].isoformat()
+                                        if r["updated_at"]
+                                        else None
+                                    ),
+                                }
+                                for r in raw_rows
+                            ],
+                        }
+                except Exception as exc:
+                    logger.debug("clinic.patients query fallback: %s", exc)
+
             return {
                 "total": total,
                 "patients": [
@@ -377,6 +431,46 @@ def create_app(
                 stmt = stmt.where(Patient.customer_number == patient_id)
             patient = await session.scalar(stmt)
             if not patient:
+                try:
+                    raw_check = await session.execute(
+                        text(
+                            "SELECT id, customer_number, full_name, email, phone, date_of_birth, "
+                            "preferred_language, gender, insurance_provider, insurance_policy_number, "
+                            "created_at, updated_at FROM clinic.patients "
+                            "WHERE customer_number = :pid OR id::text = :pid LIMIT 1"
+                        ),
+                        {"pid": patient_id},
+                    )
+                    r = raw_check.mappings().first()
+                    if r:
+                        return {
+                            "id": r["id"],
+                            "customer_number": r["customer_number"],
+                            "full_name": r["full_name"],
+                            "email": r["email"],
+                            "phone": r["phone"],
+                            "date_of_birth": (
+                                r["date_of_birth"].isoformat()
+                                if r["date_of_birth"]
+                                else None
+                            ),
+                            "preferred_language": r.get("preferred_language", "en"),
+                            "gender": r.get("gender"),
+                            "insurance_provider": r.get("insurance_provider"),
+                            "insurance_policy_number": r.get("insurance_policy_number"),
+                            "created_at": (
+                                r["created_at"].isoformat()
+                                if r["created_at"]
+                                else None
+                            ),
+                            "updated_at": (
+                                r["updated_at"].isoformat()
+                                if r["updated_at"]
+                                else None
+                            ),
+                        }
+                except Exception as exc:
+                    logger.debug("clinic.patients detail query fallback: %s", exc)
                 raise APIError(404, "PATIENT_NOT_FOUND", "Patient not found.")
             return {
                 "id": patient.id,

@@ -11,7 +11,11 @@ def make_engine(settings: Settings) -> AsyncEngine:
     return create_async_engine(
         settings.database_url.get_secret_value(),
         pool_pre_ping=True,
-        connect_args={"timeout": 3, "command_timeout": 5},
+        connect_args={
+            "timeout": 3,
+            "command_timeout": 5,
+            "server_settings": {"search_path": "clinic, public"},
+        },
     )
 
 
