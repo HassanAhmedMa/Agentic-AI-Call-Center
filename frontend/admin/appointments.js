@@ -4,6 +4,13 @@
  * Appointment Details Drawer, and Modals (New Appointment, Reschedule, Cancel, Export).
  */
 
+// Purge legacy mock storage immediately so we only display real Supabase database records
+try {
+  localStorage.removeItem('nile_clinic_appointments_live_v2');
+  localStorage.removeItem('nile_clinic_appointments_store');
+  localStorage.removeItem('clinic_admin_appointments_store');
+} catch (_) {}
+
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initGlobalShortcuts();
@@ -106,65 +113,8 @@ function saveAppointmentsStore() {
 }
 
 function initAppointmentsStore() {
-  try {
-    const saved = localStorage.getItem('nile_clinic_appointments_live_v2');
-    if (saved) {
-      appointmentsData = JSON.parse(saved);
-    }
-  } catch (e) {}
-
-  if (!appointmentsData || appointmentsData.length === 0) {
-    appointmentsData = [
-      {
-        id: 101,
-        patientName: "Hassan Metwaly",
-        patientPhone: "+201122228646",
-        patientCode: "324956",
-        patientAvatar: "H",
-        patientAvatarBg: "#EFF6FF",
-        patientAvatarColor: "#2563EB",
-        doctor: "Dr. Amal Nour",
-        doctorDept: "Cardiology",
-        doctorId: 1,
-        time: "09:00 AM - 09:30 AM",
-        timeShort: "09:00 AM",
-        date: "Today",
-        type: "Consultation",
-        status: "Confirmed",
-        branch: "Main Branch - Heliopolis",
-        room: "Cardiology Suite 1",
-        notes: "Cardiovascular consultation & baseline ECG examination.",
-        insurance: "Cash / Standard"
-      },
-      {
-        id: 102,
-        patientName: "Ziad Ehab Tawfik",
-        patientPhone: "+201019755937",
-        patientCode: "166967",
-        patientAvatar: "Z",
-        patientAvatarBg: "#F0FDF4",
-        patientAvatarColor: "#16A34A",
-        doctor: "Dr. Salma Hany",
-        doctorDept: "Dermatology",
-        doctorId: 3,
-        time: "11:00 AM - 11:30 AM",
-        timeShort: "11:00 AM",
-        date: "Today",
-        type: "Follow-up",
-        status: "Confirmed",
-        branch: "Main Branch - Heliopolis",
-        room: "Dermatology Clinic 2",
-        notes: "Routine dermatological follow-up consultation.",
-        insurance: "Standard Insurance"
-      }
-    ];
-  }
-
-  saveAppointmentsStore();
+  appointmentsData = [];
   renderScheduleGrid();
-  if (appointmentsData.length > 0) {
-    selectScheduleSlot(appointmentsData[0].id, null);
-  }
 }
 
 function renderScheduleGrid() {
@@ -186,11 +136,24 @@ function renderScheduleGrid() {
         { name_en: 'Dr. Mariam Adel', specialty_id: 3 }
       ];
 
+  const statusFilterEl = document.getElementById('statusSelectFilter');
+  const statusFilterVal = statusFilterEl ? statusFilterEl.value : 'All Statuses';
+
+  // CRITICAL: Cancelled appointments must NOT occupy slots in the active schedule grid!
+  // Only display non-cancelled appointments, unless the operator explicitly chose "Cancelled" in the status filter dropdown.
+  const activeAppointments = appointmentsData.filter(a => {
+    const isCancelled = (a.status || '').toLowerCase() === 'cancelled';
+    if (statusFilterVal === 'Cancelled') {
+      return isCancelled;
+    }
+    return !isCancelled;
+  });
+
   tbody.innerHTML = times.map(t => {
     let cellsHtml = `<td class="time-slot-cell">${t}</td>`;
 
     doctors.forEach(doc => {
-      const match = appointmentsData.find(a => {
+      const match = activeAppointments.find(a => {
         const docIdMatch = a.doctorId && doc.id && Number(a.doctorId) === Number(doc.id);
         const docNameMatch = a.doctor && (
           a.doctor.toLowerCase().includes(doc.name_en.toLowerCase()) || 
@@ -240,9 +203,9 @@ function renderScheduleGrid() {
 
   // Update Metrics
   metricsState.total = appointmentsData.length;
-  metricsState.confirmed = appointmentsData.filter(a => a.status === 'Confirmed').length;
-  metricsState.pending = appointmentsData.filter(a => a.status === 'Pending').length;
-  metricsState.cancelled = appointmentsData.filter(a => a.status === 'Cancelled').length;
+  metricsState.confirmed = appointmentsData.filter(a => (a.status || '').toLowerCase() === 'confirmed' || (a.status || '').toLowerCase() === 'scheduled').length;
+  metricsState.pending = appointmentsData.filter(a => (a.status || '').toLowerCase() === 'pending').length;
+  metricsState.cancelled = appointmentsData.filter(a => (a.status || '').toLowerCase() === 'cancelled').length;
   updateMetricsDisplay();
 
   // Render Right Column Upcoming List
@@ -1232,10 +1195,31 @@ async function handleCancelAppointment() {
   if (confirm(`Are you sure you want to cancel the appointment for ${selectedAppointment.patientName} on ${selectedAppointment.date}?`)) {
     try {
       if (window.ClinicApi) {
-        await window.ClinicApi.cancelAppointment(selectedAppointment.id, {
-          reason: 'Cancelled by operator'
-        });
-        showToast(`Appointment #${selectedAppointment.id} for ${selectedAppointment.patientName} marked as Cancelled.`, 'warning');
+        try {
+          await window.ClinicApi.cancelAppointment(selectedAppointment.id, {
+            reason: 'Cancelled by operator'
+          });
+        } catch (apiErr) {
+          // If the appointment ID was a legacy mock ID (e.g. 101, 102) from localStorage
+          if (apiErr.status === 404 || apiErr.code === 'APPOINTMENT_NOT_FOUND') {
+            console.warn('[Appointments] Legacy local appointment removed:', selectedAppointment.id);
+          } else {
+            throw apiErr;
+          }
+        }
+      }
+
+      // Mark as Cancelled in memory
+      selectedAppointment.status = 'Cancelled';
+      appointmentsData = appointmentsData.map(a => a.id === selectedAppointment.id ? { ...a, status: 'Cancelled' } : a);
+      saveAppointmentsStore();
+
+      // Immediately re-render schedule grid (removes cancelled slot from active calendar)
+      renderScheduleGrid();
+      populateAppointmentDetails(selectedAppointment);
+      showToast(`Appointment #${selectedAppointment.id} for ${selectedAppointment.patientName} has been cancelled and removed from active schedule.`, 'warning');
+
+      if (window.ClinicApi) {
         await loadLiveCatalog();
       }
     } catch (err) {
