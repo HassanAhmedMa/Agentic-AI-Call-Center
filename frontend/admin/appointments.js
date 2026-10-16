@@ -742,6 +742,17 @@ window.handleSelectRegisteredPatient = function(selectEl) {
   }
 };
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+window.escapeHtml = escapeHtml;
+
 // Open New Appointment Modal
 async function openNewAppointmentModal() {
   if (!livePatientsCache || livePatientsCache.length === 0) {

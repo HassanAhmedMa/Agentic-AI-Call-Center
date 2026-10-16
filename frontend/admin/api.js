@@ -16,6 +16,16 @@
     });
   } catch (_) {}
 
+  window.escapeHtml = function (str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
   class ClinicApiError extends Error {
     constructor(status, code, message, details = null) {
       super(message || `API Error: ${status} (${code || 'UNKNOWN'})`);
