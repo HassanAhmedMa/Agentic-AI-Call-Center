@@ -95,14 +95,172 @@ let currentInterval = 'day'; // 'day' | 'week' | 'month'
 let currentDateOffset = 0; // Days from 14 Nov 2024
 let currentActiveDayNumber = 14;
 
+function saveAppointmentsStore() {
+  try {
+    localStorage.setItem('nile_clinic_appointments_live_v2', JSON.stringify(appointmentsData));
+  } catch (_) {}
+}
+
 function initAppointmentsStore() {
   try {
-    localStorage.removeItem('nile_clinic_appointments_v1');
+    const saved = localStorage.getItem('nile_clinic_appointments_live_v2');
+    if (saved) {
+      appointmentsData = JSON.parse(saved);
+    }
   } catch (e) {}
-  updateMetricsDisplay();
-  if (selectedAppointment) {
-    populateAppointmentDetails(selectedAppointment);
+
+  if (!appointmentsData || appointmentsData.length === 0) {
+    appointmentsData = [
+      {
+        id: 101,
+        patientName: "Hassan Metwaly",
+        patientPhone: "+201122228646",
+        patientCode: "324956",
+        patientAvatar: "H",
+        patientAvatarBg: "#EFF6FF",
+        patientAvatarColor: "#2563EB",
+        doctor: "Dr. Amal Nour",
+        doctorDept: "Cardiology",
+        doctorId: 1,
+        time: "09:00 AM - 09:30 AM",
+        timeShort: "09:00 AM",
+        date: "Today",
+        type: "Consultation",
+        status: "Confirmed",
+        branch: "Main Branch - Heliopolis",
+        room: "Cardiology Suite 1",
+        notes: "Cardiovascular consultation & baseline ECG examination.",
+        insurance: "Cash / Standard"
+      },
+      {
+        id: 102,
+        patientName: "Ziad Ehab Tawfik",
+        patientPhone: "+201019755937",
+        patientCode: "166967",
+        patientAvatar: "Z",
+        patientAvatarBg: "#F0FDF4",
+        patientAvatarColor: "#16A34A",
+        doctor: "Dr. Salma Hany",
+        doctorDept: "Dermatology",
+        doctorId: 3,
+        time: "11:00 AM - 11:30 AM",
+        timeShort: "11:00 AM",
+        date: "Today",
+        type: "Follow-up",
+        status: "Confirmed",
+        branch: "Main Branch - Heliopolis",
+        room: "Dermatology Clinic 2",
+        notes: "Routine dermatological follow-up consultation.",
+        insurance: "Standard Insurance"
+      }
+    ];
   }
+
+  saveAppointmentsStore();
+  renderScheduleGrid();
+  if (appointmentsData.length > 0) {
+    selectScheduleSlot(appointmentsData[0].id, null);
+  }
+}
+
+function renderScheduleGrid() {
+  const tbody = document.getElementById('scheduleGridBody');
+  if (!tbody) return;
+
+  const times = [
+    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'
+  ];
+
+  const doctors = (Array.isArray(liveDoctorsCache) && liveDoctorsCache.length > 0)
+    ? liveDoctorsCache.slice(0, 5)
+    : [
+        { name_en: 'Dr. Amal Nour', specialty_id: 1 },
+        { name_en: 'Dr. Karim Salem', specialty_id: 1 },
+        { name_en: 'Dr. Salma Hany', specialty_id: 2 },
+        { name_en: 'Dr. Tarek Ali', specialty_id: 2 },
+        { name_en: 'Dr. Mariam Adel', specialty_id: 3 }
+      ];
+
+  tbody.innerHTML = times.map(t => {
+    let cellsHtml = `<td class="time-slot-cell">${t}</td>`;
+
+    doctors.forEach(doc => {
+      const match = appointmentsData.find(a => {
+        const timeMatch = a.timeShort === t || (a.time && a.time.startsWith(t));
+        const docMatch = a.doctor && (a.doctor.toLowerCase().includes(doc.name_en.toLowerCase()) || doc.name_en.toLowerCase().includes(a.doctor.toLowerCase()));
+        return timeMatch && docMatch;
+      });
+
+      if (match) {
+        let cardColorClass = 'card-confirmed-green';
+        if (match.status === 'Pending') cardColorClass = 'card-orange';
+        if (match.status === 'In Clinic') cardColorClass = 'card-blue';
+        if (match.status === 'Cancelled') cardColorClass = 'card-purple';
+
+        const isSelected = selectedAppointment && selectedAppointment.id === match.id ? 'selected-appt-card' : '';
+
+        cellsHtml += `
+          <td style="padding: 4px; vertical-align: top;">
+            <div class="appt-slot-card ${cardColorClass} ${isSelected}" onclick="selectScheduleSlot(${match.id}, this)">
+              <div class="slot-top-row">
+                <span class="slot-time-text">${match.timeShort || t}</span>
+                <span class="status-pill status-${match.status.toLowerCase().replace(/\s+/g, '')}">${match.status}</span>
+              </div>
+              <span class="slot-patient-name">${escapeHtml(match.patientName)}</span>
+              <span class="slot-sub-type">${escapeHtml(match.type)} • ${escapeHtml(match.patientCode)}</span>
+            </div>
+          </td>
+        `;
+      } else {
+        cellsHtml += `<td style="padding: 4px; text-align: center; vertical-align: middle;"></td>`;
+      }
+    });
+
+    return `<tr>${cellsHtml}</tr>`;
+  }).join('');
+
+  // Update Metrics
+  metricsState.total = appointmentsData.length;
+  metricsState.confirmed = appointmentsData.filter(a => a.status === 'Confirmed').length;
+  metricsState.pending = appointmentsData.filter(a => a.status === 'Pending').length;
+  metricsState.cancelled = appointmentsData.filter(a => a.status === 'Cancelled').length;
+  updateMetricsDisplay();
+
+  // Render Right Column Upcoming List
+  renderUpcomingList();
+}
+
+function renderUpcomingList() {
+  const container = document.querySelector('.upcoming-items-list');
+  const countEl = document.querySelector('.upcoming-title');
+  if (!container) return;
+
+  const upcoming = appointmentsData.filter(a => a.status !== 'Cancelled').slice(0, 5);
+  if (countEl) countEl.textContent = `Upcoming (${upcoming.length})`;
+
+  if (upcoming.length === 0) {
+    container.innerHTML = '<div style="padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 13px;">No upcoming appointments scheduled</div>';
+    return;
+  }
+
+  container.innerHTML = upcoming.map(appt => `
+    <div class="upcoming-item-card" onclick="selectScheduleSlot(${appt.id}, null)" style="cursor: pointer; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-light); margin-bottom: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 34px; height: 34px; border-radius: 50%; background: ${appt.patientAvatarBg || '#EFF6FF'}; color: ${appt.patientAvatarColor || '#2563EB'}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+          ${appt.patientAvatar || appt.patientName.charAt(0)}
+        </div>
+        <div>
+          <div style="font-weight: 700; font-size: 12.5px; color: var(--text-dark);">${escapeHtml(appt.patientName)}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(appt.doctor)} • ${escapeHtml(appt.doctorDept)}</div>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 11px; font-weight: 700; color: #2563EB;">${appt.timeShort}</div>
+        <div style="font-size: 10px; color: var(--text-muted);">${appt.date}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
 /* =============================================================================
@@ -126,7 +284,17 @@ function selectScheduleSlot(apptId, element) {
 }
 
 function populateAppointmentDetails(appt) {
-  if (!appt) return;
+  const emptyState = document.getElementById('apptDetailsEmptyState');
+  const activeContent = document.getElementById('apptDetailsActiveContent');
+
+  if (!appt) {
+    if (emptyState) emptyState.style.display = 'block';
+    if (activeContent) activeContent.style.display = 'none';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+  if (activeContent) activeContent.style.display = 'flex';
 
   const heroAvatar = document.getElementById('apptHeroAvatar');
   const heroName = document.getElementById('apptHeroName');
@@ -139,11 +307,12 @@ function populateAppointmentDetails(appt) {
   const fieldDept = document.getElementById('apptFieldDept');
   const fieldType = document.getElementById('apptFieldType');
   const fieldBranch = document.getElementById('apptFieldBranch');
+  const fieldNotes = document.getElementById('apptFieldNotes');
 
   if (heroAvatar) {
     heroAvatar.textContent = appt.patientAvatar || appt.patientName.charAt(0);
-    heroAvatar.style.background = appt.patientAvatarBg || '#EDE9FE';
-    heroAvatar.style.color = appt.patientAvatarColor || '#7C3AED';
+    heroAvatar.style.background = appt.patientAvatarBg || '#EFF6FF';
+    heroAvatar.style.color = appt.patientAvatarColor || '#2563EB';
   }
 
   if (heroName) heroName.textContent = appt.patientName;
@@ -165,13 +334,7 @@ function populateAppointmentDetails(appt) {
   if (fieldDept) fieldDept.textContent = appt.doctorDept;
   if (fieldType) fieldType.textContent = appt.type;
   if (fieldBranch) fieldBranch.textContent = appt.branch;
-
-  // Reset tab to Details
-  const defaultTab = document.querySelector('.patient-sub-tabs .sub-tab-btn');
-  if (defaultTab) {
-    document.querySelectorAll('.patient-sub-tabs .sub-tab-btn').forEach(b => b.classList.remove('active'));
-    defaultTab.classList.add('active');
-  }
+  if (fieldNotes) fieldNotes.textContent = appt.notes || 'No notes provided.';
 }
 
 /* =============================================================================
@@ -924,9 +1087,8 @@ function submitNewAppointment() {
   };
 
   appointmentsData.unshift(newAppt);
-  metricsState.total += 1;
-  metricsState.confirmed += 1;
-  updateMetricsDisplay();
+  saveAppointmentsStore();
+  renderScheduleGrid();
   selectScheduleSlot(newAppt.id, null);
   closeAdminModal();
 
@@ -996,6 +1158,8 @@ function confirmRescheduleAppointment() {
     selectedAppointment.date = newDate;
     selectedAppointment.time = newTime;
     selectedAppointment.notes += ` [Rescheduled: ${reason}]`;
+    saveAppointmentsStore();
+    renderScheduleGrid();
     populateAppointmentDetails(selectedAppointment);
   }
 
@@ -1009,9 +1173,8 @@ function handleCancelAppointment() {
 
   if (confirm(`Are you sure you want to cancel the appointment for ${selectedAppointment.patientName} on ${selectedAppointment.date}?`)) {
     selectedAppointment.status = 'Cancelled';
-    if (metricsState.confirmed > 0) metricsState.confirmed -= 1;
-    metricsState.cancelled += 1;
-    updateMetricsDisplay();
+    saveAppointmentsStore();
+    renderScheduleGrid();
     populateAppointmentDetails(selectedAppointment);
     showToast(`Appointment #${selectedAppointment.id} for ${selectedAppointment.patientName} marked as Cancelled.`, 'warning');
   }

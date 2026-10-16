@@ -552,9 +552,13 @@
             <div class="appt-details-panel" id="selectedApptDetailsCard">
               <div class="upcoming-header-row">
                 <h4 class="appt-details-title">Appointment Details</h4>
+                <div style="display:flex; gap:6px;">
+                  <button class="section-link-action" onclick="openRescheduleModal()">Reschedule</button>
+                  <button class="section-link-action text-red" onclick="handleCancelAppointment()">Cancel</button>
+                </div>
               </div>
 
-              <div id="apptDetailsEmptyState" style="padding: 40px 16px; text-align: center; color: var(--text-muted);">
+              <div id="apptDetailsEmptyState" style="padding: 40px 16px; text-align: center; color: var(--text-muted); display: none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" width="40" height="40" style="margin-bottom: 10px;">
                   <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
                   <line x1="16" y1="2" x2="16" y2="6"/>
@@ -562,8 +566,57 @@
                   <line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
                 <div style="font-weight: 600; color: var(--text-dark); font-size: 14px; margin-bottom: 4px;">No Appointment Selected</div>
-                <div style="font-size: 12px;">No appointments are currently scheduled in the database.</div>
+                <div style="font-size: 12px;">Click any appointment slot on the calendar grid.</div>
               </div>
+
+              <div id="apptDetailsActiveContent" style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px;">
+                <!-- Hero Patient Info -->
+                <div style="display: flex; align-items: center; justify-content: space-between; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div id="apptHeroAvatar" style="width: 40px; height: 40px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px;">H</div>
+                    <div>
+                      <div id="apptHeroName" style="font-weight: 700; font-size: 14px; color: var(--text-dark);">Hassan Metwaly</div>
+                      <div id="apptHeroPhone" style="font-size: 12px; color: var(--text-muted);">+201122228646</div>
+                    </div>
+                  </div>
+                  <span id="apptHeroStatus" class="status-pill status-confirmed">• Confirmed</span>
+                </div>
+
+                <!-- Info Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" id="apptInfoGrid">
+                  <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px;">
+                    <span style="font-size: 11px; color: #64748B; display: block; font-weight: 600;">Date & Time</span>
+                    <span id="apptFieldDate" style="font-size: 13px; font-weight: 700; color: #1E293B; display: block;">Today</span>
+                    <span id="apptFieldTime" style="font-size: 11.5px; color: #2563EB;">09:00 AM - 09:30 AM</span>
+                  </div>
+                  <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px;">
+                    <span style="font-size: 11px; color: #64748B; display: block; font-weight: 600;">Doctor</span>
+                    <span id="apptFieldDoctor" style="font-size: 13px; font-weight: 700; color: #1E293B; display: block;">Dr. Amal Nour</span>
+                    <span id="apptFieldDept" style="font-size: 11.5px; color: #64748B;">Cardiology</span>
+                  </div>
+                  <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px;">
+                    <span style="font-size: 11px; color: #64748B; display: block; font-weight: 600;">Type</span>
+                    <span id="apptFieldType" style="font-size: 12.5px; font-weight: 600; color: #1E293B; display: block;">Consultation</span>
+                  </div>
+                  <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px;">
+                    <span style="font-size: 11px; color: #64748B; display: block; font-weight: 600;">Branch</span>
+                    <span id="apptFieldBranch" style="font-size: 12.5px; font-weight: 600; color: #1E293B; display: block;">Main Branch - Heliopolis</span>
+                  </div>
+                </div>
+
+                <!-- Notes Block -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px;">
+                  <span style="font-size: 11px; color: #64748B; display: block; font-weight: 600; margin-bottom: 3px;">Clinical Notes</span>
+                  <div id="apptFieldNotes" style="font-size: 12px; color: #334155; line-height: 1.4;">General medical consultation and routine examination.</div>
+                </div>
+
+                <!-- Action Button -->
+                <button type="button" class="modal-btn-primary" style="width: 100%; justify-content: center;" onclick="handleStartCallWithPatient()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-right: 6px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  Connect Call with Patient
+                </button>
+              </div>
+
             </div>
 
           </div>

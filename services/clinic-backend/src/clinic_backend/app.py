@@ -133,7 +133,12 @@ def create_app(
             else uuid4().hex
         )
         if request.url.path.startswith(
-            ("/api/v1/doctors", "/api/v1/services", "/api/v1/specialties")
+            (
+                "/api/v1/doctors",
+                "/api/v1/services",
+                "/api/v1/specialties",
+                "/api/v1/availability",
+            )
         ):
             retry = limiter.retry_after(
                 request.client.host if request.client else "unknown"
@@ -741,6 +746,13 @@ def create_app(
             "active_clients": len(ws_manager.active_connections),
         }
 
+    from clinic_backend.availability_routes import availability_router
+
+    app.include_router(
+        availability_router(
+            sessions, settings, lambda: datetime.now(timezone.utc)
+        )
+    )
     app.include_router(conversation_router(sessions, settings))
     if settings.identity_enabled:
         from clinic_backend.identity_routes import identity_router
