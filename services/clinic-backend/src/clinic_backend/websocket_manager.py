@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
 logger = logging.getLogger("clinic_backend.websocket")
 
@@ -23,9 +23,10 @@ class ConnectionManager:
         self.active_connections: list[WebSocket] = []
         self._lock = asyncio.Lock()
 
-    async def connect(self, websocket: WebSocket) -> None:
+    async def connect(self, websocket: WebSocket, *, accepted: bool = False) -> None:
         """Accept and register an active WebSocket client."""
-        await websocket.accept()
+        if not accepted:
+            await websocket.accept()
         async with self._lock:
             self.active_connections.append(websocket)
         logger.info(
@@ -43,7 +44,9 @@ class ConnectionManager:
             len(self.active_connections),
         )
 
-    async def broadcast(self, event_type: str, data: dict[str, Any] | None = None) -> None:
+    async def broadcast(
+        self, event_type: str, data: dict[str, Any] | None = None
+    ) -> None:
         """Broadcast a structured JSON event to all connected operator dashboards.
 
         Implements the Thin Event pattern: payloads include entity identifiers and event
@@ -52,7 +55,7 @@ class ConnectionManager:
         payload = {
             "event": event_type,
             "data": data or {},
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         async with self._lock:

@@ -47,8 +47,12 @@ class Patient(Base):
     allergies: Mapped[str | None] = mapped_column(String(512), nullable=True)
     chronic_conditions: Mapped[str | None] = mapped_column(String(512), nullable=True)
     preferred_pharmacy: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    emergency_contact_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    emergency_contact_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    emergency_contact_name: Mapped[str | None] = mapped_column(
+        String(128), nullable=True
+    )
+    emergency_contact_phone: Mapped[str | None] = mapped_column(
+        String(32), nullable=True
+    )
     insurance_provider: Mapped[str | None] = mapped_column(String(128))
     insurance_policy_number: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(

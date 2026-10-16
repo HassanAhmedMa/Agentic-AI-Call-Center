@@ -1,13 +1,15 @@
 import asyncio
-from datetime import date as dt_date, datetime, time as dt_time, timedelta, timezone
 import logging
 import math
 import re
+import secrets
 import time
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from datetime import date as dt_date
+from datetime import time as dt_time
 from pathlib import Path as FilePath
 from typing import Annotated, Any, Literal
 from uuid import uuid4
@@ -38,7 +40,7 @@ from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
 from clinic_backend.errors import APIError, ErrorEnvelope, error_response
 from clinic_backend.identity_models import Patient
-from clinic_backend.mail import Delivery, SMTPDelivery, make_delivery
+from clinic_backend.mail import Delivery, make_delivery
 from clinic_backend.settings import Settings
 from clinic_backend.supabase_auth import AuthClient
 from clinic_backend.websocket_manager import ws_manager
@@ -119,14 +121,6 @@ def create_app(
         title="Agentic Clinic — Phase 1 Backend", version="0.2.0", lifespan=lifespan
     )
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
     @app.middleware("http")
     async def correlation(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
@@ -138,6 +132,29 @@ def create_app(
             if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", supplied)
             else uuid4().hex
         )
+        path = request.url.path
+        privileged = (
+            path == "/api/v1/admin"
+            or path.startswith("/api/v1/admin/")
+            or path == "/api/v1/appointments"
+            or path.startswith("/api/v1/appointments/")
+            or path == "/api/v1/ws/broadcast"
+            or (path == "/api/v1/doctors" and request.method == "POST")
+        )
+        if privileged and request.method != "OPTIONS":
+            expected = settings.admin_api_token
+            supplied = request.headers.get("X-Admin-Token", "")
+            if expected is None or not secrets.compare_digest(
+                supplied.encode(), expected.get_secret_value().encode()
+            ):
+                response = error_response(
+                    request,
+                    403 if expected is None else 401,
+                    "ACTION_NOT_ALLOWED" if expected is None else "ADMIN_AUTH_REQUIRED",
+                    "Administrator authentication required.",
+                )
+                response.headers["X-Request-Id"] = request.state.request_id
+                return response
         if request.url.path.startswith(
             (
                 "/api/v1/doctors",
@@ -155,29 +172,37 @@ def create_app(
                     request, 429, "RATE_LIMITED", "Too many requests. Try again later."
                 )
                 response.headers["Retry-After"] = str(retry)
-                response.headers["Access-Control-Allow-Origin"] = "*"
                 return response
         try:
             response = await call_next(request)
         except (SQLAlchemyError, OSError, TimeoutError) as exc:
-            logger.error("Database or IO error request_id=%s: %s", request.state.request_id, exc)
+            logger.error(
+                "Database or IO error request_id=%s type=%s",
+                request.state.request_id,
+                type(exc).__name__,
+            )
             response = error_response(
                 request, 503, "SERVICE_UNAVAILABLE", "Service temporarily unavailable."
             )
-            response.headers["Access-Control-Allow-Origin"] = "*"
         except Exception as exc:
             logger.error(
-                "Unhandled request error request_id=%s type=%s: %s",
+                "Unhandled request error request_id=%s type=%s",
                 request.state.request_id,
                 type(exc).__name__,
-                exc,
             )
             response = error_response(
-                request, 500, "INTERNAL_ERROR", f"An unexpected error occurred: {exc}"
+                request, 500, "INTERNAL_ERROR", "An unexpected error occurred."
             )
-            response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["X-Request-Id"] = request.state.request_id
         return response
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.exception_handler(APIError)
     async def api_error(request: Request, exc: APIError) -> Response:
@@ -320,6 +345,7 @@ def create_app(
     async def create_doctor(payload: dict[str, Any]) -> dict[str, Any]:
         from datetime import time as dt_time
         from decimal import Decimal
+
         from clinic_backend.models import Doctor, Specialty
 
         name_en = str(payload.get("name_en") or "").strip()
@@ -330,7 +356,9 @@ def create_app(
         fee_raw = payload.get("consultation_fee") or payload.get("fee") or 350.0
 
         if not name_en or not name_ar or not specialty_id:
-            raise APIError(400, "INVALID_INPUT", "name_en, name_ar, and specialty_id are required.")
+            raise APIError(
+                400, "INVALID_INPUT", "name_en, name_ar, and specialty_id are required."
+            )
 
         try:
             specialty_id = int(specialty_id)
@@ -342,8 +370,13 @@ def create_app(
         except Exception:
             consultation_fee = Decimal("350.00")
 
-        bio_en = str(payload.get("bio_en") or f"Experienced {title_en} specializing in clinic care.").strip()
-        bio_ar = str(payload.get("bio_ar") or f"استشاري متخصص في الرعاية الطبية.").strip()
+        bio_en = str(
+            payload.get("bio_en")
+            or f"Experienced {title_en} specializing in clinic care."
+        ).strip()
+        bio_ar = str(
+            payload.get("bio_ar") or "استشاري متخصص في الرعاية الطبية."
+        ).strip()
         languages = payload.get("languages") or ["ar", "en"]
 
         raw_start = str(payload.get("shift_start") or "09:00").strip()
@@ -371,7 +404,9 @@ def create_app(
         async with sessions() as session:
             spec = await session.get(Specialty, specialty_id)
             if not spec:
-                raise APIError(404, "SPECIALTY_NOT_FOUND", "Selected specialty does not exist.")
+                raise APIError(
+                    404, "SPECIALTY_NOT_FOUND", "Selected specialty does not exist."
+                )
 
             new_doc = Doctor(
                 name_en=name_en,
@@ -414,7 +449,9 @@ def create_app(
                     "currency": "EGP",
                 },
                 "working_days": [
-                    {1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 6: "Sat", 7: "Sun"}.get(d, str(d))
+                    {1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 6: "Sat", 7: "Sun"}.get(
+                        d, str(d)
+                    )
                     for d in new_doc.working_days
                 ],
                 "working_hours": {
@@ -446,7 +483,7 @@ def create_app(
             raise APIError(404, "SERVICE_NOT_FOUND", "Service not found.")
         return item
 
-    @app.get("/api/v1/patients", tags=["Patients"])
+    @app.get("/api/v1/admin/patients", tags=["Patients"])
     async def list_patients(
         q: str | None = Query(default=None),
         limit: int = Query(default=50, ge=1, le=100),
@@ -473,9 +510,12 @@ def create_app(
                 try:
                     raw_check = await session.execute(
                         text(
-                            "SELECT id, customer_number, full_name, email, phone, date_of_birth, "
-                            "preferred_language, gender, insurance_provider, insurance_policy_number, "
-                            "created_at, updated_at FROM clinic.patients ORDER BY id DESC LIMIT :limit OFFSET :offset"
+                            "SELECT id, customer_number, full_name, email, phone, "
+                            "date_of_birth, "
+                            "preferred_language, gender, insurance_provider, "
+                            "insurance_policy_number, "
+                            "created_at, updated_at FROM clinic.patients ORDER BY id "
+                            "DESC LIMIT :limit OFFSET :offset"
                         ),
                         {"limit": limit, "offset": offset},
                     )
@@ -507,8 +547,12 @@ def create_app(
                                     "allergies": r.get("allergies"),
                                     "chronic_conditions": r.get("chronic_conditions"),
                                     "preferred_pharmacy": r.get("preferred_pharmacy"),
-                                    "emergency_contact_name": r.get("emergency_contact_name"),
-                                    "emergency_contact_phone": r.get("emergency_contact_phone"),
+                                    "emergency_contact_name": r.get(
+                                        "emergency_contact_name"
+                                    ),
+                                    "emergency_contact_phone": r.get(
+                                        "emergency_contact_phone"
+                                    ),
                                     "insurance_provider": r.get("insurance_provider"),
                                     "insurance_policy_number": r.get(
                                         "insurance_policy_number"
@@ -549,8 +593,12 @@ def create_app(
                         "allergies": getattr(p, "allergies", None),
                         "chronic_conditions": getattr(p, "chronic_conditions", None),
                         "preferred_pharmacy": getattr(p, "preferred_pharmacy", None),
-                        "emergency_contact_name": getattr(p, "emergency_contact_name", None),
-                        "emergency_contact_phone": getattr(p, "emergency_contact_phone", None),
+                        "emergency_contact_name": getattr(
+                            p, "emergency_contact_name", None
+                        ),
+                        "emergency_contact_phone": getattr(
+                            p, "emergency_contact_phone", None
+                        ),
                         "insurance_provider": p.insurance_provider,
                         "insurance_policy_number": p.insurance_policy_number,
                         "created_at": (
@@ -564,12 +612,17 @@ def create_app(
                 ],
             }
 
-    @app.get("/api/v1/patients/{patient_id}", tags=["Patients"])
+    @app.get("/api/v1/admin/patients/{patient_id}", tags=["Patients"])
     async def get_patient_detail(patient_id: str) -> dict[str, Any]:
         async with sessions() as session:
             stmt = select(Patient)
             if patient_id.isdigit():
-                stmt = stmt.where(or_(Patient.id == int(patient_id), Patient.customer_number == patient_id))
+                stmt = stmt.where(
+                    or_(
+                        Patient.id == int(patient_id),
+                        Patient.customer_number == patient_id,
+                    )
+                )
             else:
                 stmt = stmt.where(Patient.customer_number == patient_id)
             patient = await session.scalar(stmt)
@@ -577,8 +630,10 @@ def create_app(
                 try:
                     raw_check = await session.execute(
                         text(
-                            "SELECT id, customer_number, full_name, email, phone, date_of_birth, "
-                            "preferred_language, gender, insurance_provider, insurance_policy_number, "
+                            "SELECT id, customer_number, full_name, email, phone, "
+                            "date_of_birth, "
+                            "preferred_language, gender, insurance_provider, "
+                            "insurance_policy_number, "
                             "created_at, updated_at FROM clinic.patients "
                             "WHERE customer_number = :pid OR id::text = :pid LIMIT 1"
                         ),
@@ -609,14 +664,10 @@ def create_app(
                             "insurance_provider": r.get("insurance_provider"),
                             "insurance_policy_number": r.get("insurance_policy_number"),
                             "created_at": (
-                                r["created_at"].isoformat()
-                                if r["created_at"]
-                                else None
+                                r["created_at"].isoformat() if r["created_at"] else None
                             ),
                             "updated_at": (
-                                r["updated_at"].isoformat()
-                                if r["updated_at"]
-                                else None
+                                r["updated_at"].isoformat() if r["updated_at"] else None
                             ),
                         }
                 except Exception as exc:
@@ -638,8 +689,12 @@ def create_app(
                 "allergies": getattr(patient, "allergies", None),
                 "chronic_conditions": getattr(patient, "chronic_conditions", None),
                 "preferred_pharmacy": getattr(patient, "preferred_pharmacy", None),
-                "emergency_contact_name": getattr(patient, "emergency_contact_name", None),
-                "emergency_contact_phone": getattr(patient, "emergency_contact_phone", None),
+                "emergency_contact_name": getattr(
+                    patient, "emergency_contact_name", None
+                ),
+                "emergency_contact_phone": getattr(
+                    patient, "emergency_contact_phone", None
+                ),
                 "insurance_provider": patient.insurance_provider,
                 "insurance_policy_number": patient.insurance_policy_number,
                 "created_at": (
@@ -650,10 +705,11 @@ def create_app(
                 ),
             }
 
-    @app.post("/api/v1/patients", tags=["Patients"])
+    @app.post("/api/v1/admin/patients", tags=["Patients"])
     async def create_patient(payload: dict[str, Any]) -> dict[str, Any]:
         import random
-        from datetime import date as dt_date, datetime, timezone
+        from datetime import date as dt_date
+        from datetime import datetime
 
         full_name = str(payload.get("full_name") or payload.get("name") or "").strip()
         phone = str(payload.get("phone") or "").strip()
@@ -689,7 +745,7 @@ def create_app(
             else:
                 candidate_num = f"{random.randint(100000, 999999)}"
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             patient = Patient(
                 customer_number=candidate_num,
                 full_name=full_name,
@@ -697,15 +753,34 @@ def create_app(
                 email_verified_at=now,
                 phone=phone,
                 date_of_birth=dob,
-                preferred_language="ar" if payload.get("preferred_language") == "ar" else "en",
+                preferred_language=(
+                    "ar" if payload.get("preferred_language") == "ar" else "en"
+                ),
                 gender=gender,
                 address=str(payload.get("address") or "").strip() or None,
-                blood_type=str(payload.get("blood_type") or payload.get("bloodType") or "").strip() or None,
+                blood_type=str(
+                    payload.get("blood_type") or payload.get("bloodType") or ""
+                ).strip()
+                or None,
                 allergies=str(payload.get("allergies") or "").strip() or None,
-                chronic_conditions=str(payload.get("chronic_conditions") or payload.get("chronicConditions") or "").strip() or None,
-                preferred_pharmacy=str(payload.get("preferred_pharmacy") or payload.get("pharmacy") or "").strip() or None,
-                emergency_contact_name=str(payload.get("emergency_contact_name") or "").strip() or None,
-                emergency_contact_phone=str(payload.get("emergency_contact_phone") or "").strip() or None,
+                chronic_conditions=str(
+                    payload.get("chronic_conditions")
+                    or payload.get("chronicConditions")
+                    or ""
+                ).strip()
+                or None,
+                preferred_pharmacy=str(
+                    payload.get("preferred_pharmacy") or payload.get("pharmacy") or ""
+                ).strip()
+                or None,
+                emergency_contact_name=str(
+                    payload.get("emergency_contact_name") or ""
+                ).strip()
+                or None,
+                emergency_contact_phone=str(
+                    payload.get("emergency_contact_phone") or ""
+                ).strip()
+                or None,
                 insurance_provider=payload.get("insurance_provider"),
                 insurance_policy_number=payload.get("insurance_policy_number"),
                 created_at=now,
@@ -730,7 +805,9 @@ def create_app(
                 "full_name": patient.full_name,
                 "email": patient.email,
                 "phone": patient.phone,
-                "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+                "date_of_birth": (
+                    patient.date_of_birth.isoformat() if patient.date_of_birth else None
+                ),
                 "preferred_language": patient.preferred_language,
                 "gender": patient.gender,
                 "address": patient.address,
@@ -742,18 +819,29 @@ def create_app(
                 "emergency_contact_phone": patient.emergency_contact_phone,
                 "insurance_provider": patient.insurance_provider,
                 "insurance_policy_number": patient.insurance_policy_number,
-                "created_at": patient.created_at.isoformat() if patient.created_at else None,
-                "updated_at": patient.updated_at.isoformat() if patient.updated_at else None,
+                "created_at": (
+                    patient.created_at.isoformat() if patient.created_at else None
+                ),
+                "updated_at": (
+                    patient.updated_at.isoformat() if patient.updated_at else None
+                ),
             }
 
-    @app.put("/api/v1/patients/{patient_id}", tags=["Patients"])
-    async def update_patient(patient_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        from datetime import datetime, timezone
+    @app.put("/api/v1/admin/patients/{patient_id}", tags=["Patients"])
+    async def update_patient(
+        patient_id: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        from datetime import datetime
 
         async with sessions() as session:
             stmt = select(Patient)
             if patient_id.isdigit():
-                stmt = stmt.where(or_(Patient.id == int(patient_id), Patient.customer_number == patient_id))
+                stmt = stmt.where(
+                    or_(
+                        Patient.id == int(patient_id),
+                        Patient.customer_number == patient_id,
+                    )
+                )
             else:
                 stmt = stmt.where(Patient.customer_number == patient_id)
             patient = await session.scalar(stmt)
@@ -761,7 +849,9 @@ def create_app(
                 raise APIError(404, "PATIENT_NOT_FOUND", "Patient not found.")
 
             if "full_name" in payload or "name" in payload:
-                patient.full_name = str(payload.get("full_name") or payload.get("name")).strip()
+                patient.full_name = str(
+                    payload.get("full_name") or payload.get("name")
+                ).strip()
             if "phone" in payload:
                 new_phone = str(payload["phone"]).strip()
                 if not new_phone.startswith("+"):
@@ -769,38 +859,75 @@ def create_app(
                 patient.phone = new_phone
             if "email" in payload and payload["email"]:
                 patient.email = str(payload["email"]).strip().lower()
-            if "gender" in payload and str(payload["gender"]).lower() in ("male", "female"):
+            if "gender" in payload and str(payload["gender"]).lower() in (
+                "male",
+                "female",
+            ):
                 patient.gender = str(payload["gender"]).lower()
             if "address" in payload:
                 patient.address = str(payload["address"]).strip() or None
             if "blood_type" in payload or "bloodType" in payload:
-                patient.blood_type = str(payload.get("blood_type") or payload.get("bloodType") or "").strip() or None
+                patient.blood_type = (
+                    str(
+                        payload.get("blood_type") or payload.get("bloodType") or ""
+                    ).strip()
+                    or None
+                )
             if "allergies" in payload:
                 patient.allergies = str(payload["allergies"]).strip() or None
             if "chronic_conditions" in payload or "chronicConditions" in payload:
-                patient.chronic_conditions = str(payload.get("chronic_conditions") or payload.get("chronicConditions") or "").strip() or None
+                patient.chronic_conditions = (
+                    str(
+                        payload.get("chronic_conditions")
+                        or payload.get("chronicConditions")
+                        or ""
+                    ).strip()
+                    or None
+                )
             if "preferred_pharmacy" in payload or "pharmacy" in payload:
-                patient.preferred_pharmacy = str(payload.get("preferred_pharmacy") or payload.get("pharmacy") or "").strip() or None
+                patient.preferred_pharmacy = (
+                    str(
+                        payload.get("preferred_pharmacy")
+                        or payload.get("pharmacy")
+                        or ""
+                    ).strip()
+                    or None
+                )
             if "emergency_contact_name" in payload:
-                patient.emergency_contact_name = str(payload["emergency_contact_name"]).strip() or None
+                patient.emergency_contact_name = (
+                    str(payload["emergency_contact_name"]).strip() or None
+                )
             if "emergency_contact_phone" in payload:
-                patient.emergency_contact_phone = str(payload["emergency_contact_phone"]).strip() or None
+                patient.emergency_contact_phone = (
+                    str(payload["emergency_contact_phone"]).strip() or None
+                )
             if "insurance_provider" in payload:
-                patient.insurance_provider = str(payload["insurance_provider"]).strip() if payload["insurance_provider"] else None
+                patient.insurance_provider = (
+                    str(payload["insurance_provider"]).strip()
+                    if payload["insurance_provider"]
+                    else None
+                )
             if "insurance_policy_number" in payload:
-                patient.insurance_policy_number = str(payload["insurance_policy_number"]).strip() if payload["insurance_policy_number"] else None
+                patient.insurance_policy_number = (
+                    str(payload["insurance_policy_number"]).strip()
+                    if payload["insurance_policy_number"]
+                    else None
+                )
             if "date_of_birth" in payload or "dob" in payload:
                 raw_dob = payload.get("date_of_birth") or payload.get("dob")
                 if raw_dob:
                     try:
                         from datetime import date as dt_date
+
                         patient.date_of_birth = dt_date.fromisoformat(str(raw_dob)[:10])
                     except Exception:
                         pass
-            if "preferred_language" in payload and str(payload["preferred_language"]).lower() in ("ar", "en"):
+            if "preferred_language" in payload and str(
+                payload["preferred_language"]
+            ).lower() in ("ar", "en"):
                 patient.preferred_language = str(payload["preferred_language"]).lower()
 
-            patient.updated_at = datetime.now(timezone.utc)
+            patient.updated_at = datetime.now(UTC)
             await session.commit()
             await session.refresh(patient)
 
@@ -819,7 +946,9 @@ def create_app(
                 "full_name": patient.full_name,
                 "email": patient.email,
                 "phone": patient.phone,
-                "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+                "date_of_birth": (
+                    patient.date_of_birth.isoformat() if patient.date_of_birth else None
+                ),
                 "preferred_language": patient.preferred_language,
                 "gender": patient.gender,
                 "address": patient.address,
@@ -831,23 +960,44 @@ def create_app(
                 "emergency_contact_phone": patient.emergency_contact_phone,
                 "insurance_provider": patient.insurance_provider,
                 "insurance_policy_number": patient.insurance_policy_number,
-                "created_at": patient.created_at.isoformat() if patient.created_at else None,
-                "updated_at": patient.updated_at.isoformat() if patient.updated_at else None,
+                "created_at": (
+                    patient.created_at.isoformat() if patient.created_at else None
+                ),
+                "updated_at": (
+                    patient.updated_at.isoformat() if patient.updated_at else None
+                ),
             }
 
     @app.websocket("/api/v1/ws")
     @app.websocket("/ws")
     async def websocket_realtime_endpoint(websocket: WebSocket) -> None:
-        await ws_manager.connect(websocket)
+        await websocket.accept()
         try:
-            from datetime import datetime, timezone
+            message = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+            supplied = message.get("token", "") if isinstance(message, dict) else ""
+            expected = settings.admin_api_token
+            if (
+                not expected
+                or not isinstance(supplied, str)
+                or not secrets.compare_digest(
+                    supplied.encode(), expected.get_secret_value().encode()
+                )
+            ):
+                await websocket.close(code=4401)
+                return
+        except Exception:
+            await websocket.close(code=4401)
+            return
+        await ws_manager.connect(websocket, accepted=True)
+        try:
+            from datetime import datetime
 
             await websocket.send_json(
                 {
                     "event": "CONNECTED",
                     "data": {
                         "status": "ready",
-                        "server_time": datetime.now(timezone.utc).isoformat(),
+                        "server_time": datetime.now(UTC).isoformat(),
                     },
                 }
             )
@@ -901,7 +1051,9 @@ def create_app(
             if status:
                 stmt = stmt.where(Appointment.status == status.lower())
 
-            stmt = stmt.order_by(Appointment.appointment_date.desc(), Appointment.start_time.asc())
+            stmt = stmt.order_by(
+                Appointment.appointment_date.desc(), Appointment.start_time.asc()
+            )
             stmt = stmt.offset(offset).limit(limit)
 
             rows = (await session.execute(stmt)).all()
@@ -916,46 +1068,66 @@ def create_app(
                     time_short = "0" + time_short
 
                 p_name = pat.full_name if pat else "Unknown Patient"
-                p_code = pat.customer_number if pat else (f"PT-{appt.patient_id}" if appt.patient_id else "")
+                p_code = (
+                    pat.customer_number
+                    if pat
+                    else (f"PT-{appt.patient_id}" if appt.patient_id else "")
+                )
                 p_phone = pat.phone if pat else ""
 
-                status_formatted = appt.status.capitalize() if appt.status else "Scheduled"
+                status_formatted = (
+                    appt.status.capitalize() if appt.status else "Scheduled"
+                )
                 if status_formatted == "Scheduled":
                     status_formatted = "Confirmed"
 
-                results.append({
-                    "id": appt.id,
-                    "patient_id": appt.patient_id,
-                    "patientName": p_name,
-                    "patient_name": p_name,
-                    "patientPhone": p_phone,
-                    "patient_phone": p_phone,
-                    "patientCode": p_code,
-                    "patient_code": p_code,
-                    "patientAvatar": p_name[0].upper() if p_name else "P",
-                    "patientAvatarBg": "#EFF6FF",
-                    "patientAvatarColor": "#2563EB",
-                    "doctor_id": appt.doctor_id,
-                    "doctorId": appt.doctor_id,
-                    "doctor": doc.name_en if doc else "Unknown Doctor",
-                    "doctor_name": doc.name_en if doc else "Unknown Doctor",
-                    "doctor_name_ar": doc.name_ar if doc else "",
-                    "doctorDept": spec.name_en if spec else (doc.title_en if doc else "General Medicine"),
-                    "doctor_dept": spec.name_en if spec else (doc.title_en if doc else "General Medicine"),
-                    "appointment_date": appt.appointment_date.isoformat(),
-                    "date": appt.appointment_date.isoformat(),
-                    "start_time": start_str,
-                    "end_time": end_str,
-                    "time": f"{start_str} - {end_str}",
-                    "timeShort": time_short,
-                    "status": status_formatted,
-                    "type": "Consultation",
-                    "visit_reason": appt.visit_reason or "Consultation",
-                    "notes": appt.visit_reason or "General consultation",
-                    "cancellation_reason": appt.cancellation_reason,
-                    "created_at": appt.created_at.isoformat() if appt.created_at else None,
-                    "updated_at": appt.updated_at.isoformat() if appt.updated_at else None,
-                })
+                results.append(
+                    {
+                        "id": appt.id,
+                        "patient_id": appt.patient_id,
+                        "patientName": p_name,
+                        "patient_name": p_name,
+                        "patientPhone": p_phone,
+                        "patient_phone": p_phone,
+                        "patientCode": p_code,
+                        "patient_code": p_code,
+                        "patientAvatar": p_name[0].upper() if p_name else "P",
+                        "patientAvatarBg": "#EFF6FF",
+                        "patientAvatarColor": "#2563EB",
+                        "doctor_id": appt.doctor_id,
+                        "doctorId": appt.doctor_id,
+                        "doctor": doc.name_en if doc else "Unknown Doctor",
+                        "doctor_name": doc.name_en if doc else "Unknown Doctor",
+                        "doctor_name_ar": doc.name_ar if doc else "",
+                        "doctorDept": (
+                            spec.name_en
+                            if spec
+                            else (doc.title_en if doc else "General Medicine")
+                        ),
+                        "doctor_dept": (
+                            spec.name_en
+                            if spec
+                            else (doc.title_en if doc else "General Medicine")
+                        ),
+                        "appointment_date": appt.appointment_date.isoformat(),
+                        "date": appt.appointment_date.isoformat(),
+                        "start_time": start_str,
+                        "end_time": end_str,
+                        "time": f"{start_str} - {end_str}",
+                        "timeShort": time_short,
+                        "status": status_formatted,
+                        "type": "Consultation",
+                        "visit_reason": appt.visit_reason or "Consultation",
+                        "notes": appt.visit_reason or "General consultation",
+                        "cancellation_reason": appt.cancellation_reason,
+                        "created_at": (
+                            appt.created_at.isoformat() if appt.created_at else None
+                        ),
+                        "updated_at": (
+                            appt.updated_at.isoformat() if appt.updated_at else None
+                        ),
+                    }
+                )
             return {"total": len(results), "appointments": results}
 
     @app.post("/api/v1/appointments", status_code=201, tags=["Appointments"])
@@ -971,16 +1143,23 @@ def create_app(
                 if str(raw_patient_id).isdigit():
                     patient = await session.scalar(
                         select(Patient).where(
-                            or_(Patient.id == int(raw_patient_id), Patient.customer_number == str(raw_patient_id))
+                            or_(
+                                Patient.id == int(raw_patient_id),
+                                Patient.customer_number == str(raw_patient_id),
+                            )
                         )
                     )
                 else:
                     patient = await session.scalar(
-                        select(Patient).where(Patient.customer_number == str(raw_patient_id))
+                        select(Patient).where(
+                            Patient.customer_number == str(raw_patient_id)
+                        )
                     )
 
             if not patient and (payload.get("phone") or payload.get("patientPhone")):
-                clean_phone = str(payload.get("phone") or payload.get("patientPhone")).strip()
+                clean_phone = str(
+                    payload.get("phone") or payload.get("patientPhone")
+                ).strip()
                 if not clean_phone.startswith("+"):
                     clean_phone = f"+{clean_phone}"
                 patient = await session.scalar(
@@ -988,12 +1167,23 @@ def create_app(
                 )
 
             if not patient:
-                p_name = str(payload.get("patient_name") or payload.get("patientName") or payload.get("name") or "Walk-in Patient").strip()
-                p_phone = str(payload.get("phone") or payload.get("patient_phone") or payload.get("patientPhone") or "+201000000000").strip()
+                p_name = str(
+                    payload.get("patient_name")
+                    or payload.get("patientName")
+                    or payload.get("name")
+                    or "Walk-in Patient"
+                ).strip()
+                p_phone = str(
+                    payload.get("phone")
+                    or payload.get("patient_phone")
+                    or payload.get("patientPhone")
+                    or "+201000000000"
+                ).strip()
                 if not p_phone.startswith("+"):
                     p_phone = f"+{p_phone}"
 
                 import random
+
                 cust_num = f"{random.randint(100000, 999999)}"
                 patient = Patient(
                     full_name=p_name,
@@ -1009,17 +1199,25 @@ def create_app(
             raw_doc_id = payload.get("doctor_id") or payload.get("doctorId")
             doctor = None
             if raw_doc_id:
-                doctor = await session.scalar(select(Doctor).where(Doctor.id == int(raw_doc_id)))
+                doctor = await session.scalar(
+                    select(Doctor).where(Doctor.id == int(raw_doc_id))
+                )
             elif payload.get("doctor"):
                 doc_name = str(payload["doctor"]).replace("Dr. ", "").strip().lower()
                 doctor = await session.scalar(
-                    select(Doctor).where(func.lower(Doctor.name_en).like(f"%{doc_name}%"))
+                    select(Doctor).where(
+                        func.lower(Doctor.name_en).like(f"%{doc_name}%")
+                    )
                 )
 
             if not doctor:
                 doctor = await session.scalar(select(Doctor).order_by(Doctor.id.asc()))
             if not doctor:
-                raise APIError(404, "DOCTOR_NOT_FOUND", "No available doctors found in clinic catalog.")
+                raise APIError(
+                    404,
+                    "DOCTOR_NOT_FOUND",
+                    "No available doctors found in clinic catalog.",
+                )
 
             # 3. Resolve Date & Time
             raw_date = payload.get("appointment_date") or payload.get("date")
@@ -1028,12 +1226,21 @@ def create_app(
             try:
                 appt_date = dt_date.fromisoformat(str(raw_date)[:10])
             except Exception:
-                raise APIError(400, "INVALID_DATE", "Invalid appointment date format. Use YYYY-MM-DD.")
+                raise APIError(
+                    400,
+                    "INVALID_DATE",
+                    "Invalid appointment date format. Use YYYY-MM-DD.",
+                )
 
             if appt_date.isoweekday() == 5:
                 raise APIError(400, "CLINIC_CLOSED", "The clinic is closed on Fridays.")
 
-            raw_time = str(payload.get("start_time") or payload.get("time") or payload.get("timeShort") or "09:00").strip()
+            raw_time = str(
+                payload.get("start_time")
+                or payload.get("time")
+                or payload.get("timeShort")
+                or "09:00"
+            ).strip()
             if " - " in raw_time:
                 raw_time = raw_time.split(" - ")[0].strip()
 
@@ -1057,7 +1264,9 @@ def create_app(
                 start_obj = dt_time(start_obj.hour, 30 if start_obj.minute > 15 else 0)
 
             if start_obj < dt_time(7, 0) or start_obj > dt_time(21, 30):
-                raise APIError(400, "INVALID_TIME", "Appointments must be between 07:00 and 21:30.")
+                raise APIError(
+                    400, "INVALID_TIME", "Appointments must be between 07:00 and 21:30."
+                )
 
             end_dt = datetime.combine(appt_date, start_obj) + timedelta(minutes=30)
             end_obj = end_dt.time()
@@ -1072,10 +1281,20 @@ def create_app(
                 )
             )
             if conflict:
-                raise APIError(409, "SLOT_OCCUPIED", f"Dr. {doctor.name_en} already has a scheduled appointment at {start_obj.strftime('%H:%M')} on {appt_date}.")
+                raise APIError(
+                    409,
+                    "SLOT_OCCUPIED",
+                    f"Dr. {doctor.name_en} already has a scheduled appointment "
+                    f"at {start_obj.strftime('%H:%M')} on {appt_date}.",
+                )
 
             # 5. Insert Appointment
-            reason = str(payload.get("visit_reason") or payload.get("notes") or payload.get("type") or "General Consultation").strip()
+            reason = str(
+                payload.get("visit_reason")
+                or payload.get("notes")
+                or payload.get("type")
+                or "General Consultation"
+            ).strip()
             appt = Appointment(
                 patient_id=patient.id,
                 doctor_id=doctor.id,
@@ -1100,7 +1319,9 @@ def create_app(
             await session.commit()
             await session.refresh(appt)
 
-            spec = await session.scalar(select(Specialty).where(Specialty.id == doctor.specialty_id))
+            spec = await session.scalar(
+                select(Specialty).where(Specialty.id == doctor.specialty_id)
+            )
 
             start_str = appt.start_time.strftime("%H:%M")
             end_str = appt.end_time.strftime("%H:%M")
@@ -1118,15 +1339,21 @@ def create_app(
                 "patient_phone": patient.phone,
                 "patientCode": patient.customer_number,
                 "patient_code": patient.customer_number,
-                "patientAvatar": patient.full_name[0].upper() if patient.full_name else "P",
+                "patientAvatar": (
+                    patient.full_name[0].upper() if patient.full_name else "P"
+                ),
                 "patientAvatarBg": "#EFF6FF",
                 "patientAvatarColor": "#2563EB",
                 "doctor_id": doctor.id,
                 "doctorId": doctor.id,
                 "doctor": doctor.name_en,
                 "doctor_name": doctor.name_en,
-                "doctorDept": spec.name_en if spec else (doctor.title_en or "General Medicine"),
-                "doctor_dept": spec.name_en if spec else (doctor.title_en or "General Medicine"),
+                "doctorDept": (
+                    spec.name_en if spec else (doctor.title_en or "General Medicine")
+                ),
+                "doctor_dept": (
+                    spec.name_en if spec else (doctor.title_en or "General Medicine")
+                ),
                 "appointment_date": appt.appointment_date.isoformat(),
                 "date": appt.appointment_date.isoformat(),
                 "start_time": start_str,
@@ -1157,14 +1384,18 @@ def create_app(
             if not appt:
                 raise APIError(404, "APPOINTMENT_NOT_FOUND", "Appointment not found.")
             if appt.status == "cancelled":
-                raise APIError(400, "ALREADY_CANCELLED", "Appointment is already cancelled.")
+                raise APIError(
+                    400, "ALREADY_CANCELLED", "Appointment is already cancelled."
+                )
 
-            reason = str((payload or {}).get("reason") or "Cancelled by operator").strip()
+            reason = str(
+                (payload or {}).get("reason") or "Cancelled by operator"
+            ).strip()
             appt.status = "cancelled"
             appt.cancellation_reason = reason[:300]
-            appt.cancelled_at = datetime.now(timezone.utc)
+            appt.cancelled_at = datetime.now(UTC)
             appt.cancelled_by = "clinic_staff"
-            appt.updated_at = datetime.now(timezone.utc)
+            appt.updated_at = datetime.now(UTC)
 
             history = AppointmentHistory(
                 appointment_id=appt.id,
@@ -1188,7 +1419,9 @@ def create_app(
             )
             return {"status": "cancelled", "id": appt.id}
 
-    @app.patch("/api/v1/appointments/{appointment_id}/reschedule", tags=["Appointments"])
+    @app.patch(
+        "/api/v1/appointments/{appointment_id}/reschedule", tags=["Appointments"]
+    )
     async def reschedule_appointment(
         appointment_id: int, payload: dict[str, Any]
     ) -> dict[str, Any]:
@@ -1204,7 +1437,9 @@ def create_app(
             raw_date = payload.get("appointment_date") or payload.get("date")
             raw_time = payload.get("start_time") or payload.get("time")
             if not raw_date or not raw_time:
-                raise APIError(400, "INVALID_INPUT", "Must provide new appointment date and time.")
+                raise APIError(
+                    400, "INVALID_INPUT", "Must provide new appointment date and time."
+                )
 
             new_date = dt_date.fromisoformat(str(raw_date)[:10])
             if new_date.isoweekday() == 5:
@@ -1226,12 +1461,16 @@ def create_app(
                 new_start = dt_time(hrs, mins)
             else:
                 t_parts = clean_time.split(":")
-                new_start = dt_time(int(t_parts[0]), int(t_parts[1]) if len(t_parts) > 1 else 0)
+                new_start = dt_time(
+                    int(t_parts[0]), int(t_parts[1]) if len(t_parts) > 1 else 0
+                )
 
             if new_start.minute not in (0, 30):
                 new_start = dt_time(new_start.hour, 30 if new_start.minute > 15 else 0)
 
-            new_end = (datetime.combine(new_date, new_start) + timedelta(minutes=30)).time()
+            new_end = (
+                datetime.combine(new_date, new_start) + timedelta(minutes=30)
+            ).time()
 
             conflict = await session.scalar(
                 select(Appointment).where(
@@ -1243,7 +1482,9 @@ def create_app(
                 )
             )
             if conflict:
-                raise APIError(409, "SLOT_OCCUPIED", "Target time slot is already booked.")
+                raise APIError(
+                    409, "SLOT_OCCUPIED", "Target time slot is already booked."
+                )
 
             prev_date = appt.appointment_date
             prev_time = appt.start_time
@@ -1252,7 +1493,7 @@ def create_app(
             appt.start_time = new_start
             appt.end_time = new_end
             appt.status = "scheduled"
-            appt.updated_at = datetime.now(timezone.utc)
+            appt.updated_at = datetime.now(UTC)
 
             history = AppointmentHistory(
                 appointment_id=appt.id,
@@ -1287,12 +1528,8 @@ def create_app(
             )
             return {"status": "rescheduled", "id": appt.id}
 
-    from clinic_backend.availability_routes import availability_router
-
     app.include_router(
-        availability_router(
-            sessions, settings, lambda: datetime.now(timezone.utc)
-        )
+        availability_router(sessions, settings, clock or (lambda: datetime.now(UTC)))
     )
     app.include_router(conversation_router(sessions, settings))
     if settings.identity_enabled:

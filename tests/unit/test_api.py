@@ -105,7 +105,10 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             headers={"Origin": "http://127.0.0.1:57296"},
         )
         assert res_allowed_ip.status_code == 200
-        assert res_allowed_ip.headers.get("access-control-allow-origin") == "http://127.0.0.1:57296"
+        assert (
+            res_allowed_ip.headers.get("access-control-allow-origin")
+            == "http://127.0.0.1:57296"
+        )
         assert "access-control-allow-credentials" not in res_allowed_ip.headers
 
         # 2. Allowed: Localhost with changing port (e.g. 8002, 3000)
@@ -114,7 +117,10 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             headers={"Origin": "http://localhost:8002"},
         )
         assert res_allowed_host.status_code == 200
-        assert res_allowed_host.headers.get("access-control-allow-origin") == "http://localhost:8002"
+        assert (
+            res_allowed_host.headers.get("access-control-allow-origin")
+            == "http://localhost:8002"
+        )
 
         # 3. Allowed: CORS preflight (OPTIONS)
         res_preflight = http.options(
@@ -126,7 +132,10 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             },
         )
         assert res_preflight.status_code == 200
-        assert res_preflight.headers.get("access-control-allow-origin") == "http://127.0.0.1:57296"
+        assert (
+            res_preflight.headers.get("access-control-allow-origin")
+            == "http://127.0.0.1:57296"
+        )
         assert "GET" in res_preflight.headers.get("access-control-allow-methods", "")
 
         # 4. Rejected: Unrelated external origin
@@ -146,4 +155,3 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             },
         )
         assert "access-control-allow-origin" not in res_rejected_preflight.headers
-

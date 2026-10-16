@@ -27,53 +27,36 @@ class Availability:
         ids = [doctor.id for doctor in doctors]
         if not ids:
             return {}
-        closures: set[date] = set()
-        try:
-            closures = set(
-                (
-                    await self.session.scalars(
-                        select(ClinicClosure.closure_date).where(
-                            ClinicClosure.closure_date.between(query.from_date, end)
-                        )
-                    )
-                ).all()
-            )
-        except Exception:
-            await self.session.rollback()
-            closures = set()
-
-        off = []
-        try:
-            off = (
+        closures = set(
+            (
                 await self.session.scalars(
-                    select(DoctorTimeOff).where(
-                        DoctorTimeOff.doctor_id.in_(ids),
-                        DoctorTimeOff.off_date.between(query.from_date, end),
+                    select(ClinicClosure.closure_date).where(
+                        ClinicClosure.closure_date.between(query.from_date, end)
                     )
                 )
             ).all()
-        except Exception:
-            await self.session.rollback()
-            off = []
-
-        booked = []
-        try:
-            booked = (
-                await self.session.execute(
-                    select(
-                        Appointment.doctor_id,
-                        Appointment.appointment_date,
-                        Appointment.start_time,
-                    ).where(
-                        Appointment.doctor_id.in_(ids),
-                        Appointment.appointment_date.between(query.from_date, end),
-                        Appointment.status.in_(["scheduled", "confirmed"]),
-                    )
+        )
+        off = (
+            await self.session.scalars(
+                select(DoctorTimeOff).where(
+                    DoctorTimeOff.doctor_id.in_(ids),
+                    DoctorTimeOff.off_date.between(query.from_date, end),
                 )
-            ).all()
-        except Exception:
-            await self.session.rollback()
-            booked = []
+            )
+        ).all()
+        booked = (
+            await self.session.execute(
+                select(
+                    Appointment.doctor_id,
+                    Appointment.appointment_date,
+                    Appointment.start_time,
+                ).where(
+                    Appointment.doctor_id.in_(ids),
+                    Appointment.appointment_date.between(query.from_date, end),
+                    Appointment.status == "scheduled",
+                )
+            )
+        ).all()
         off_by_day: dict[tuple[int, date], list[TimeOff]] = {}
         occupied: dict[tuple[int, date], set[time]] = {}
         for item in off:

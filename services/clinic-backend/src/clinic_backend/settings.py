@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     booking_horizon_days: int = Field(default=30, ge=1, le=30)
     migrations_dir: Path = Path("database/migrations")
     agent_service_token: SecretStr | None = None
+    admin_api_token: SecretStr | None = None
     identity_enabled: bool = False
     identity_provider: Literal["clinic", "supabase"] = "clinic"
     supabase_url: str = ""
@@ -53,6 +54,12 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def identity_configuration(self) -> "Settings":
+        if self.admin_api_token:
+            token = self.admin_api_token.get_secret_value()
+            if len(token.encode()) < 32 or token.startswith("replace-with-"):
+                raise ValueError("Admin token must be generated and at least 32 bytes")
+            if self.admin_api_token in (self.agent_service_token, self.otp_hmac_secret):
+                raise ValueError("Admin token must be distinct from other credentials")
         if self.supabase_public_key:
             key = self.supabase_public_key.get_secret_value()
             if key.startswith("sb_secret_"):

@@ -12,7 +12,7 @@
   try {
     localStorage.removeItem('clinic_admin_patients_store');
     Object.keys(sessionStorage).forEach(k => {
-      if (k.startsWith('clinic_cache_patients')) sessionStorage.removeItem(k);
+      if (k.startsWith('clinic_cache_')) sessionStorage.removeItem(k);
     });
   } catch (_) {}
 
@@ -41,35 +41,19 @@
      ========================================================================= */
   const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
 
+  const cacheEntries = new Map();
   const ClinicCache = {
     get: function (key) {
-      try {
-        const item = sessionStorage.getItem('clinic_cache_' + key);
-        if (!item) return null;
-        const parsed = JSON.parse(item);
-        if (Date.now() - parsed.ts < CACHE_TTL_MS) {
-          return parsed.data;
-        }
-      } catch (_) {}
-      return null;
+      const item = cacheEntries.get(key);
+      return item && Date.now() - item.ts < CACHE_TTL_MS ? item.data : null;
     },
     set: function (key, data) {
-      try {
-        sessionStorage.setItem('clinic_cache_' + key, JSON.stringify({ ts: Date.now(), data }));
-      } catch (_) {}
+      cacheEntries.set(key, {ts: Date.now(), data});
     },
-    invalidate: function (keyPrefix) {
-      try {
-        if (!keyPrefix) {
-          Object.keys(sessionStorage).forEach(k => {
-            if (k.startsWith('clinic_cache_')) sessionStorage.removeItem(k);
-          });
-          return;
-        }
-        Object.keys(sessionStorage).forEach(k => {
-          if (k.startsWith('clinic_cache_' + keyPrefix)) sessionStorage.removeItem(k);
-        });
-      } catch (_) {}
+    invalidate: function (prefix) {
+      for (const key of cacheEntries.keys()) {
+        if (!prefix || key.startsWith(prefix)) cacheEntries.delete(key);
+      }
     }
   };
 
@@ -89,9 +73,20 @@
   /**
    * Internal HTTP fetch wrapper
    */
+  let adminToken = null;
+  let adminTokenRequested = false;
+  function getAdminToken() {
+    if (!adminTokenRequested) {
+      adminTokenRequested = true;
+      adminToken = window.prompt('Administrator access token (kept only until this page closes):') || null;
+    }
+    return adminToken;
+  }
+
   async function request(endpoint, options = {}) {
     const baseUrl = window.ClinicConfig ? window.ClinicConfig.getApiBaseUrl() : '/api/v1';
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    if (/^\/patients(?:\/|\?|$)/.test(cleanEndpoint)) cleanEndpoint = '/admin' + cleanEndpoint;
     const url = `${baseUrl}${cleanEndpoint}`;
 
     const headers = {
@@ -100,6 +95,9 @@
       'Pragma': 'no-cache',
       ...(options.headers || {})
     };
+
+    const privileged = /^\/(admin|appointments|ws)(?:\/|\?|$)/.test(cleanEndpoint) || (cleanEndpoint === '/doctors' && options.method === 'POST');
+    if (privileged && getAdminToken()) headers['X-Admin-Token'] = adminToken;
 
     if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
@@ -121,8 +119,8 @@
           // Non-JSON error body
         }
 
-        const code = errorData?.code || response.statusText || 'HTTP_ERROR';
-        const message = errorData?.message || `Request failed with status ${response.status}`;
+        const code = errorData?.error?.code || errorData?.code || response.statusText || 'HTTP_ERROR';
+        const message = errorData?.error?.message || errorData?.message || `Request failed with status ${response.status}`;
         const details = errorData?.details || null;
 
         // A 4xx response confirms the backend API server is reachable, online, and responding!
@@ -155,6 +153,11 @@
 
   const ClinicApi = {
     ClinicApiError,
+    setAdminToken: function (token) {
+      ClinicCache.invalidate();
+      adminToken = token || null;
+      adminTokenRequested = true;
+    },
 
     getConnectionState: function () {
       return { state: connectionState, lastCheckedAt };
@@ -793,11 +796,8 @@
         this.socket = new WebSocket(url);
 
         this.socket.onopen = () => {
-          this.isConnected = true;
-          this.reconnectAttempts = 0;
-          this.startHeartbeat();
-          this.updateUiIndicator(true);
-          this.emit('CONNECTED', { status: 'ready' });
+          this.socket.send(JSON.stringify({token: getAdminToken()}));
+
         };
 
         this.socket.onmessage = (event) => {
@@ -810,11 +810,11 @@
           } catch (_) {}
         };
 
-        this.socket.onclose = () => {
+        this.socket.onclose = (event) => {
           this.isConnected = false;
           this.stopHeartbeat();
           this.updateUiIndicator(false);
-          this.scheduleReconnect();
+          if (event.code !== 4401) this.scheduleReconnect();
         };
 
         this.socket.onerror = () => {
@@ -872,6 +872,12 @@
     },
 
     handleIncomingEvent: function (event, data) {
+      if (event === 'CONNECTED') {
+        this.isConnected = true;
+        this.reconnectAttempts = 0;
+        this.startHeartbeat();
+        this.updateUiIndicator(true);
+      }
       // 1. Invalidate cache on mutations
       if (event.startsWith('PATIENT_')) {
         ClinicCache.invalidate('patients');

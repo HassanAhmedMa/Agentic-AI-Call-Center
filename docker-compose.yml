@@ -50,6 +50,7 @@ services:
       BOOKING_MIN_LEAD_MINUTES: ${BOOKING_MIN_LEAD_MINUTES:-60}
       BOOKING_HORIZON_DAYS: ${BOOKING_HORIZON_DAYS:-30}
       # Empty disables lifecycle writes; generate locally, never send to a browser.
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
       AGENT_SERVICE_TOKEN: ${AGENT_SERVICE_TOKEN:-}
       IDENTITY_ENABLED: ${IDENTITY_ENABLED:-false}
       IDENTITY_PROVIDER: ${IDENTITY_PROVIDER:-clinic}
