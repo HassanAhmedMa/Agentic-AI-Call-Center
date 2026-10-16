@@ -201,8 +201,9 @@
     const deptId = deptFilter === 'all' ? null : parseInt(deptFilter, 10);
 
     const filtered = allDoctors.filter(doc => {
-      const spec = allSpecialties.find(s => s.id === doc.specialty_id);
-      const matchesDept = deptId === null || doc.specialty_id === deptId;
+      const docSpecId = doc.specialty?.id ?? doc.specialty_id;
+      const spec = doc.specialty || allSpecialties.find(s => s.id === docSpecId);
+      const matchesDept = deptId === null || docSpecId === deptId;
       if (!matchesDept) return false;
 
       if (!q) return true;
@@ -247,7 +248,8 @@
     }
 
     const html = doctors.map(doc => {
-      const spec = allSpecialties.find(s => s.id === doc.specialty_id);
+      const docSpecId = doc.specialty?.id ?? doc.specialty_id;
+      const spec = doc.specialty || allSpecialties.find(s => s.id === docSpecId);
       const deptName = spec ? spec.name_en : (doc.title_en || 'Specialist');
       const deptNameAr = spec ? spec.name_ar : (doc.title_ar || '');
       
@@ -264,7 +266,7 @@
 
       const langs = Array.isArray(doc.languages) ? doc.languages.join(', ').toUpperCase() : 'AR, EN';
 
-      const palette = getDeptPalette(doc.specialty_id);
+      const palette = getDeptPalette(docSpecId);
 
       return `
         <div class="doctor-card-panel" onclick="viewDoctorDetails(${doc.id})">
@@ -451,6 +453,174 @@
       backdrop.classList.remove('open');
     }
   };
+
+  window.openAddDoctorModal = function () {
+    const backdrop = document.getElementById('adminModalBackdrop');
+    const titleEl = document.getElementById('adminModalTitle');
+    const bodyEl = document.getElementById('adminModalBody');
+    const footerEl = document.getElementById('adminModalFooter');
+
+    if (!backdrop || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = 'Add New Doctor to Clinic';
+
+    const specOptions = allSpecialties.map(s => `
+      <option value="${s.id}">${s.name_en} (${s.name_ar})</option>
+    `).join('');
+
+    bodyEl.innerHTML = `
+      <form id="addDoctorForm" onsubmit="submitAddDoctorForm(event)" style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Doctor Name (English) *</label>
+            <input type="text" id="newDocNameEn" required placeholder="e.g. Dr. Tarek Mansour" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Doctor Name (Arabic) *</label>
+            <input type="text" id="newDocNameAr" required dir="rtl" placeholder="د. طارق منصور" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Specialty / Department *</label>
+            <select id="newDocSpecialty" required style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 10px; font-size:13px; background:#FFF;">
+              ${specOptions}
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Consultation Fee (EGP) *</label>
+            <input type="number" id="newDocFee" required min="50" step="10" value="350" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Title (English)</label>
+            <input type="text" id="newDocTitleEn" value="Senior Consultant" placeholder="e.g. Senior Consultant" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Title (Arabic)</label>
+            <input type="text" id="newDocTitleAr" value="استشاري أول" dir="rtl" placeholder="استشاري أول" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Shift Start (24h)</label>
+            <input type="time" id="newDocShiftStart" value="09:00" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Shift End (24h)</label>
+            <input type="time" id="newDocShiftEnd" value="17:00" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Professional Bio (English)</label>
+          <textarea id="newDocBioEn" rows="2" placeholder="Brief professional background, qualifications and experience..." style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:8px 12px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
+        </div>
+
+        <div id="addDoctorErrorMsg" style="display:none; padding:10px; background:#FEE2E2; color:#B91C1C; border-radius:6px; font-size:12px;"></div>
+      </form>
+    `;
+
+    if (footerEl) {
+      footerEl.innerHTML = `
+        <button type="button" class="modal-btn-secondary" onclick="closeDoctorModal()">Cancel</button>
+        <button type="button" id="btnSubmitAddDoctor" class="modal-btn-primary" onclick="document.getElementById('addDoctorForm').requestSubmit()">Save Doctor to Supabase</button>
+      `;
+    }
+
+    backdrop.classList.add('active');
+    backdrop.classList.add('open');
+  };
+
+  window.submitAddDoctorForm = async function (e) {
+    if (e) e.preventDefault();
+    const btn = document.getElementById('btnSubmitAddDoctor');
+    const errBox = document.getElementById('addDoctorErrorMsg');
+
+    const nameEn = document.getElementById('newDocNameEn')?.value.trim();
+    const nameAr = document.getElementById('newDocNameAr')?.value.trim();
+    const specialtyId = parseInt(document.getElementById('newDocSpecialty')?.value, 10);
+    const fee = parseFloat(document.getElementById('newDocFee')?.value || '350');
+    const titleEn = document.getElementById('newDocTitleEn')?.value.trim() || 'Consultant';
+    const titleAr = document.getElementById('newDocTitleAr')?.value.trim() || 'استشاري';
+    const shiftStart = document.getElementById('newDocShiftStart')?.value || '09:00';
+    const shiftEnd = document.getElementById('newDocShiftEnd')?.value || '17:00';
+    const bioEn = document.getElementById('newDocBioEn')?.value.trim() || `Experienced ${titleEn} at Nile Clinics.`;
+
+    if (!nameEn || !nameAr || !specialtyId) {
+      if (errBox) {
+        errBox.textContent = 'Please fill out all required fields marked with *.';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Saving to Database...';
+    }
+
+    try {
+      await window.ClinicApi.createDoctor({
+        name_en: nameEn,
+        name_ar: nameAr,
+        title_en: titleEn,
+        title_ar: titleAr,
+        specialty_id: specialtyId,
+        consultation_fee: fee,
+        shift_start: shiftStart,
+        shift_end: shiftEnd,
+        bio_en: bioEn,
+        bio_ar: 'استشاري متميز في عيادات النيل.'
+      });
+
+      showToast(`Doctor ${nameEn} added successfully to Supabase!`, 'success');
+      closeDoctorModal();
+      await loadLiveDoctors();
+    } catch (err) {
+      console.error('[Doctors] Error adding doctor:', err);
+      if (errBox) {
+        errBox.textContent = err.message || 'Failed to save doctor to database.';
+        errBox.style.display = 'block';
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Save Doctor to Supabase';
+      }
+    }
+  };
+
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('adminToastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${type}`;
+
+    let iconSvg = '';
+    if (type === 'success') {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>';
+    } else if (type === 'warning') {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5" width="18" height="18"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    } else {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+    }
+
+    toast.innerHTML = `
+      ${iconSvg}
+      <span class="toast-message">${message}</span>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('toast-exit');
+      setTimeout(() => toast.remove(), 250);
+    }, 4000);
+  }
 
   window.handleBranchChange = function () {
     alert('Nile Clinics - Heliopolis Branch (Active)');

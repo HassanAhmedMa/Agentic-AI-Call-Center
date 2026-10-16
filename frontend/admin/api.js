@@ -221,6 +221,19 @@
     },
 
     /**
+     * Create new doctor in Supabase catalog
+     * POST /api/v1/doctors
+     */
+    createDoctor: async function (doctorData) {
+      const res = await request('/doctors', {
+        method: 'POST',
+        body: JSON.stringify(doctorData)
+      });
+      ClinicCache.invalidate('doctors');
+      return res;
+    },
+
+    /**
      * Fetch clinic services list
      * GET /api/v1/services?category=...&limit=...
      * Response: { total: number, services: Array<Service> }

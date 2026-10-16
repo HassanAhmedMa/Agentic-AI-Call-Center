@@ -268,15 +268,18 @@ function selectScheduleSlot(apptId, element) {
 function populateAppointmentDetails(appt) {
   const emptyState = document.getElementById('apptDetailsEmptyState');
   const activeContent = document.getElementById('apptDetailsActiveContent');
+  const headerActions = document.getElementById('apptDetailsHeaderActions');
 
-  if (!appt) {
+  if (!appt || appt.status === 'Cancelled') {
     if (emptyState) emptyState.style.display = 'block';
     if (activeContent) activeContent.style.display = 'none';
+    if (headerActions) headerActions.style.display = 'none';
     return;
   }
 
   if (emptyState) emptyState.style.display = 'none';
   if (activeContent) activeContent.style.display = 'flex';
+  if (headerActions) headerActions.style.display = 'flex';
 
   const heroAvatar = document.getElementById('apptHeroAvatar');
   const heroName = document.getElementById('apptHeroName');
@@ -623,14 +626,23 @@ async function loadLiveCatalog() {
       updateDoctorScheduleColumns(docData.doctors);
     }
 
-    if (apptData && Array.isArray(apptData.appointments) && apptData.appointments.length > 0) {
+    if (apptData && Array.isArray(apptData.appointments)) {
       appointmentsData = apptData.appointments;
       saveAppointmentsStore();
     }
 
     renderScheduleGrid();
-    if (appointmentsData.length > 0 && (!selectedAppointment || !appointmentsData.some(a => a.id === selectedAppointment.id))) {
-      selectScheduleSlot(appointmentsData[0].id, null);
+    if (selectedAppointment) {
+      const match = appointmentsData.find(a => a.id === selectedAppointment.id);
+      if (!match || match.status === 'Cancelled') {
+        selectedAppointment = null;
+        populateAppointmentDetails(null);
+      } else {
+        selectedAppointment = match;
+        populateAppointmentDetails(selectedAppointment);
+      }
+    } else {
+      populateAppointmentDetails(null);
     }
 
     // Sync live availability for the currently selected date
@@ -1182,14 +1194,16 @@ async function handleCancelAppointment() {
       }
 
       // Mark as Cancelled in memory
-      selectedAppointment.status = 'Cancelled';
-      appointmentsData = appointmentsData.map(a => a.id === selectedAppointment.id ? { ...a, status: 'Cancelled' } : a);
+      const cancelledPatientName = selectedAppointment.patientName;
+      const cancelledId = selectedAppointment.id;
+      appointmentsData = appointmentsData.map(a => a.id === cancelledId ? { ...a, status: 'Cancelled' } : a);
       saveAppointmentsStore();
 
-      // Immediately re-render schedule grid (removes cancelled slot from active calendar)
+      // Deselect and clear details panel
+      selectedAppointment = null;
       renderScheduleGrid();
-      populateAppointmentDetails(selectedAppointment);
-      showToast(`Appointment #${selectedAppointment.id} for ${selectedAppointment.patientName} has been cancelled and removed from active schedule.`, 'warning');
+      populateAppointmentDetails(null);
+      showToast(`Appointment #${cancelledId} for ${cancelledPatientName} has been cancelled and removed from active schedule.`, 'warning');
 
       if (window.ClinicApi) {
         await loadLiveCatalog();
@@ -1245,19 +1259,41 @@ function handleExportAppointments() {
 
 // Open All Upcoming Modal
 function openAllUpcomingModal() {
-  const bodyHtml = `
-    <div style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto; padding-right:4px;">
-      ${appointmentsData.slice(0, 8).map(a => `
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#F8FAFC; border:1px solid var(--border-light); border-radius:8px;">
-          <div>
-            <div style="font-weight:700; color:var(--text-dark); font-size:13px;">${a.patientName}</div>
-            <div style="font-size:12px; color:var(--text-muted);">${a.time} • ${a.doctor} (${a.doctorDept})</div>
+  const activeUpcoming = appointmentsData.filter(a => (a.status || '').toLowerCase() !== 'cancelled');
+  let bodyHtml = '';
+
+  if (activeUpcoming.length === 0) {
+    bodyHtml = `
+      <div style="padding: 36px 16px; text-align: center; color: var(--text-muted);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" width="48" height="48" style="margin-bottom: 12px;">
+          <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <div style="font-weight: 700; color: var(--text-dark); font-size: 16px; margin-bottom: 6px;">No Appointments Today</div>
+        <p style="font-size: 13px; margin: 0 0 20px 0;">There are no active scheduled appointments in today's clinic calendar.</p>
+        <button class="modal-btn-primary" onclick="closeAdminModal(); openNewAppointmentModal();" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:8px 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Schedule New Appointment
+        </button>
+      </div>
+    `;
+  } else {
+    bodyHtml = `
+      <div style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto; padding-right:4px;">
+        ${activeUpcoming.slice(0, 15).map(a => `
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#F8FAFC; border:1px solid var(--border-light); border-radius:8px;">
+            <div>
+              <div style="font-weight:700; color:var(--text-dark); font-size:13px;">${a.patientName}</div>
+              <div style="font-size:12px; color:var(--text-muted);">${a.time} • ${a.doctor} (${a.doctorDept})</div>
+            </div>
+            <span class="status-pill status-${(a.status || 'Confirmed').toLowerCase().replace(' ', '')}">• ${a.status}</span>
           </div>
-          <span class="status-pill status-${a.status.toLowerCase().replace(' ', '')}">• ${a.status}</span>
-        </div>
-      `).join('')}
-    </div>
-  `;
+        `).join('')}
+      </div>
+    `;
+  }
 
   const footerHtml = `
     <button class="modal-btn-secondary" onclick="closeAdminModal()">Close</button>

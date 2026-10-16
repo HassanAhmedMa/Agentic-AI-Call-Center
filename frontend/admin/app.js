@@ -696,50 +696,7 @@ function openAnalyticsModal() {
 
 // 4.7 View All Appointments
 function openAllAppointmentsModal() {
-  const html = `
-    <div style="display:flex; flex-direction:column; gap:12px;">
-      <p style="font-size:13px; color:#64748B; margin:0;">Listing all scheduled patient appointments across all clinic departments.</p>
-      <div style="display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto;">
-        <div class="appointment-row-item">
-          <span class="appt-time-cell">09:00 AM</span>
-          <span class="appt-doctor-cell">Ahmed Mohamed</span>
-          <span class="appt-dept-cell">Cardiology</span>
-          <span class="status-pill status-confirmed">• Confirmed</span>
-        </div>
-        <div class="appointment-row-item">
-          <span class="appt-time-cell">10:30 AM</span>
-          <span class="appt-doctor-cell">Sara Elsaid</span>
-          <span class="appt-dept-cell">Dermatology</span>
-          <span class="status-pill status-inclinic">• In Clinic</span>
-        </div>
-        <div class="appointment-row-item">
-          <span class="appt-time-cell">12:00 PM</span>
-          <span class="appt-doctor-cell">Mohamed Ali</span>
-          <span class="appt-dept-cell">Orthopedics</span>
-          <span class="status-pill status-confirmed">• Confirmed</span>
-        </div>
-        <div class="appointment-row-item">
-          <span class="appt-time-cell">02:30 PM</span>
-          <span class="appt-doctor-cell">Mona Khaled</span>
-          <span class="appt-dept-cell">Cardiology</span>
-          <span class="status-pill status-pending">• Pending</span>
-        </div>
-        <div class="appointment-row-item">
-          <span class="appt-time-cell">04:00 PM</span>
-          <span class="appt-doctor-cell">Youssef Hassan</span>
-          <span class="appt-dept-cell">General Medicine</span>
-          <span class="status-pill status-confirmed">• Confirmed</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const footer = `
-    <button class="modal-btn-secondary" onclick="closeAdminModal()">Close</button>
-    <button class="modal-btn-primary" onclick="openNewAppointmentModal()">Add New Appointment</button>
-  `;
-
-  openAdminModal('All Appointments (18 Today)', html, footer);
+  window.location.href = 'appointments.html';
 }
 
 // 4.8 View All Calls

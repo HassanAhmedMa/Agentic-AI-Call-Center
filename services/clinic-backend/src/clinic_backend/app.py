@@ -306,6 +306,114 @@ def create_app(
             raise APIError(404, "DOCTOR_NOT_FOUND", "Doctor not found.")
         return item
 
+    @app.post("/api/v1/doctors", status_code=201, tags=["Doctors"])
+    async def create_doctor(payload: dict[str, Any]) -> dict[str, Any]:
+        from datetime import time as dt_time
+        from decimal import Decimal
+        from clinic_backend.models import Doctor, Specialty
+
+        name_en = str(payload.get("name_en") or "").strip()
+        name_ar = str(payload.get("name_ar") or "").strip()
+        title_en = str(payload.get("title_en") or "Consultant").strip()
+        title_ar = str(payload.get("title_ar") or "استشاري").strip()
+        specialty_id = payload.get("specialty_id")
+        fee_raw = payload.get("consultation_fee") or payload.get("fee") or 350.0
+
+        if not name_en or not name_ar or not specialty_id:
+            raise APIError(400, "INVALID_INPUT", "name_en, name_ar, and specialty_id are required.")
+
+        try:
+            specialty_id = int(specialty_id)
+        except (ValueError, TypeError):
+            raise APIError(400, "INVALID_INPUT", "specialty_id must be an integer.")
+
+        try:
+            consultation_fee = Decimal(str(fee_raw))
+        except Exception:
+            consultation_fee = Decimal("350.00")
+
+        bio_en = str(payload.get("bio_en") or f"Experienced {title_en} specializing in clinic care.").strip()
+        bio_ar = str(payload.get("bio_ar") or f"استشاري متخصص في الرعاية الطبية.").strip()
+        languages = payload.get("languages") or ["ar", "en"]
+
+        raw_start = str(payload.get("shift_start") or "09:00").strip()
+        raw_end = str(payload.get("shift_end") or "17:00").strip()
+        try:
+            sh_h, sh_m = map(int, raw_start.split(":")[:2])
+            shift_start = dt_time(sh_h, 0 if sh_m < 15 else 30)
+        except Exception:
+            shift_start = dt_time(9, 0)
+
+        try:
+            eh_h, eh_m = map(int, raw_end.split(":")[:2])
+            shift_end = dt_time(eh_h, 0 if eh_m < 15 else 30)
+        except Exception:
+            shift_end = dt_time(17, 0)
+
+        if shift_end <= shift_start:
+            shift_end = dt_time(min(shift_start.hour + 4, 21), 0)
+
+        working_days = payload.get("working_days") or [1, 2, 3, 4, 6, 7]
+        valid_days = [d for d in working_days if d in (1, 2, 3, 4, 6, 7)]
+        if not valid_days:
+            valid_days = [1, 2, 3, 4, 6, 7]
+
+        async with sessions() as session:
+            spec = await session.get(Specialty, specialty_id)
+            if not spec:
+                raise APIError(404, "SPECIALTY_NOT_FOUND", "Selected specialty does not exist.")
+
+            new_doc = Doctor(
+                name_en=name_en,
+                name_ar=name_ar,
+                title_en=title_en,
+                title_ar=title_ar,
+                specialty_id=specialty_id,
+                bio_en=bio_en,
+                bio_ar=bio_ar,
+                languages=languages,
+                consultation_fee=consultation_fee,
+                working_days=valid_days,
+                shift_start=shift_start,
+                shift_end=shift_end,
+                is_active=True,
+            )
+            session.add(new_doc)
+            await session.commit()
+            await session.refresh(new_doc)
+
+            # Invalidate caches
+            if hasattr(app.state, "cache"):
+                await app.state.cache.clear()
+
+            return {
+                "id": new_doc.id,
+                "name_en": new_doc.name_en,
+                "name_ar": new_doc.name_ar,
+                "title_en": new_doc.title_en,
+                "title_ar": new_doc.title_ar,
+                "specialty": {
+                    "id": spec.id,
+                    "name_en": spec.name_en,
+                    "name_ar": spec.name_ar,
+                },
+                "specialty_id": spec.id,
+                "languages": new_doc.languages,
+                "consultation_fee": {
+                    "amount": float(new_doc.consultation_fee),
+                    "currency": "EGP",
+                },
+                "working_days": [
+                    {1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 6: "Sat", 7: "Sun"}.get(d, str(d))
+                    for d in new_doc.working_days
+                ],
+                "working_hours": {
+                    "start": new_doc.shift_start.strftime("%H:%M"),
+                    "end": new_doc.shift_end.strftime("%H:%M"),
+                },
+                "is_active": new_doc.is_active,
+            }
+
     @app.get("/api/v1/services", response_model=dto.ServiceList, responses=errors)
     async def services(
         query: Annotated[dto.ServiceQuery, Query()],
