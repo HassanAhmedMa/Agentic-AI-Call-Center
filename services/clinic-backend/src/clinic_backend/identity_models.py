@@ -41,6 +41,13 @@ class Patient(Base):
         ENUM("ar", "en", name="preferred_language"), server_default="ar"
     )
     gender: Mapped[str | None] = mapped_column(String(16))
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    blood_type: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    allergies: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    chronic_conditions: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    preferred_pharmacy: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    emergency_contact_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    emergency_contact_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
     insurance_provider: Mapped[str | None] = mapped_column(String(128))
     insurance_policy_number: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(

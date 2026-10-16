@@ -373,6 +373,13 @@ def create_app(
                                         "preferred_language", "en"
                                     ),
                                     "gender": r.get("gender"),
+                                    "address": r.get("address"),
+                                    "blood_type": r.get("blood_type"),
+                                    "allergies": r.get("allergies"),
+                                    "chronic_conditions": r.get("chronic_conditions"),
+                                    "preferred_pharmacy": r.get("preferred_pharmacy"),
+                                    "emergency_contact_name": r.get("emergency_contact_name"),
+                                    "emergency_contact_phone": r.get("emergency_contact_phone"),
                                     "insurance_provider": r.get("insurance_provider"),
                                     "insurance_policy_number": r.get(
                                         "insurance_policy_number"
@@ -408,6 +415,13 @@ def create_app(
                         ),
                         "preferred_language": p.preferred_language,
                         "gender": p.gender,
+                        "address": getattr(p, "address", None),
+                        "blood_type": getattr(p, "blood_type", None),
+                        "allergies": getattr(p, "allergies", None),
+                        "chronic_conditions": getattr(p, "chronic_conditions", None),
+                        "preferred_pharmacy": getattr(p, "preferred_pharmacy", None),
+                        "emergency_contact_name": getattr(p, "emergency_contact_name", None),
+                        "emergency_contact_phone": getattr(p, "emergency_contact_phone", None),
                         "insurance_provider": p.insurance_provider,
                         "insurance_policy_number": p.insurance_policy_number,
                         "created_at": (
@@ -456,6 +470,13 @@ def create_app(
                             ),
                             "preferred_language": r.get("preferred_language", "en"),
                             "gender": r.get("gender"),
+                            "address": r.get("address"),
+                            "blood_type": r.get("blood_type"),
+                            "allergies": r.get("allergies"),
+                            "chronic_conditions": r.get("chronic_conditions"),
+                            "preferred_pharmacy": r.get("preferred_pharmacy"),
+                            "emergency_contact_name": r.get("emergency_contact_name"),
+                            "emergency_contact_phone": r.get("emergency_contact_phone"),
                             "insurance_provider": r.get("insurance_provider"),
                             "insurance_policy_number": r.get("insurance_policy_number"),
                             "created_at": (
@@ -483,6 +504,13 @@ def create_app(
                 ),
                 "preferred_language": patient.preferred_language,
                 "gender": patient.gender,
+                "address": getattr(patient, "address", None),
+                "blood_type": getattr(patient, "blood_type", None),
+                "allergies": getattr(patient, "allergies", None),
+                "chronic_conditions": getattr(patient, "chronic_conditions", None),
+                "preferred_pharmacy": getattr(patient, "preferred_pharmacy", None),
+                "emergency_contact_name": getattr(patient, "emergency_contact_name", None),
+                "emergency_contact_phone": getattr(patient, "emergency_contact_phone", None),
                 "insurance_provider": patient.insurance_provider,
                 "insurance_policy_number": patient.insurance_policy_number,
                 "created_at": (
@@ -542,6 +570,13 @@ def create_app(
                 date_of_birth=dob,
                 preferred_language="ar" if payload.get("preferred_language") == "ar" else "en",
                 gender=gender,
+                address=str(payload.get("address") or "").strip() or None,
+                blood_type=str(payload.get("blood_type") or payload.get("bloodType") or "").strip() or None,
+                allergies=str(payload.get("allergies") or "").strip() or None,
+                chronic_conditions=str(payload.get("chronic_conditions") or payload.get("chronicConditions") or "").strip() or None,
+                preferred_pharmacy=str(payload.get("preferred_pharmacy") or payload.get("pharmacy") or "").strip() or None,
+                emergency_contact_name=str(payload.get("emergency_contact_name") or "").strip() or None,
+                emergency_contact_phone=str(payload.get("emergency_contact_phone") or "").strip() or None,
                 insurance_provider=payload.get("insurance_provider"),
                 insurance_policy_number=payload.get("insurance_policy_number"),
                 created_at=now,
@@ -569,6 +604,13 @@ def create_app(
                 "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
                 "preferred_language": patient.preferred_language,
                 "gender": patient.gender,
+                "address": patient.address,
+                "blood_type": patient.blood_type,
+                "allergies": patient.allergies,
+                "chronic_conditions": patient.chronic_conditions,
+                "preferred_pharmacy": patient.preferred_pharmacy,
+                "emergency_contact_name": patient.emergency_contact_name,
+                "emergency_contact_phone": patient.emergency_contact_phone,
                 "insurance_provider": patient.insurance_provider,
                 "insurance_policy_number": patient.insurance_policy_number,
                 "created_at": patient.created_at.isoformat() if patient.created_at else None,
@@ -600,6 +642,20 @@ def create_app(
                 patient.email = str(payload["email"]).strip().lower()
             if "gender" in payload and str(payload["gender"]).lower() in ("male", "female"):
                 patient.gender = str(payload["gender"]).lower()
+            if "address" in payload:
+                patient.address = str(payload["address"]).strip() or None
+            if "blood_type" in payload or "bloodType" in payload:
+                patient.blood_type = str(payload.get("blood_type") or payload.get("bloodType") or "").strip() or None
+            if "allergies" in payload:
+                patient.allergies = str(payload["allergies"]).strip() or None
+            if "chronic_conditions" in payload or "chronicConditions" in payload:
+                patient.chronic_conditions = str(payload.get("chronic_conditions") or payload.get("chronicConditions") or "").strip() or None
+            if "preferred_pharmacy" in payload or "pharmacy" in payload:
+                patient.preferred_pharmacy = str(payload.get("preferred_pharmacy") or payload.get("pharmacy") or "").strip() or None
+            if "emergency_contact_name" in payload:
+                patient.emergency_contact_name = str(payload["emergency_contact_name"]).strip() or None
+            if "emergency_contact_phone" in payload:
+                patient.emergency_contact_phone = str(payload["emergency_contact_phone"]).strip() or None
             if "insurance_provider" in payload:
                 patient.insurance_provider = str(payload["insurance_provider"]).strip() if payload["insurance_provider"] else None
             if "insurance_policy_number" in payload:
@@ -637,6 +693,13 @@ def create_app(
                 "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
                 "preferred_language": patient.preferred_language,
                 "gender": patient.gender,
+                "address": patient.address,
+                "blood_type": patient.blood_type,
+                "allergies": patient.allergies,
+                "chronic_conditions": patient.chronic_conditions,
+                "preferred_pharmacy": patient.preferred_pharmacy,
+                "emergency_contact_name": patient.emergency_contact_name,
+                "emergency_contact_phone": patient.emergency_contact_phone,
                 "insurance_provider": patient.insurance_provider,
                 "insurance_policy_number": patient.insurance_policy_number,
                 "created_at": patient.created_at.isoformat() if patient.created_at else None,

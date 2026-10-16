@@ -974,13 +974,19 @@
         payload.chronic_conditions = chronicEl.value.trim() || 'None';
         payload.chronicConditions = chronicEl.value.trim() || 'None';
       }
-      if (pharmacyEl) payload.pharmacy = pharmacyEl.value.trim() || 'Nile Pharmacy';
+      if (pharmacyEl) {
+        payload.pharmacy = pharmacyEl.value.trim() || 'Nile Pharmacy';
+        payload.preferred_pharmacy = pharmacyEl.value.trim() || 'Nile Pharmacy';
+      }
     }
 
     try {
       const identifier = patient.customer_number || patient.id;
       const updated = await window.ClinicApi.updatePatient(identifier, payload);
       Object.assign(patient, updated, payload);
+      patient.bloodType = patient.blood_type || patient.bloodType || '—';
+      patient.chronicConditions = patient.chronic_conditions || patient.chronicConditions || '—';
+      patient.pharmacy = patient.preferred_pharmacy || patient.pharmacy || '—';
 
       if (patient.date_of_birth || patient.dob) {
         const birthYear = new Date(patient.date_of_birth || patient.dob).getFullYear();
