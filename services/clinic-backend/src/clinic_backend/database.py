@@ -29,39 +29,25 @@ def make_engine(settings: Settings) -> AsyncEngine:
 
 async def is_ready(engine: AsyncEngine, settings: Settings) -> bool:
     async def check() -> bool:
+        heads = set(ScriptDirectory(str(settings.migrations_dir)).get_heads())
         async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-            try:
-                heads = set(ScriptDirectory(str(settings.migrations_dir)).get_heads())
-            except Exception:
-                heads = set()
-            try:
-                versions = set(
-                    (
-                        await conn.execute(text("SELECT version_num FROM alembic_version"))
-                    ).scalars()
-                )
-            except Exception:
-                versions = set()
-
+            versions = set(
+                (
+                    await conn.execute(text("SELECT version_num FROM alembic_version"))
+                ).scalars()
+            )
             if settings.identity_enabled and settings.identity_provider == "supabase":
-                try:
-                    if not await conn.scalar(
-                        text(
-                            "SELECT to_regprocedure(current_schema() || "
-                            "'.auth_session_active(uuid,uuid)') IS NOT NULL"
-                        )
-                    ):
-                        return False
-                except Exception:
-                    pass
-
-            if heads and versions:
-                return heads == versions
-            return bool(versions) or bool(heads)
+                if not await conn.scalar(
+                    text(
+                        "SELECT to_regprocedure(current_schema() || "
+                        "'.auth_session_active(uuid,uuid)') IS NOT NULL"
+                    )
+                ):
+                    return False
+        return bool(heads) and heads == versions
 
     try:
         return await asyncio.wait_for(check(), timeout=5)
-    except Exception as exc:
-        logger.warning("Readiness probe check failed: %s (%s)", type(exc).__name__, exc)
+    except Exception:
+        # Readiness must not leak connection strings, SQL or schema state.
         return False
