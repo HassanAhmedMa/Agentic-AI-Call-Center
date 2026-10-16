@@ -12,27 +12,6 @@
 
 services:
   # ----------------------------------------------------------------------------
-  # Shared Database: PostgreSQL (Relational persistence for Clinic Backend)
-  # ----------------------------------------------------------------------------
-  database:
-    image: postgres:16-alpine
-    container_name: agentic_clinic_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-clinic_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clinic_password}
-      POSTGRES_DB: ${POSTGRES_DB:-clinic_db}
-    ports:
-      - "127.0.0.1:5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # ----------------------------------------------------------------------------
   # Shared Cache & Session Store: Redis
   # ----------------------------------------------------------------------------
   redis:
@@ -66,7 +45,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-clinic_user}:${POSTGRES_PASSWORD:-clinic_password}@database:5432/${POSTGRES_DB:-clinic_db}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/postgres}
       # Empty disables lifecycle writes; generate locally, never send to a browser.
       AGENT_SERVICE_TOKEN: ${AGENT_SERVICE_TOKEN:-}
       IDENTITY_ENABLED: ${IDENTITY_ENABLED:-false}
@@ -78,9 +57,9 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
-    depends_on:
-      database:
-        condition: service_healthy
+    networks:
+      - default
+      - supabase_default
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready', timeout=6)"]
       interval: 10s
@@ -133,7 +112,10 @@ services:
   #     - VOICE_API_KEY=${VOICE_API_KEY}
 
 volumes:
-  postgres_data:
-    name: agentic_clinic_postgres_data
   redis_data:
     name: agentic_clinic_redis_data
+
+networks:
+  default:
+  supabase_default:
+    external: true
