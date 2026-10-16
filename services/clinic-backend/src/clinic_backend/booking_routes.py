@@ -95,7 +95,7 @@ def booking_router(
             raise APIError(
                 400, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required."
             )
-        if not re.fullmatch(r"[\x21-\x7e]{1,128}", key):
+        if not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", key):
             raise APIError(400, "VALIDATION_FAILED", "Invalid idempotency key.")
         now = clock()
         fingerprint = hashlib.sha256(

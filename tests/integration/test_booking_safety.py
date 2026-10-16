@@ -67,7 +67,7 @@ async def test_conflicts_limits_ownership_and_atomic_changes(engine, monkeypatch
         async def book(h, key, day="2026-10-18", doctor=1, clock="10:00"):
             return await client.post(
                 path,
-                headers={**h, "Idempotency-Key": key},
+                headers={**h, "Idempotency-Key": key.ljust(8, "_")},
                 json={"doctor_id": doctor, "date": day, "start_time": clock},
             )
 
@@ -85,6 +85,14 @@ async def test_conflicts_limits_ownership_and_atomic_changes(engine, monkeypatch
             json={"doctor_id": 1, "date": "2026-10-18", "start_time": "12:00"},
         )
         assert missing.json()["error"]["code"] == "IDEMPOTENCY_KEY_REQUIRED"
+        for invalid_key in ["short", "invalid!key"]:
+            invalid = await client.post(
+                path,
+                headers={**h, "Idempotency-Key": invalid_key},
+                json={"doctor_id": 1, "date": "2026-10-18", "start_time": "12:00"},
+            )
+            assert invalid.status_code == 400
+
         assert (await book(h, "grid", clock="10:15")).json()["error"][
             "code"
         ] == "INVALID_SLOT_TIME"
@@ -156,27 +164,27 @@ async def test_conflicts_limits_ownership_and_atomic_changes(engine, monkeypatch
             await conn.execute(
                 text("""INSERT INTO idempotency_keys(patient_id,
               operation,idempotency_key,request_hash,expires_at)
-              VALUES (:p,'book_appointment','pending',:h,'2026-10-18')"""),
+              VALUES (:p,'book_appointment','pending1',:h,'2026-10-18')"""),
                 {"p": patient_ids[winner], "h": fingerprint},
             )
         pending = await client.post(
-            path, headers={**h, "Idempotency-Key": "pending"}, json=payload
+            path, headers={**h, "Idempotency-Key": "pending1"}, json=payload
         )
         assert pending.json()["error"]["code"] == "IDEMPOTENCY_IN_PROGRESS"
         async with engine.begin() as conn:
             await conn.execute(
                 text(
                     "UPDATE idempotency_keys SET expires_at='2026-10-01' "
-                    "WHERE idempotency_key='pending'"
+                    "WHERE idempotency_key='pending1'"
                 )
             )
         expired = await client.post(
-            path, headers={**h, "Idempotency-Key": "pending"}, json=payload
+            path, headers={**h, "Idempotency-Key": "pending1"}, json=payload
         )
         assert expired.json()["error"]["code"] == "ACTIVE_LIMIT_REACHED"
         assert (
             await client.post(
-                path, headers={**h, "Idempotency-Key": "pending"}, json=payload
+                path, headers={**h, "Idempotency-Key": "pending1"}, json=payload
             )
         ).json() == expired.json()
         boundary = await book(other, "boundary", "2026-10-17", doctor=5, clock="12:00")
