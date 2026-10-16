@@ -100,6 +100,9 @@ function initGlobalShortcuts() {
    3. APPOINTMENTS DATA STORE
    ============================================================================= */
 let appointmentsData = [];
+let liveDoctorsCache = [];
+let liveSpecialtiesCache = [];
+let livePatientsCache = [];
 
 let selectedAppointment = null;
 let currentViewMode = 'calendar'; // 'calendar' | 'list'
