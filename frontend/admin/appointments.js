@@ -719,33 +719,110 @@ function updateMetricsDisplay() {
    11. MODAL DIALOGS
    ============================================================================= */
 
+let livePatientsCache = [];
+
+window.handleSelectRegisteredPatient = function(selectEl) {
+  const selectedOpt = selectEl.options[selectEl.selectedIndex];
+  if (!selectedOpt || !selectedOpt.value) return;
+
+  const name = selectedOpt.getAttribute('data-name');
+  const phone = selectedOpt.getAttribute('data-phone');
+  const code = selectedOpt.getAttribute('data-code');
+
+  const nameInput = document.getElementById('newPatientName');
+  const phoneInput = document.getElementById('newPatientPhone');
+  const codeInput = document.getElementById('newPatientCode');
+
+  if (nameInput && name) nameInput.value = name;
+  if (phoneInput && phone) phoneInput.value = phone;
+  if (codeInput && code) codeInput.value = code;
+
+  if (typeof showToast === 'function') {
+    showToast(`Linked patient: ${name} (ID: ${code})`, 'success');
+  }
+};
+
 // Open New Appointment Modal
-function openNewAppointmentModal() {
+async function openNewAppointmentModal() {
+  if (!livePatientsCache || livePatientsCache.length === 0) {
+    if (window.ClinicApi) {
+      try {
+        const res = await window.ClinicApi.getPatients();
+        if (res && Array.isArray(res.patients)) livePatientsCache = res.patients;
+      } catch (_) {}
+    }
+  }
+
+  if (!liveDoctorsCache || liveDoctorsCache.length === 0) {
+    if (window.ClinicApi) {
+      try {
+        const dRes = await window.ClinicApi.getDoctors({ limit: 50 });
+        if (dRes && Array.isArray(dRes.doctors)) liveDoctorsCache = dRes.doctors;
+      } catch (_) {}
+    }
+  }
+
+  let patientOptions = '<option value="">-- Choose Existing Patient (or enter new below) --</option>';
+  if (Array.isArray(livePatientsCache) && livePatientsCache.length > 0) {
+    patientOptions += livePatientsCache.map(p => {
+      const code = p.customer_number || p.patientCode || String(p.id || '');
+      const pName = p.full_name || p.name || 'Patient';
+      const pPhone = p.phone || '';
+      return `<option value="${p.id}" data-name="${escapeHtml(pName)}" data-phone="${escapeHtml(pPhone)}" data-code="${escapeHtml(code)}">${escapeHtml(pName)} (${escapeHtml(pPhone || 'No phone')}) — ID: ${escapeHtml(code)}</option>`;
+    }).join('');
+  }
+
+  let doctorOptions = '';
+  if (Array.isArray(liveDoctorsCache) && liveDoctorsCache.length > 0) {
+    doctorOptions = liveDoctorsCache.map(doc => {
+      const spec = liveSpecialtiesCache.find(s => s.id === doc.specialty_id);
+      const dept = doc.specialty?.name_en || (spec ? spec.name_en : doc.title_en || 'General Medicine');
+      return `<option value="${escapeHtml(doc.name_en)}|${escapeHtml(dept)}|${doc.id}">${escapeHtml(doc.name_en)} (${escapeHtml(dept)})</option>`;
+    }).join('');
+  } else {
+    doctorOptions = `
+      <option value="Dr. Ahmed Mohamed|Cardiology">Dr. Ahmed Mohamed (Cardiology)</option>
+      <option value="Dr. Sara Elsayed|Dermatology">Dr. Sara Elsayed (Dermatology)</option>
+      <option value="Dr. Mohamed Ali|Orthopedics">Dr. Mohamed Ali (Orthopedics)</option>
+      <option value="Dr. Mona Khaled|Pediatrics">Dr. Mona Khaled (Pediatrics)</option>
+      <option value="Dr. Youssef Hassan|ENT">Dr. Youssef Hassan (ENT)</option>
+    `;
+  }
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+
   const bodyHtml = `
     <form id="newApptForm" onsubmit="event.preventDefault(); submitNewAppointment();" style="display:flex; flex-direction:column; gap:14px;">
+      
+      <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px;">
+        <label style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 6px;">
+          <span>⚡ Link Registered Patient (Supabase DB)</span>
+          <span style="font-size: 11px; font-weight: 500; color: #15803D;">Auto-fills details below</span>
+        </label>
+        <select id="selectRegisteredPatient" onchange="handleSelectRegisteredPatient(this)" style="width: 100%; height: 38px; border: 1px solid #86EFAC; border-radius: 6px; padding: 0 10px; font-size: 13px; background: #FFFFFF; font-family: inherit; color: #1E293B;">
+          ${patientOptions}
+        </select>
+      </div>
+
       <div>
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Patient Full Name</label>
-        <input type="text" id="newPatientName" placeholder="e.g. Tarek Zaki" required style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Patient Full Name *</label>
+        <input type="text" id="newPatientName" placeholder="e.g. Hassan Metwaly" required style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Phone Number</label>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Phone Number *</label>
           <input type="tel" id="newPatientPhone" placeholder="+20 100 000 0000" required style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
         </div>
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Patient ID (Optional)</label>
-          <input type="text" id="newPatientCode" placeholder="PT-2024-XXX" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+          <input type="text" id="newPatientCode" placeholder="PT-2026-XXX" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Doctor</label>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Doctor (Database) *</label>
           <select id="newApptDoctor" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
-            <option value="Dr. Ahmed Mohamed|Cardiology">Dr. Ahmed Mohamed (Cardiology)</option>
-            <option value="Dr. Sara Elsayed|Dermatology">Dr. Sara Elsayed (Dermatology)</option>
-            <option value="Dr. Mohamed Ali|Orthopedics">Dr. Mohamed Ali (Orthopedics)</option>
-            <option value="Dr. Mona Khaled|Pediatrics">Dr. Mona Khaled (Pediatrics)</option>
-            <option value="Dr. Youssef Hassan|ENT">Dr. Youssef Hassan (ENT)</option>
+            ${doctorOptions}
           </select>
         </div>
         <div>
@@ -760,11 +837,11 @@ function openNewAppointmentModal() {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Date</label>
-          <input type="date" id="newApptDate" value="2024-11-14" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Date *</label>
+          <input type="date" id="newApptDate" value="${todayIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
         </div>
         <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Time Slot</label>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Time Slot *</label>
           <select id="newApptTime" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
             <option value="09:00 AM">09:00 AM</option>
             <option value="10:00 AM">10:00 AM</option>
@@ -777,14 +854,14 @@ function openNewAppointmentModal() {
       </div>
       <div>
         <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Clinical Notes / Chief Complaint</label>
-        <textarea id="newApptNotes" rows="2" placeholder="Brief clinical summary..." style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
+        <textarea id="newApptNotes" rows="2" placeholder="Brief clinical summary or reason for visit..." style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
       </div>
     </form>
   `;
 
   const footerHtml = `
-    <button class="modal-btn-secondary" onclick="closeAdminModal()">Cancel</button>
-    <button class="modal-btn-primary" onclick="submitNewAppointment()">Confirm Booking</button>
+    <button type="button" class="modal-btn-secondary" onclick="closeAdminModal()">Cancel</button>
+    <button type="button" class="modal-btn-primary" onclick="submitNewAppointment()">Confirm Booking</button>
   `;
 
   openAdminModal('Schedule New Appointment', bodyHtml, footerHtml);
@@ -793,10 +870,13 @@ function openNewAppointmentModal() {
 function submitNewAppointment() {
   const name = document.getElementById('newPatientName').value.trim();
   const phone = document.getElementById('newPatientPhone').value.trim();
+  const code = document.getElementById('newPatientCode').value.trim();
   const docVal = document.getElementById('newApptDoctor').value.split('|');
   const doctor = docVal[0];
-  const dept = docVal[1];
+  const dept = docVal[1] || 'General';
+  const docId = docVal[2] || null;
   const type = document.getElementById('newApptType').value;
+  const dateVal = document.getElementById('newApptDate').value;
   const time = document.getElementById('newApptTime').value;
   const notes = document.getElementById('newApptNotes').value.trim();
 
@@ -805,19 +885,25 @@ function submitNewAppointment() {
     return;
   }
 
+  const parsedDate = new Date(dateVal || new Date());
+  const dateFormatted = !isNaN(parsedDate.getTime()) 
+    ? parsedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
+    : "Today";
+
   const newAppt = {
     id: Date.now(),
     patientName: name,
     patientPhone: phone,
-    patientCode: `PT-2024-${Math.floor(100 + Math.random() * 900)}`,
+    patientCode: code || `PT-2026-${Math.floor(100 + Math.random() * 900)}`,
     patientAvatar: name.charAt(0).toUpperCase(),
     patientAvatarBg: "#EFF6FF",
     patientAvatarColor: "#2563EB",
     doctor: doctor,
     doctorDept: dept,
+    doctorId: docId,
     time: `${time} - ${time.replace('00', '30')}`,
     timeShort: time,
-    date: "Thursday, 14 Nov 2024",
+    date: dateFormatted,
     type: type,
     status: "Confirmed",
     branch: "Main Branch - Heliopolis",
@@ -832,6 +918,17 @@ function submitNewAppointment() {
   updateMetricsDisplay();
   selectScheduleSlot(newAppt.id, null);
   closeAdminModal();
+
+  if (window.ClinicRealtime && typeof window.ClinicRealtime.broadcast === 'function') {
+    window.ClinicRealtime.broadcast('APPOINTMENT_BOOKED', {
+      id: newAppt.id,
+      patientName: name,
+      doctor: doctor,
+      date: dateFormatted,
+      time: time
+    });
+  }
+
   showToast(`Successfully scheduled appointment for ${name} with ${doctor}.`, 'success');
 }
 
