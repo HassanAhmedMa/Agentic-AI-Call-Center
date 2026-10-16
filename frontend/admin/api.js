@@ -73,18 +73,15 @@
   /**
    * Internal HTTP fetch wrapper
    */
-  let adminToken = window.ADMIN_API_TOKEN || localStorage.getItem('clinic_admin_api_token') || null;
-  let adminTokenRequested = Boolean(adminToken);
+  let adminToken = window.ADMIN_API_TOKEN || (function() {
+    try { return localStorage.getItem('clinic_admin_api_token') || null; } catch (_) { return null; }
+  })();
+
   function getAdminToken() {
     if (!adminToken) {
-      adminToken = window.ADMIN_API_TOKEN || localStorage.getItem('clinic_admin_api_token') || null;
-    }
-    if (!adminToken && !adminTokenRequested) {
-      adminTokenRequested = true;
-      adminToken = window.prompt('Administrator access token (kept only until this page closes):') || null;
-      if (adminToken) {
-        try { localStorage.setItem('clinic_admin_api_token', adminToken); } catch (_) {}
-      }
+      try {
+        adminToken = window.ADMIN_API_TOKEN || localStorage.getItem('clinic_admin_api_token') || null;
+      } catch (_) {}
     }
     return adminToken;
   }
@@ -162,7 +159,6 @@
     setAdminToken: function (token) {
       ClinicCache.invalidate();
       adminToken = token || null;
-      adminTokenRequested = true;
     },
 
     getConnectionState: function () {

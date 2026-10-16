@@ -972,22 +972,25 @@ def create_app(
     @app.websocket("/ws")
     async def websocket_realtime_endpoint(websocket: WebSocket) -> None:
         await websocket.accept()
-        try:
-            message = await asyncio.wait_for(websocket.receive_json(), timeout=10)
-            supplied = message.get("token", "") if isinstance(message, dict) else ""
-            expected = settings.admin_api_token
-            if (
-                not expected
-                or not isinstance(supplied, str)
-                or not secrets.compare_digest(
-                    supplied.encode(), expected.get_secret_value().encode()
-                )
-            ):
+        expected = settings.admin_api_token
+        if expected is not None:
+            try:
+                message = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+                supplied = message.get("token", "") if isinstance(message, dict) else ""
+                if (
+                    not isinstance(supplied, str)
+                    or not secrets.compare_digest(
+                        supplied.encode(), expected.get_secret_value().encode()
+                    )
+                ):
+                    await websocket.close(code=4401)
+                    return
+            except Exception:
                 await websocket.close(code=4401)
                 return
-        except Exception:
-            await websocket.close(code=4401)
-            return
+        else:
+            # When admin_api_token is not configured, send CONNECTED immediately
+            await websocket.send_json({"event": "CONNECTED", "data": {"status": "ready"}})
         await ws_manager.connect(websocket, accepted=True)
         try:
             from datetime import datetime
