@@ -33,6 +33,14 @@ async def is_ready(engine: AsyncEngine, settings: Settings) -> bool:
                     await conn.execute(text("SELECT version_num FROM alembic_version"))
                 ).scalars()
             )
+            if settings.identity_enabled and settings.identity_provider == "supabase":
+                if not await conn.scalar(
+                    text(
+                        "SELECT to_regprocedure(current_schema() || "
+                        "'.auth_session_active(uuid,uuid)') IS NOT NULL"
+                    )
+                ):
+                    return False
         return bool(heads) and heads == versions
 
     try:

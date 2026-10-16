@@ -32,6 +32,7 @@ class Patient(Base):
     )
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     customer_number: Mapped[str] = mapped_column(String(6), unique=True)
+    supabase_user_id: Mapped[UUID | None] = mapped_column(unique=True)
     full_name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(254))
     email_verified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -133,6 +134,7 @@ class PatientSession(Base):
     patient_id: Mapped[int] = mapped_column(
         ForeignKey("patients.id", ondelete="CASCADE")
     )
+    supabase_session_id: Mapped[UUID | None]
     conversation_session_id: Mapped[UUID] = mapped_column(
         ForeignKey("conversation_sessions.id", ondelete="CASCADE")
     )

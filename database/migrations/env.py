@@ -1,5 +1,6 @@
 import asyncio
 
+import clinic_backend.idempotency  # noqa: F401
 import clinic_backend.identity_models  # noqa: F401
 import clinic_backend.scheduling_models  # noqa: F401
 from alembic import context

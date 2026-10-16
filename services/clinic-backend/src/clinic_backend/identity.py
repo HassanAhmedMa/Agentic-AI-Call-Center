@@ -310,6 +310,22 @@ class Identity:
         )
         now = datetime.now(UTC)
         expired = False
+        if row and self.settings.identity_provider == "supabase":
+            from clinic_backend.supabase_identity import active_auth_session
+
+            patient = await self.session.get(Patient, row.patient_id)
+            if (
+                patient is None
+                or patient.supabase_user_id is None
+                or row.supabase_session_id is None
+                or not await active_auth_session(
+                    self.session, patient.supabase_user_id, row.supabase_session_id
+                )
+            ):
+                row.revoked_at = now
+                row.revoke_reason = "logout"
+                row = None
+                expired = True
         if row and (
             row.expires_at <= now
             or row.last_activity_at
