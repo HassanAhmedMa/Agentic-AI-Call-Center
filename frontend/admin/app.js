@@ -827,7 +827,7 @@ function initSidebarNav() {
       if (label === 'Live Calls') {
         window.location.href = 'live-calls.html';
       } else if (label === 'Appointments') {
-        openAllAppointmentsModal();
+        window.location.href = 'appointments.html';
       } else if (label === 'Doctors') {
         window.location.href = 'doctors.html';
       } else if (label === 'Patients') {

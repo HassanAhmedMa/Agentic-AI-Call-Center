@@ -1,4 +1,5 @@
 import asyncio
+from datetime import date as dt_date, datetime, time as dt_time, timedelta, timezone
 import logging
 import math
 import re
@@ -115,9 +116,9 @@ def create_app(
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
+        allow_origins=["*"],
         allow_credentials=False,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_methods=["*"],
         allow_headers=["*"],
     )
 
@@ -148,22 +149,27 @@ def create_app(
                     request, 429, "RATE_LIMITED", "Too many requests. Try again later."
                 )
                 response.headers["Retry-After"] = str(retry)
+                response.headers["Access-Control-Allow-Origin"] = "*"
                 return response
         try:
             response = await call_next(request)
-        except (SQLAlchemyError, OSError, TimeoutError):
+        except (SQLAlchemyError, OSError, TimeoutError) as exc:
+            logger.error("Database or IO error request_id=%s: %s", request.state.request_id, exc)
             response = error_response(
                 request, 503, "SERVICE_UNAVAILABLE", "Service temporarily unavailable."
             )
+            response.headers["Access-Control-Allow-Origin"] = "*"
         except Exception as exc:
             logger.error(
-                "Unhandled request error request_id=%s type=%s",
+                "Unhandled request error request_id=%s type=%s: %s",
                 request.state.request_id,
                 type(exc).__name__,
+                exc,
             )
             response = error_response(
-                request, 500, "INTERNAL_ERROR", "An unexpected error occurred."
+                request, 500, "INTERNAL_ERROR", f"An unexpected error occurred: {exc}"
             )
+            response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["X-Request-Id"] = request.state.request_id
         return response
 
@@ -745,6 +751,423 @@ def create_app(
             "status": "broadcasted",
             "active_clients": len(ws_manager.active_connections),
         }
+
+    # =========================================================================
+    # APPOINTMENTS REST API (LIVE SUPABASE / POSTGRESQL ONLY)
+    # =========================================================================
+    @app.get("/api/v1/appointments", tags=["Appointments"])
+    async def list_appointments(
+        date: dt_date | None = None,
+        doctor_id: int | None = None,
+        patient_id: int | None = None,
+        status: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        from clinic_backend.models import Doctor, Specialty
+        from clinic_backend.scheduling_models import Appointment
+
+        async with sessions() as session:
+            stmt = (
+                select(Appointment, Doctor, Patient, Specialty)
+                .join(Doctor, Appointment.doctor_id == Doctor.id, isouter=True)
+                .join(Patient, Appointment.patient_id == Patient.id, isouter=True)
+                .join(Specialty, Doctor.specialty_id == Specialty.id, isouter=True)
+            )
+            if date:
+                stmt = stmt.where(Appointment.appointment_date == date)
+            if doctor_id:
+                stmt = stmt.where(Appointment.doctor_id == doctor_id)
+            if patient_id:
+                stmt = stmt.where(Appointment.patient_id == patient_id)
+            if status:
+                stmt = stmt.where(Appointment.status == status.lower())
+
+            stmt = stmt.order_by(Appointment.appointment_date.desc(), Appointment.start_time.asc())
+            stmt = stmt.offset(offset).limit(limit)
+
+            rows = (await session.execute(stmt)).all()
+            results = []
+            for appt, doc, pat, spec in rows:
+                start_str = appt.start_time.strftime("%H:%M")
+                end_str = appt.end_time.strftime("%H:%M")
+                # Format 12-hour short string
+                start_dt = datetime.combine(appt.appointment_date, appt.start_time)
+                time_short = start_dt.strftime("%I:%M %p").lstrip("0")
+                if time_short.startswith(":"):
+                    time_short = "0" + time_short
+
+                p_name = pat.full_name if pat else "Unknown Patient"
+                p_code = pat.customer_number if pat else (f"PT-{appt.patient_id}" if appt.patient_id else "")
+                p_phone = pat.phone if pat else ""
+
+                status_formatted = appt.status.capitalize() if appt.status else "Scheduled"
+                if status_formatted == "Scheduled":
+                    status_formatted = "Confirmed"
+
+                results.append({
+                    "id": appt.id,
+                    "patient_id": appt.patient_id,
+                    "patientName": p_name,
+                    "patient_name": p_name,
+                    "patientPhone": p_phone,
+                    "patient_phone": p_phone,
+                    "patientCode": p_code,
+                    "patient_code": p_code,
+                    "patientAvatar": p_name[0].upper() if p_name else "P",
+                    "patientAvatarBg": "#EFF6FF",
+                    "patientAvatarColor": "#2563EB",
+                    "doctor_id": appt.doctor_id,
+                    "doctorId": appt.doctor_id,
+                    "doctor": doc.name_en if doc else "Unknown Doctor",
+                    "doctor_name": doc.name_en if doc else "Unknown Doctor",
+                    "doctor_name_ar": doc.name_ar if doc else "",
+                    "doctorDept": spec.name_en if spec else (doc.title_en if doc else "General Medicine"),
+                    "doctor_dept": spec.name_en if spec else (doc.title_en if doc else "General Medicine"),
+                    "appointment_date": appt.appointment_date.isoformat(),
+                    "date": appt.appointment_date.isoformat(),
+                    "start_time": start_str,
+                    "end_time": end_str,
+                    "time": f"{start_str} - {end_str}",
+                    "timeShort": time_short,
+                    "status": status_formatted,
+                    "type": "Consultation",
+                    "visit_reason": appt.visit_reason or "Consultation",
+                    "notes": appt.visit_reason or "General consultation",
+                    "cancellation_reason": appt.cancellation_reason,
+                    "created_at": appt.created_at.isoformat() if appt.created_at else None,
+                    "updated_at": appt.updated_at.isoformat() if appt.updated_at else None,
+                })
+            return {"total": len(results), "appointments": results}
+
+    @app.post("/api/v1/appointments", status_code=201, tags=["Appointments"])
+    async def create_appointment(payload: dict[str, Any]) -> dict[str, Any]:
+        from clinic_backend.models import Doctor, Specialty
+        from clinic_backend.scheduling_models import Appointment, AppointmentHistory
+
+        async with sessions() as session:
+            # 1. Resolve Patient
+            patient = None
+            raw_patient_id = payload.get("patient_id")
+            if raw_patient_id:
+                if str(raw_patient_id).isdigit():
+                    patient = await session.scalar(
+                        select(Patient).where(
+                            or_(Patient.id == int(raw_patient_id), Patient.customer_number == str(raw_patient_id))
+                        )
+                    )
+                else:
+                    patient = await session.scalar(
+                        select(Patient).where(Patient.customer_number == str(raw_patient_id))
+                    )
+
+            if not patient and (payload.get("phone") or payload.get("patientPhone")):
+                clean_phone = str(payload.get("phone") or payload.get("patientPhone")).strip()
+                if not clean_phone.startswith("+"):
+                    clean_phone = f"+{clean_phone}"
+                patient = await session.scalar(
+                    select(Patient).where(Patient.phone == clean_phone)
+                )
+
+            if not patient:
+                p_name = str(payload.get("patient_name") or payload.get("patientName") or payload.get("name") or "Walk-in Patient").strip()
+                p_phone = str(payload.get("phone") or payload.get("patient_phone") or payload.get("patientPhone") or "+201000000000").strip()
+                if not p_phone.startswith("+"):
+                    p_phone = f"+{p_phone}"
+
+                import random
+                cust_num = f"{random.randint(100000, 999999)}"
+                patient = Patient(
+                    full_name=p_name,
+                    phone=p_phone,
+                    customer_number=cust_num,
+                    preferred_language="ar",
+                    gender="male",
+                )
+                session.add(patient)
+                await session.flush()
+
+            # 2. Resolve Doctor
+            raw_doc_id = payload.get("doctor_id") or payload.get("doctorId")
+            doctor = None
+            if raw_doc_id:
+                doctor = await session.scalar(select(Doctor).where(Doctor.id == int(raw_doc_id)))
+            elif payload.get("doctor"):
+                doc_name = str(payload["doctor"]).replace("Dr. ", "").strip().lower()
+                doctor = await session.scalar(
+                    select(Doctor).where(func.lower(Doctor.name_en).like(f"%{doc_name}%"))
+                )
+
+            if not doctor:
+                doctor = await session.scalar(select(Doctor).order_by(Doctor.id.asc()))
+            if not doctor:
+                raise APIError(404, "DOCTOR_NOT_FOUND", "No available doctors found in clinic catalog.")
+
+            # 3. Resolve Date & Time
+            raw_date = payload.get("appointment_date") or payload.get("date")
+            if not raw_date:
+                raise APIError(400, "MISSING_DATE", "Appointment date is required.")
+            try:
+                appt_date = dt_date.fromisoformat(str(raw_date)[:10])
+            except Exception:
+                raise APIError(400, "INVALID_DATE", "Invalid appointment date format. Use YYYY-MM-DD.")
+
+            if appt_date.isoweekday() == 5:
+                raise APIError(400, "CLINIC_CLOSED", "The clinic is closed on Fridays.")
+
+            raw_time = str(payload.get("start_time") or payload.get("time") or payload.get("timeShort") or "09:00").strip()
+            if " - " in raw_time:
+                raw_time = raw_time.split(" - ")[0].strip()
+
+            if " " in raw_time:
+                parts = raw_time.split(" ")
+                t_parts = parts[0].split(":")
+                hrs = int(t_parts[0])
+                mins = int(t_parts[1]) if len(t_parts) > 1 else 0
+                if parts[1].upper() == "PM" and hrs < 12:
+                    hrs += 12
+                elif parts[1].upper() == "AM" and hrs == 12:
+                    hrs = 0
+                start_obj = dt_time(hrs, mins)
+            else:
+                t_parts = raw_time.split(":")
+                hrs = int(t_parts[0])
+                mins = int(t_parts[1]) if len(t_parts) > 1 else 0
+                start_obj = dt_time(hrs, mins)
+
+            if start_obj.minute not in (0, 30):
+                start_obj = dt_time(start_obj.hour, 30 if start_obj.minute > 15 else 0)
+
+            if start_obj < dt_time(7, 0) or start_obj > dt_time(21, 30):
+                raise APIError(400, "INVALID_TIME", "Appointments must be between 07:00 and 21:30.")
+
+            end_dt = datetime.combine(appt_date, start_obj) + timedelta(minutes=30)
+            end_obj = end_dt.time()
+
+            # 4. Check slot conflict
+            conflict = await session.scalar(
+                select(Appointment).where(
+                    Appointment.doctor_id == doctor.id,
+                    Appointment.appointment_date == appt_date,
+                    Appointment.start_time == start_obj,
+                    Appointment.status == "scheduled",
+                )
+            )
+            if conflict:
+                raise APIError(409, "SLOT_OCCUPIED", f"Dr. {doctor.name_en} already has a scheduled appointment at {start_obj.strftime('%H:%M')} on {appt_date}.")
+
+            # 5. Insert Appointment
+            reason = str(payload.get("visit_reason") or payload.get("notes") or payload.get("type") or "General Consultation").strip()
+            appt = Appointment(
+                patient_id=patient.id,
+                doctor_id=doctor.id,
+                appointment_date=appt_date,
+                start_time=start_obj,
+                end_time=end_obj,
+                status="scheduled",
+                visit_reason=reason[:300],
+            )
+            session.add(appt)
+            await session.flush()
+
+            # 6. Insert AppointmentHistory
+            history = AppointmentHistory(
+                appointment_id=appt.id,
+                event="created",
+                new_date=appt_date,
+                new_start_time=start_obj,
+                actor="clinic_staff",
+            )
+            session.add(history)
+            await session.commit()
+            await session.refresh(appt)
+
+            spec = await session.scalar(select(Specialty).where(Specialty.id == doctor.specialty_id))
+
+            start_str = appt.start_time.strftime("%H:%M")
+            end_str = appt.end_time.strftime("%H:%M")
+            start_dt = datetime.combine(appt.appointment_date, appt.start_time)
+            time_short = start_dt.strftime("%I:%M %p").lstrip("0")
+            if time_short.startswith(":"):
+                time_short = "0" + time_short
+
+            data = {
+                "id": appt.id,
+                "patient_id": patient.id,
+                "patientName": patient.full_name,
+                "patient_name": patient.full_name,
+                "patientPhone": patient.phone,
+                "patient_phone": patient.phone,
+                "patientCode": patient.customer_number,
+                "patient_code": patient.customer_number,
+                "patientAvatar": patient.full_name[0].upper() if patient.full_name else "P",
+                "patientAvatarBg": "#EFF6FF",
+                "patientAvatarColor": "#2563EB",
+                "doctor_id": doctor.id,
+                "doctorId": doctor.id,
+                "doctor": doctor.name_en,
+                "doctor_name": doctor.name_en,
+                "doctorDept": spec.name_en if spec else (doctor.title_en or "General Medicine"),
+                "doctor_dept": spec.name_en if spec else (doctor.title_en or "General Medicine"),
+                "appointment_date": appt.appointment_date.isoformat(),
+                "date": appt.appointment_date.isoformat(),
+                "start_time": start_str,
+                "end_time": end_str,
+                "time": f"{start_str} - {end_str}",
+                "timeShort": time_short,
+                "status": "Confirmed",
+                "visit_reason": appt.visit_reason,
+                "notes": appt.visit_reason,
+                "type": payload.get("type") or "Consultation",
+            }
+
+            # 7. WebSocket Live Broadcast across ALL operators
+            await ws_manager.broadcast("APPOINTMENT_BOOKED", data)
+
+            return data
+
+    @app.patch("/api/v1/appointments/{appointment_id}/cancel", tags=["Appointments"])
+    async def cancel_appointment(
+        appointment_id: int, payload: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        from clinic_backend.scheduling_models import Appointment, AppointmentHistory
+
+        async with sessions() as session:
+            appt = await session.scalar(
+                select(Appointment).where(Appointment.id == appointment_id)
+            )
+            if not appt:
+                raise APIError(404, "APPOINTMENT_NOT_FOUND", "Appointment not found.")
+            if appt.status == "cancelled":
+                raise APIError(400, "ALREADY_CANCELLED", "Appointment is already cancelled.")
+
+            reason = str((payload or {}).get("reason") or "Cancelled by operator").strip()
+            appt.status = "cancelled"
+            appt.cancellation_reason = reason[:300]
+            appt.cancelled_at = datetime.now(timezone.utc)
+            appt.cancelled_by = "clinic_staff"
+            appt.updated_at = datetime.now(timezone.utc)
+
+            history = AppointmentHistory(
+                appointment_id=appt.id,
+                event="cancelled",
+                previous_date=appt.appointment_date,
+                previous_start_time=appt.start_time,
+                actor="clinic_staff",
+            )
+            session.add(history)
+            await session.commit()
+
+            await ws_manager.broadcast(
+                "APPOINTMENT_CANCELLED",
+                {
+                    "id": appt.id,
+                    "patient_id": appt.patient_id,
+                    "doctor_id": appt.doctor_id,
+                    "status": "Cancelled",
+                    "cancellation_reason": reason,
+                },
+            )
+            return {"status": "cancelled", "id": appt.id}
+
+    @app.patch("/api/v1/appointments/{appointment_id}/reschedule", tags=["Appointments"])
+    async def reschedule_appointment(
+        appointment_id: int, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        from clinic_backend.scheduling_models import Appointment, AppointmentHistory
+
+        async with sessions() as session:
+            appt = await session.scalar(
+                select(Appointment).where(Appointment.id == appointment_id)
+            )
+            if not appt:
+                raise APIError(404, "APPOINTMENT_NOT_FOUND", "Appointment not found.")
+
+            raw_date = payload.get("appointment_date") or payload.get("date")
+            raw_time = payload.get("start_time") or payload.get("time")
+            if not raw_date or not raw_time:
+                raise APIError(400, "INVALID_INPUT", "Must provide new appointment date and time.")
+
+            new_date = dt_date.fromisoformat(str(raw_date)[:10])
+            if new_date.isoweekday() == 5:
+                raise APIError(400, "CLINIC_CLOSED", "The clinic is closed on Fridays.")
+
+            clean_time = str(raw_time).strip()
+            if " - " in clean_time:
+                clean_time = clean_time.split(" - ")[0].strip()
+
+            if " " in clean_time:
+                parts = clean_time.split(" ")
+                t_parts = parts[0].split(":")
+                hrs = int(t_parts[0])
+                mins = int(t_parts[1]) if len(t_parts) > 1 else 0
+                if parts[1].upper() == "PM" and hrs < 12:
+                    hrs += 12
+                elif parts[1].upper() == "AM" and hrs == 12:
+                    hrs = 0
+                new_start = dt_time(hrs, mins)
+            else:
+                t_parts = clean_time.split(":")
+                new_start = dt_time(int(t_parts[0]), int(t_parts[1]) if len(t_parts) > 1 else 0)
+
+            if new_start.minute not in (0, 30):
+                new_start = dt_time(new_start.hour, 30 if new_start.minute > 15 else 0)
+
+            new_end = (datetime.combine(new_date, new_start) + timedelta(minutes=30)).time()
+
+            conflict = await session.scalar(
+                select(Appointment).where(
+                    Appointment.doctor_id == appt.doctor_id,
+                    Appointment.appointment_date == new_date,
+                    Appointment.start_time == new_start,
+                    Appointment.status == "scheduled",
+                    Appointment.id != appt.id,
+                )
+            )
+            if conflict:
+                raise APIError(409, "SLOT_OCCUPIED", "Target time slot is already booked.")
+
+            prev_date = appt.appointment_date
+            prev_time = appt.start_time
+
+            appt.appointment_date = new_date
+            appt.start_time = new_start
+            appt.end_time = new_end
+            appt.status = "scheduled"
+            appt.updated_at = datetime.now(timezone.utc)
+
+            history = AppointmentHistory(
+                appointment_id=appt.id,
+                event="time_changed",
+                previous_date=prev_date,
+                previous_start_time=prev_time,
+                new_date=new_date,
+                new_start_time=new_start,
+                actor="clinic_staff",
+            )
+            session.add(history)
+            await session.commit()
+
+            start_str = appt.start_time.strftime("%H:%M")
+            start_dt = datetime.combine(appt.appointment_date, appt.start_time)
+            time_short = start_dt.strftime("%I:%M %p").lstrip("0")
+            if time_short.startswith(":"):
+                time_short = "0" + time_short
+
+            await ws_manager.broadcast(
+                "APPOINTMENT_BOOKED",
+                {
+                    "id": appt.id,
+                    "patient_id": appt.patient_id,
+                    "doctor_id": appt.doctor_id,
+                    "appointment_date": appt.appointment_date.isoformat(),
+                    "date": appt.appointment_date.isoformat(),
+                    "start_time": start_str,
+                    "timeShort": time_short,
+                    "status": "Confirmed",
+                },
+            )
+            return {"status": "rescheduled", "id": appt.id}
 
     from clinic_backend.availability_routes import availability_router
 

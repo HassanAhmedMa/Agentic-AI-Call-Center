@@ -265,6 +265,114 @@
     },
 
     /* =========================================================================
+       APPOINTMENTS ENDPOINTS (LIVE FASTAPI & SUPABASE ONLY)
+       ========================================================================= */
+    /**
+     * Fetch list of appointments from live backend
+     * GET /api/v1/appointments?date=...&doctor_id=...&patient_id=...&status=...
+     */
+    getAppointments: async function (params = {}) {
+      const query = new URLSearchParams();
+      if (params.date) query.set('date', params.date);
+      if (params.doctor_id) query.set('doctor_id', params.doctor_id);
+      if (params.patient_id) query.set('patient_id', params.patient_id);
+      if (params.status) query.set('status', params.status);
+      if (params.limit) query.set('limit', params.limit);
+      if (params.offset) query.set('offset', params.offset);
+
+      const qs = query.toString();
+      const endpoint = qs ? `/appointments?${qs}` : '/appointments';
+      const res = await request(endpoint);
+      let appts = [];
+      if (res && Array.isArray(res.appointments)) {
+        appts = res.appointments.map(ClinicApi.normalizeAppointment);
+      } else if (Array.isArray(res)) {
+        appts = res.map(ClinicApi.normalizeAppointment);
+      }
+      return { total: res.total ?? appts.length, appointments: appts };
+    },
+
+    /**
+     * Create / schedule a new appointment in Supabase database
+     * POST /api/v1/appointments
+     */
+    createAppointment: async function (payload) {
+      const res = await request('/appointments', {
+        method: 'POST',
+        body: payload
+      });
+      ClinicCache.invalidate('appointments');
+      return ClinicApi.normalizeAppointment(res);
+    },
+
+    /**
+     * Cancel appointment
+     * PATCH /api/v1/appointments/{id}/cancel
+     */
+    cancelAppointment: async function (appointmentId, payload = {}) {
+      const res = await request(`/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
+        method: 'PATCH',
+        body: payload
+      });
+      ClinicCache.invalidate('appointments');
+      return res;
+    },
+
+    /**
+     * Reschedule appointment
+     * PATCH /api/v1/appointments/{id}/reschedule
+     */
+    rescheduleAppointment: async function (appointmentId, payload) {
+      const res = await request(`/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
+        method: 'PATCH',
+        body: payload
+      });
+      ClinicCache.invalidate('appointments');
+      return res;
+    },
+
+    /**
+     * Standardizes appointment data object for UI rendering
+     */
+    normalizeAppointment: function (raw) {
+      if (!raw) return null;
+      const pName = raw.patientName || raw.patient_name || 'Patient';
+      const pPhone = raw.patientPhone || raw.patient_phone || '';
+      const pCode = raw.patientCode || raw.patient_code || (raw.patient_id ? `#${raw.patient_id}` : '—');
+      const docName = raw.doctor || raw.doctor_name || 'Doctor';
+      const docDept = raw.doctorDept || raw.doctor_dept || 'General';
+      const timeStr = raw.time || (raw.start_time ? `${raw.start_time} - ${raw.end_time || ''}` : '09:00 AM');
+      const timeShort = raw.timeShort || (raw.start_time ? raw.start_time.slice(0, 5) : '09:00');
+      const dateVal = raw.date || raw.appointment_date || 'Today';
+
+      let status = raw.status || 'Confirmed';
+      if (status.toLowerCase() === 'scheduled') status = 'Confirmed';
+
+      return {
+        id: raw.id,
+        patient_id: raw.patient_id,
+        patientName: pName,
+        patientPhone: pPhone,
+        patientCode: pCode,
+        patientAvatar: pName.charAt(0).toUpperCase(),
+        patientAvatarBg: raw.patientAvatarBg || '#EFF6FF',
+        patientAvatarColor: raw.patientAvatarColor || '#2563EB',
+        doctor: docName,
+        doctorDept: docDept,
+        doctorId: raw.doctor_id || raw.doctorId,
+        time: timeStr,
+        timeShort: timeShort,
+        date: dateVal,
+        type: raw.type || 'Consultation',
+        status: status,
+        branch: raw.branch || 'Main Branch - Heliopolis',
+        room: raw.room || (docDept + ' Suite'),
+        notes: raw.notes || raw.visit_reason || 'Routine consultation',
+        insurance: raw.insurance || 'Cash / Standard'
+      };
+    },
+
+    /* =========================================================================
        PATIENT MANAGEMENT ENDPOINTS (LIVE FASTAPI & POSTGRESQL ONLY)
        ========================================================================= */
     /**

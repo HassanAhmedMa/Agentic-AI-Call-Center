@@ -125,8 +125,11 @@
       }
       updatePatientMetrics(allPatients);
       applyFilters();
-      if (allPatients.length > 0) {
-        selectPatientRow(allPatients[0].id);
+      const cachedTargetId = (currentlySelectedPatientId && allPatients.some(p => p.id === currentlySelectedPatientId))
+        ? currentlySelectedPatientId
+        : (allPatients.length > 0 ? allPatients[0].id : null);
+      if (cachedTargetId !== null) {
+        selectPatientRow(cachedTargetId);
       }
     }
 
@@ -148,9 +151,13 @@
       // 3. Render Table
       applyFilters();
 
-      // 4. Select initial patient
-      if (allPatients.length > 0) {
-        selectPatientRow(allPatients[0].id);
+      // 4. Select patient (preserving active selection during multi-operator real-time updates)
+      const targetId = (currentlySelectedPatientId && allPatients.some(p => p.id === currentlySelectedPatientId))
+        ? currentlySelectedPatientId
+        : (allPatients.length > 0 ? allPatients[0].id : null);
+
+      if (targetId !== null) {
+        selectPatientRow(targetId);
       } else {
         const heroRow = document.getElementById('patientHeroRow');
         const subTabs = document.getElementById('patientSubTabs');

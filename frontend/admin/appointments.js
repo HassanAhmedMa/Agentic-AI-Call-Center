@@ -14,17 +14,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initRealtimeAppointmentsSync() {
   if (!window.ClinicRealtime) return;
-  window.ClinicRealtime.on('APPOINTMENT_BOOKED', () => {
+  window.ClinicRealtime.on('APPOINTMENT_BOOKED', (payload) => {
     loadLiveCatalog();
     if (typeof showToast === 'function') {
-      showToast('Appointments schedule updated in real-time.', 'info');
+      const pName = payload?.patientName || payload?.patient_name || 'Patient';
+      showToast(`Real-time: New appointment scheduled for ${pName}.`, 'success');
     }
   });
-  window.ClinicRealtime.on('APPOINTMENT_CANCELLED', () => {
+  window.ClinicRealtime.on('APPOINTMENT_CANCELLED', (payload) => {
     loadLiveCatalog();
     if (typeof showToast === 'function') {
-      showToast('Appointment cancelled by operator.', 'warning');
+      showToast(`Real-time: Appointment #${payload?.id || ''} was cancelled.`, 'warning');
     }
+  });
+  window.ClinicRealtime.on('APPOINTMENT_UPDATED', () => {
+    loadLiveCatalog();
   });
 }
 
@@ -187,9 +191,23 @@ function renderScheduleGrid() {
 
     doctors.forEach(doc => {
       const match = appointmentsData.find(a => {
-        const timeMatch = a.timeShort === t || (a.time && a.time.startsWith(t));
-        const docMatch = a.doctor && (a.doctor.toLowerCase().includes(doc.name_en.toLowerCase()) || doc.name_en.toLowerCase().includes(a.doctor.toLowerCase()));
-        return timeMatch && docMatch;
+        const docIdMatch = a.doctorId && doc.id && Number(a.doctorId) === Number(doc.id);
+        const docNameMatch = a.doctor && (
+          a.doctor.toLowerCase().includes(doc.name_en.toLowerCase()) || 
+          doc.name_en.toLowerCase().includes(a.doctor.toLowerCase())
+        );
+        if (!docIdMatch && !docNameMatch) return false;
+
+        if (a.timeShort && (a.timeShort === t || a.timeShort.startsWith(t.slice(0, 5)))) return true;
+        if (a.time && a.time.startsWith(t)) return true;
+
+        const tHour = parseInt(t.slice(0, 2), 10) + (t.includes('PM') && !t.startsWith('12') ? 12 : 0);
+        const aStart = a.start_time || (a.time ? a.time.slice(0, 5) : '');
+        if (aStart) {
+          const aHour = parseInt(aStart.slice(0, 2), 10);
+          if (aHour === tHour) return true;
+        }
+        return false;
       });
 
       if (match) {
@@ -645,7 +663,7 @@ function getSelectedDateIso() {
 async function loadLiveCatalog() {
   if (!window.ClinicApi) return;
   try {
-    const [specData, docData] = await Promise.all([
+    const [specData, docData, apptData] = await Promise.all([
       ClinicApi.getSpecialties().catch(e => {
         console.debug('[ClinicApi] Specialties fetch error:', e.message);
         return [];
@@ -653,6 +671,10 @@ async function loadLiveCatalog() {
       ClinicApi.getDoctors({ limit: 50 }).catch(e => {
         console.debug('[ClinicApi] Doctors fetch error:', e.message);
         return { total: 0, doctors: [] };
+      }),
+      ClinicApi.getAppointments().catch(e => {
+        console.debug('[ClinicApi] Appointments fetch error:', e.message);
+        return { total: 0, appointments: [] };
       })
     ]);
 
@@ -665,6 +687,16 @@ async function loadLiveCatalog() {
       liveDoctorsCache = docData.doctors;
       populateDoctorsFilter(docData.doctors);
       updateDoctorScheduleColumns(docData.doctors);
+    }
+
+    if (apptData && Array.isArray(apptData.appointments) && apptData.appointments.length > 0) {
+      appointmentsData = apptData.appointments;
+      saveAppointmentsStore();
+    }
+
+    renderScheduleGrid();
+    if (appointmentsData.length > 0 && (!selectedAppointment || !appointmentsData.some(a => a.id === selectedAppointment.id))) {
+      selectScheduleSlot(appointmentsData[0].id, null);
     }
 
     // Sync live availability for the currently selected date
@@ -1017,12 +1049,23 @@ async function openNewAppointmentModal() {
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Time Slot *</label>
           <select id="newApptTime" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
-            <option value="09:00 AM">09:00 AM</option>
-            <option value="10:00 AM">10:00 AM</option>
-            <option value="11:00 AM">11:00 AM</option>
-            <option value="01:00 PM">01:00 PM</option>
-            <option value="03:00 PM">03:00 PM</option>
-            <option value="05:00 PM">05:00 PM</option>
+            <option value="09:00">09:00 AM</option>
+            <option value="09:30">09:30 AM</option>
+            <option value="10:00">10:00 AM</option>
+            <option value="10:30">10:30 AM</option>
+            <option value="11:00">11:00 AM</option>
+            <option value="11:30">11:30 AM</option>
+            <option value="12:00">12:00 PM</option>
+            <option value="12:30">12:30 PM</option>
+            <option value="13:00">01:00 PM</option>
+            <option value="13:30">01:30 PM</option>
+            <option value="14:00">02:00 PM</option>
+            <option value="14:30">02:30 PM</option>
+            <option value="15:00">03:00 PM</option>
+            <option value="15:30">03:30 PM</option>
+            <option value="16:00">04:00 PM</option>
+            <option value="16:30">04:30 PM</option>
+            <option value="17:00">05:00 PM</option>
           </select>
         </div>
       </div>
@@ -1041,14 +1084,17 @@ async function openNewAppointmentModal() {
   openAdminModal('Schedule New Appointment', bodyHtml, footerHtml);
 }
 
-function submitNewAppointment() {
+async function submitNewAppointment() {
+  const selectPat = document.getElementById('selectRegisteredPatient');
+  const selectedPatientId = selectPat ? selectPat.value : null;
+
   const name = document.getElementById('newPatientName').value.trim();
   const phone = document.getElementById('newPatientPhone').value.trim();
   const code = document.getElementById('newPatientCode').value.trim();
   const docVal = document.getElementById('newApptDoctor').value.split('|');
   const doctor = docVal[0];
   const dept = docVal[1] || 'General';
-  const docId = docVal[2] || null;
+  const docId = docVal[2] ? parseInt(docVal[2], 10) : null;
   const type = document.getElementById('newApptType').value;
   const dateVal = document.getElementById('newApptDate').value;
   const time = document.getElementById('newApptTime').value;
@@ -1059,55 +1105,50 @@ function submitNewAppointment() {
     return;
   }
 
-  const parsedDate = new Date(dateVal || new Date());
-  const dateFormatted = !isNaN(parsedDate.getTime()) 
-    ? parsedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
-    : "Today";
-
-  const newAppt = {
-    id: Date.now(),
-    patientName: name,
-    patientPhone: phone,
-    patientCode: code || `PT-2026-${Math.floor(100 + Math.random() * 900)}`,
-    patientAvatar: name.charAt(0).toUpperCase(),
-    patientAvatarBg: "#EFF6FF",
-    patientAvatarColor: "#2563EB",
-    doctor: doctor,
-    doctorDept: dept,
-    doctorId: docId,
-    time: `${time} - ${time.replace('00', '30')}`,
-    timeShort: time,
-    date: dateFormatted,
-    type: type,
-    status: "Confirmed",
-    branch: "Main Branch - Heliopolis",
-    room: "Examination Room",
-    notes: notes || "Newly scheduled patient appointment.",
-    insurance: "Cash / Standard"
-  };
-
-  appointmentsData.unshift(newAppt);
-  saveAppointmentsStore();
-  renderScheduleGrid();
-  selectScheduleSlot(newAppt.id, null);
-  closeAdminModal();
-
-  if (window.ClinicRealtime && typeof window.ClinicRealtime.broadcast === 'function') {
-    window.ClinicRealtime.broadcast('APPOINTMENT_BOOKED', {
-      id: newAppt.id,
-      patientName: name,
-      doctor: doctor,
-      date: dateFormatted,
-      time: time
-    });
+  // Validate Friday closure
+  if (dateVal) {
+    const d = new Date(dateVal + 'T00:00:00');
+    if (d.getDay() === 5) {
+      alert('The clinic is closed on Fridays. Please choose another date.');
+      return;
+    }
   }
 
-  showToast(`Successfully scheduled appointment for ${name} with ${doctor}.`, 'success');
+  const payload = {
+    patient_id: selectedPatientId ? parseInt(selectedPatientId, 10) : undefined,
+    patient_name: name,
+    patient_phone: phone,
+    doctor_id: docId || undefined,
+    doctor: doctor,
+    appointment_date: dateVal,
+    start_time: time,
+    type: type,
+    visit_reason: notes || type || 'General Consultation'
+  };
+
+  try {
+    if (window.ClinicApi) {
+      const created = await window.ClinicApi.createAppointment(payload);
+      closeAdminModal();
+      showToast(`Successfully scheduled appointment in Supabase for ${name} with ${doctor}.`, 'success');
+      await loadLiveCatalog();
+      if (created && created.id) {
+        selectScheduleSlot(created.id, null);
+      }
+    } else {
+      closeAdminModal();
+    }
+  } catch (err) {
+    console.error('[Appointments] Booking error:', err);
+    alert('Failed to schedule appointment: ' + (err.message || 'Database error'));
+  }
 }
 
 // Reschedule Modal
 function openRescheduleModal() {
   if (!selectedAppointment) return;
+
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   const bodyHtml = `
     <div style="display:flex; flex-direction:column; gap:14px;">
@@ -1117,16 +1158,27 @@ function openRescheduleModal() {
       </div>
       <div>
         <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Target Date</label>
-        <input type="date" id="reschedDate" value="2024-11-15" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+        <input type="date" id="reschedDate" value="${todayIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
       </div>
       <div>
         <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Time Slot</label>
         <select id="reschedTime" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
-          <option value="10:00 AM - 10:30 AM">10:00 AM - 10:30 AM</option>
-          <option value="11:30 AM - 12:00 PM">11:30 AM - 12:00 PM</option>
-          <option value="01:30 PM - 02:00 PM">01:30 PM - 02:00 PM</option>
-          <option value="03:00 PM - 03:30 PM">03:00 PM - 03:30 PM</option>
-          <option value="04:30 PM - 05:00 PM">04:30 PM - 05:00 PM</option>
+          <option value="09:00">09:00 AM - 09:30 AM</option>
+          <option value="09:30">09:30 AM - 10:00 AM</option>
+          <option value="10:00">10:00 AM - 10:30 AM</option>
+          <option value="10:30">10:30 AM - 11:00 AM</option>
+          <option value="11:00">11:00 AM - 11:30 AM</option>
+          <option value="11:30">11:30 AM - 12:00 PM</option>
+          <option value="12:00">12:00 PM - 12:30 PM</option>
+          <option value="12:30">12:30 PM - 01:00 PM</option>
+          <option value="13:00">01:00 PM - 01:30 PM</option>
+          <option value="13:30">01:30 PM - 02:00 PM</option>
+          <option value="14:00">02:00 PM - 02:30 PM</option>
+          <option value="14:30">02:30 PM - 03:00 PM</option>
+          <option value="15:00">03:00 PM - 03:30 PM</option>
+          <option value="15:30">03:30 PM - 04:00 PM</option>
+          <option value="16:00">04:00 PM - 04:30 PM</option>
+          <option value="16:30">04:30 PM - 05:00 PM</option>
         </select>
       </div>
       <div>
@@ -1149,34 +1201,47 @@ function openRescheduleModal() {
   openAdminModal('Reschedule Appointment', bodyHtml, footerHtml);
 }
 
-function confirmRescheduleAppointment() {
+async function confirmRescheduleAppointment() {
   const newDate = document.getElementById('reschedDate').value;
   const newTime = document.getElementById('reschedTime').value;
   const reason = document.getElementById('reschedReason').value;
 
-  if (selectedAppointment) {
-    selectedAppointment.date = newDate;
-    selectedAppointment.time = newTime;
-    selectedAppointment.notes += ` [Rescheduled: ${reason}]`;
-    saveAppointmentsStore();
-    renderScheduleGrid();
-    populateAppointmentDetails(selectedAppointment);
-  }
+  if (!selectedAppointment) return;
 
-  closeAdminModal();
-  showToast(`Appointment for ${selectedAppointment.patientName} rescheduled to ${newDate} (${newTime}).`, 'success');
+  try {
+    if (window.ClinicApi) {
+      await window.ClinicApi.rescheduleAppointment(selectedAppointment.id, {
+        appointment_date: newDate,
+        start_time: newTime,
+        reason: reason
+      });
+      closeAdminModal();
+      showToast(`Appointment rescheduled to ${newDate} (${newTime}).`, 'success');
+      await loadLiveCatalog();
+    }
+  } catch (err) {
+    console.error('[Appointments] Reschedule error:', err);
+    alert('Failed to reschedule appointment: ' + (err.message || 'Database error'));
+  }
 }
 
 // Cancel Appointment
-function handleCancelAppointment() {
+async function handleCancelAppointment() {
   if (!selectedAppointment) return;
 
   if (confirm(`Are you sure you want to cancel the appointment for ${selectedAppointment.patientName} on ${selectedAppointment.date}?`)) {
-    selectedAppointment.status = 'Cancelled';
-    saveAppointmentsStore();
-    renderScheduleGrid();
-    populateAppointmentDetails(selectedAppointment);
-    showToast(`Appointment #${selectedAppointment.id} for ${selectedAppointment.patientName} marked as Cancelled.`, 'warning');
+    try {
+      if (window.ClinicApi) {
+        await window.ClinicApi.cancelAppointment(selectedAppointment.id, {
+          reason: 'Cancelled by operator'
+        });
+        showToast(`Appointment #${selectedAppointment.id} for ${selectedAppointment.patientName} marked as Cancelled.`, 'warning');
+        await loadLiveCatalog();
+      }
+    } catch (err) {
+      console.error('[Appointments] Cancellation error:', err);
+      alert('Failed to cancel appointment: ' + (err.message || 'Database error'));
+    }
   }
 }
 
