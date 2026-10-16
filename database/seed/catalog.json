@@ -1,0 +1,505 @@
+{
+  "_notice": "Fictional public catalog for development only. Names and prices are synthetic; not medical advice.",
+  "specialties": [
+    {
+      "id": 1,
+      "name_en": "Cardiology",
+      "name_ar": "أمراض القلب",
+      "synonyms": [
+        "قلب",
+        "heart",
+        "cardio"
+      ]
+    },
+    {
+      "id": 2,
+      "name_en": "Dermatology",
+      "name_ar": "الأمراض الجلدية",
+      "synonyms": [
+        "جلدية",
+        "جلد",
+        "skin"
+      ]
+    },
+    {
+      "id": 3,
+      "name_en": "Pediatrics",
+      "name_ar": "طب الأطفال",
+      "synonyms": [
+        "اطفال",
+        "أطفال",
+        "عيال",
+        "kids"
+      ]
+    },
+    {
+      "id": 4,
+      "name_en": "Orthopedics",
+      "name_ar": "جراحة العظام",
+      "synonyms": [
+        "عظام",
+        "عضم",
+        "bones"
+      ]
+    },
+    {
+      "id": 5,
+      "name_en": "Internal Medicine",
+      "name_ar": "الباطنة",
+      "synonyms": [
+        "باطنة",
+        "باطنه",
+        "internal"
+      ]
+    }
+  ],
+  "doctors": [
+    {
+      "id": 1,
+      "name_en": "Dr. Amal Nour",
+      "name_ar": "د. أمل نور",
+      "title_en": "Consultant in Cardiology",
+      "title_ar": "استشاري أمراض القلب",
+      "specialty_id": 1,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "name_en": "Dr. Karim Salem",
+      "name_ar": "د. كريم سالم",
+      "title_en": "Consultant in Cardiology",
+      "title_ar": "استشاري أمراض القلب",
+      "specialty_id": 1,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "name_en": "Dr. Salma Hany",
+      "name_ar": "د. سلمى هاني",
+      "title_en": "Consultant in Dermatology",
+      "title_ar": "استشاري الأمراض الجلدية",
+      "specialty_id": 2,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "name_en": "Dr. Tarek Ali",
+      "name_ar": "د. طارق علي",
+      "title_en": "Consultant in Dermatology",
+      "title_ar": "استشاري الأمراض الجلدية",
+      "specialty_id": 2,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 5,
+      "name_en": "Dr. Mariam Adel",
+      "name_ar": "د. مريم عادل",
+      "title_en": "Consultant in Pediatrics",
+      "title_ar": "استشاري طب الأطفال",
+      "specialty_id": 3,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 6,
+      "name_en": "Dr. Omar Fathy",
+      "name_ar": "د. عمر فتحي",
+      "title_en": "Consultant in Pediatrics",
+      "title_ar": "استشاري طب الأطفال",
+      "specialty_id": 3,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 7,
+      "name_en": "Dr. Heba Samir",
+      "name_ar": "د. هبة سمير",
+      "title_en": "Consultant in Orthopedics",
+      "title_ar": "استشاري جراحة العظام",
+      "specialty_id": 4,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 8,
+      "name_en": "Dr. Youssef Nabil",
+      "name_ar": "د. يوسف نبيل",
+      "title_en": "Consultant in Orthopedics",
+      "title_ar": "استشاري جراحة العظام",
+      "specialty_id": 4,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 9,
+      "name_en": "Dr. Nadia Hassan",
+      "name_ar": "د. نادية حسن",
+      "title_en": "Consultant in Internal Medicine",
+      "title_ar": "استشاري الباطنة",
+      "specialty_id": 5,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    },
+    {
+      "id": 10,
+      "name_en": "Dr. Mostafa Khaled",
+      "name_ar": "د. مصطفى خالد",
+      "title_en": "Consultant in Internal Medicine",
+      "title_ar": "استشاري الباطنة",
+      "specialty_id": 5,
+      "bio_en": "Fictional consultant profile for the clinic demo.",
+      "bio_ar": "دكتور في العيادة التجريبية. البيانات دي للتجربة بس.",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "consultation_fee": 350,
+      "working_days": [
+        6,
+        7,
+        1,
+        2,
+        3
+      ],
+      "shift_start": "09:00",
+      "shift_end": "14:00",
+      "is_active": true
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "name_en": "General Consultation",
+      "name_ar": "كشف عام",
+      "category": "consultation",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 2,
+      "name_en": "Echocardiogram",
+      "name_ar": "إيكو على القلب",
+      "category": "diagnostic",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 600,
+      "duration_minutes": 45,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 3,
+      "name_en": "ECG",
+      "name_ar": "رسم قلب",
+      "category": "diagnostic",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 4,
+      "name_en": "Skin Consultation",
+      "name_ar": "كشف جلدية",
+      "category": "consultation",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 5,
+      "name_en": "Pediatric Consultation",
+      "name_ar": "كشف أطفال",
+      "category": "consultation",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 6,
+      "name_en": "Orthopedic Consultation",
+      "name_ar": "كشف عظام",
+      "category": "consultation",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 7,
+      "name_en": "Internal Medicine Consultation",
+      "name_ar": "كشف باطنة",
+      "category": "consultation",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 8,
+      "name_en": "Abdominal Ultrasound",
+      "name_ar": "سونار على البطن",
+      "category": "diagnostic",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 9,
+      "name_en": "Complete Blood Count",
+      "name_ar": "صورة دم كاملة",
+      "category": "laboratory",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 10,
+      "name_en": "Blood Glucose Test",
+      "name_ar": "تحليل سكر",
+      "category": "laboratory",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 11,
+      "name_en": "Lipid Profile",
+      "name_ar": "تحليل دهون",
+      "category": "laboratory",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 12,
+      "name_en": "Liver Function Tests",
+      "name_ar": "تحاليل وظائف كبد",
+      "category": "laboratory",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 13,
+      "name_en": "Kidney Function Tests",
+      "name_ar": "تحاليل وظائف كلى",
+      "category": "laboratory",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 14,
+      "name_en": "Thyroid Test",
+      "name_ar": "تحليل الغدة الدرقية",
+      "category": "laboratory",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    },
+    {
+      "id": 15,
+      "name_en": "Urine Analysis",
+      "name_ar": "تحليل بول",
+      "category": "laboratory",
+      "description_en": "Synthetic service description for demonstration only.",
+      "description_ar": "خدمة في العيادة التجريبية. التفاصيل والأسعار للتجربة بس.",
+      "price": 200,
+      "duration_minutes": 30,
+      "preparation_instructions_en": "Contact clinic staff for preparation instructions.",
+      "preparation_instructions_ar": "اسأل موظف العيادة عن تعليمات التحضير.",
+      "is_available": true
+    }
+  ]
+}

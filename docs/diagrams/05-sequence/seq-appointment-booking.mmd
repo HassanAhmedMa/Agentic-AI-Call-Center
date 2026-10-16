@@ -1,51 +1,29 @@
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff', 'actorBkg':'#ffffff', 'actorTextColor':'#000000', 'actorBorder':'#000000', 'signalColor':'#000000', 'signalTextColor':'#000000' }}}%%
 sequenceDiagram
     autonumber
-    actor Caller as Patient / Caller
-    participant Voice as Voice Layer (WebSockets)
-    participant Agent as AI Agent Orchestrator
-    participant Tool as Tool Dispatcher
-    participant API as Clinic Backend API
-    participant DB as PostgreSQL Database
-
-    Note over Caller,Voice: Egyptian Arabic Appointment Booking
-    Caller->>Voice: "عايز أحجز مع دكتور قلب بكرة بعد الضهر"
-    Voice->>Agent: Transcribed Text + Session ID
-    
-    Note over Agent: Intent: book_appointment<br/>Specialty: Cardiology<br/>Date: Tomorrow (YYYY-MM-DD)<br/>Period: Afternoon
-
-    Agent->>Tool: find_doctors(specialty="Cardiology")
-    Tool->>API: GET /api/v1/doctors?specialty=Cardiology
-    API->>DB: SELECT * FROM doctors WHERE specialty = 'Cardiology' AND is_active = true
-    DB-->>API: Rows: [Dr. Sarah Farouk (ID: 12), ...]
-    API-->>Tool: HTTP 200 OK (Doctor List)
-    Tool-->>Agent: Returns Doctors
-
-    Agent->>Tool: get_doctor_availability(doctor_id=12, date="2026-10-15")
-    Tool->>API: GET /api/v1/doctors/12/availability?date=2026-10-15
-    API->>DB: SELECT start_time FROM appointments WHERE doctor_id=12 AND appointment_date='2026-10-15'
-    DB-->>API: Booked Slots
-    API-->>Tool: HTTP 200 OK: available_slots: ["14:00", "15:00"]
-    Tool-->>Agent: Returns Open Slots
-
-    Agent->>Voice: Synthesize: "دكتورة سارة فاروق متاحة بكرة الساعة 2:00 و 3:00 بعد الضهر. تحب أحجزلك الساعة 2؟"
-    Voice-->>Caller: Speaks Arabic Audio Response
-
-    Caller->>Voice: "تمام الساعة 2"
-    Voice->>Agent: "تمام الساعة 2" (Slot Selected & Confirmed)
-
-    Note over Agent: User explicitly confirmed booking.<br/>Invoke state-altering tool.
-
-    Agent->>Tool: book_appointment(patient_id=101, doctor_id=12, date="2026-10-15", time="14:00")
-    Tool->>API: POST /api/v1/appointments {patient_id: 101, doctor_id: 12, date: "2026-10-15", time: "14:00"}
-    
-    API->>DB: BEGIN TRANSACTION
-    API->>DB: Check uniqueness & lock slot (SELECT FOR UPDATE)
-    API->>DB: INSERT INTO appointments (...) VALUES (...)
-    API->>DB: COMMIT TRANSACTION
-    DB-->>API: New Appointment ID: 502
-    API-->>Tool: HTTP 201 Created {id: 502, status: "scheduled"}
-    Tool-->>Agent: Tool Success Envelope
-
-    Agent->>Voice: Synthesize: "حجز حضرتك اتأكد مع دكتورة سارة بكرة الساعة 2:00 بعد الضهر. رقم الحجز 502."
-    Voice-->>Caller: Speaks Confirmation Audio
+    actor Caller
+    participant Page as Browser page
+    participant Agent
+    participant Tool as Deterministic dispatcher
+    participant API as Clinic backend
+    participant DB as PostgreSQL
+    Note over Page,API: Conversation already created, secrets stay outside model context
+    Agent->>Tool: request_verification_code(customer_number)
+    Tool->>API: POST verification/challenges with service and conversation tokens
+    API-->>Page: Pending state, email code via Mailpit
+    Caller->>Page: Type email code
+    Page->>API: POST verification/verify directly
+    API->>DB: Bind verified patient session
+    API-->>Tool: Sanitized verified state (polled)
+    Agent->>Tool: propose_booking(doctor_id=12, date=2026-10-15, start_time=14:00)
+    Tool-->>Agent: Stored proposal id and summary
+    Agent->>Page: Deliver immutable action summary
+    Page-->>Tool: Delivery acknowledgement
+    Caller->>Agent: New affirmative caller turn
+    Agent->>Tool: confirm_pending_action(proposal_id)
+    Tool->>API: POST /patients/me/appointments with stable idempotency key
+    API->>DB: Identity revalidation, ownership, locks, business rules
+    DB-->>API: 201 scheduled
+    API-->>Tool: Sanitized result
+    Tool-->>Agent: Tool result
+    Agent-->>Caller: Explain actual outcome
+    Note over Tool,API: Timeout means unknown outcome, reconcile using same key

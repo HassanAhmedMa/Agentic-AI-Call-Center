@@ -2,6 +2,10 @@
 .env
 .env.local
 .env.*.local
+.env.cutover-base
+.env.supabase
+.env.n8n
+*.dump
 *.pem
 *.key
 *.cert
@@ -50,6 +54,7 @@ venv/
 ENV/
 env/
 .pytest_cache/
+pytest-cache-files-*/
 .coverage
 htmlcov/
 .mypy_cache/

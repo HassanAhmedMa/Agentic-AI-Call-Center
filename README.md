@@ -1,6 +1,6 @@
 # Agentic Clinic
 
-[![Phase: Phase 0 Foundation](https://img.shields.io/badge/Phase-0%20Foundation%20%26%20Contracts-blue.svg)](docs/architecture/system-architecture.md)
+[![Phase: Phase 1 Catalog](https://img.shields.io/badge/Phase-1%20Public%20Catalog-blue.svg)](services/clinic-backend/README.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Architecture: Modular Monorepo](https://img.shields.io/badge/Architecture-Modular%20Monorepo-orange.svg)](docs/decisions/ADR-001-monorepo.md)
 
@@ -76,10 +76,22 @@ agentic-clinic/
 
 ---
 
-## 🚦 Current Status: Phase 0 (Architecture & Foundation)
+## 🚦 Current Status: Phase 1 — Catalog, Conversations and Identity
 
-This repository is currently in **Phase 0**. In accordance with Phase 0 restrictions:
-- ❌ No application business logic, models, or vector databases are implemented yet.
+The first Phase 1 slice implements public doctor/service discovery:
+
+Conversation creation and service-authenticated lifecycle are now implemented
+locally. See [conversation review notes](docs/development/phase1-conversation-changes.md).
+Registration, SMTP verification and bilingual forms now exist locally.
+See [identity review notes](docs/development/phase1-identity-changes.md).
+
+- ✅ FastAPI backend, three catalog tables, Alembic migrations and deterministic synthetic seeds.
+- ✅ English/Egyptian Arabic catalog data and normalized Arabic/English doctor search.
+- ✅ Health/readiness endpoints, typed public contracts and PostgreSQL integration tests.
+- ✅ Identity endpoints and English/Egyptian Arabic registration page; local Mailpit email testing.
+- ✅ Doctor availability and earliest-slot search prepared locally for review; [review notes](docs/development/phase1-availability-changes.md).
+- ✅ Shared Oracle/Supabase registration with n8n verification email tested.
+- ⏳ Appointment writes, agent tools, RAG and voice remain planned.
 - ❌ No production speech recognition or voice pipelines are hooked up.
 - ✅ All architectural boundaries, REST contracts, AI tool schemas, and database entity relationships are formalized and documented.
 - ✅ The monorepo layout, Git conventions, CI pipeline foundation, and AI agent constitutions are in place.
@@ -97,6 +109,8 @@ Our team consists of 5 software engineering students. Each developer works with 
 
 For detailed guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
 
+For runnable backend setup, including Docker and team development, see [the backend guide](services/clinic-backend/README.md).
+
 ---
 
 ## 🚀 Getting Started
@@ -108,3 +122,7 @@ To explore the architecture and prepare your local environment, consult:
 - [Database Schema Blueprint](docs/architecture/database-schema.md)
 - [Local Development Setup](docs/development/setup.md)
 - [Git Workflow](docs/development/git-workflow.md)
+
+## ADR-003 review and next implementation step
+
+Identity/booking decisions remain **Proposed** pending the recorded approval gates. Read the [review findings](docs/development/architecture-review-2026-10-10.md) and [implementation roadmap](docs/development/implementation-roadmap.md). Phase 1 targets deterministic backend identity and a minimal browser text/form page; currently the backend implements catalog, conversations and patient identity.
