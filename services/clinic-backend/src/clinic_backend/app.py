@@ -7,6 +7,7 @@ import time
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
+from datetime import UTC, datetime
 from pathlib import Path as FilePath
 from typing import Annotated, Any, Literal
 from uuid import uuid4
@@ -31,13 +32,15 @@ from starlette.exceptions import HTTPException
 from starlette.responses import FileResponse, Response
 from starlette.staticfiles import StaticFiles
 
+from clinic_backend.availability_routes import availability_router
 from clinic_backend.catalog import Catalog
 from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
 from clinic_backend.errors import APIError, ErrorEnvelope, error_response
 from clinic_backend.identity_models import Patient
-from clinic_backend.mail import Delivery, SMTPDelivery
+from clinic_backend.mail import Delivery, SMTPDelivery, make_delivery
 from clinic_backend.settings import Settings
+from clinic_backend.supabase_auth import AuthClient
 from clinic_backend.websocket_manager import ws_manager
 
 logger = logging.getLogger("clinic_backend")
@@ -84,13 +87,15 @@ def create_app(
     *,
     engine: AsyncEngine | None = None,
     mailer: Delivery | None = None,
+    clock: Callable[[], datetime] | None = None,
+    auth_client: AuthClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     owns_engine = engine is None
     engine = engine or make_engine(settings)
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     limiter = PublicLimiter(settings.public_rate_limit)
-    mailer = mailer or SMTPDelivery(settings)
+    mailer = mailer or make_delivery(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -139,6 +144,7 @@ def create_app(
                 "/api/v1/services",
                 "/api/v1/specialties",
                 "/api/v1/availability",
+                "/api/v1/auth",
             )
         ):
             retry = limiter.retry_after(
@@ -188,6 +194,10 @@ def create_app(
         request: Request, exc: RequestValidationError
     ) -> Response:
         known_fields = {
+            "from_date",
+            "to_date",
+            "earliest_time",
+            "latest_time",
             "specialty_id",
             "q",
             "limit",
@@ -1286,9 +1296,37 @@ def create_app(
     )
     app.include_router(conversation_router(sessions, settings))
     if settings.identity_enabled:
+        from clinic_backend.booking_routes import booking_router
         from clinic_backend.identity_routes import identity_router
 
-        app.include_router(identity_router(sessions, settings, mailer))
+        app.include_router(
+            booking_router(sessions, settings, clock or (lambda: datetime.now(UTC)))
+        )
+
+        identity = identity_router(sessions, settings, mailer)
+        if settings.identity_provider == "supabase":
+            from clinic_backend.supabase_routes import supabase_router
+
+            identity.routes = [
+                route
+                for route in identity.routes
+                if getattr(route, "path", "")
+                in {
+                    "/api/v1/patients/me",
+                    "/api/v1/patients/me/logout",
+                    "/api/v1/conversations/current/verification",
+                }
+            ]
+            app.include_router(
+                supabase_router(sessions, settings, auth_client or AuthClient(settings))
+            )
+        else:
+
+            @app.get("/api/v1/auth/config", dependencies=[Depends(no_query)])
+            async def legacy_auth_config() -> dict[str, object]:
+                return {"provider": "clinic", "otp_length": 6}
+
+        app.include_router(identity)
         static = FilePath(__file__).parent / "static"
         app.mount(
             "/identity-assets", StaticFiles(directory=static), name="identity-assets"
@@ -1302,7 +1340,12 @@ def create_app(
                     "Cache-Control": "no-store",
                     "Content-Security-Policy": (
                         "default-src 'self'; frame-ancestors 'none'; "
-                        "base-uri 'none'; form-action 'self'"
+                        "base-uri 'none'; form-action 'self'; "
+                        + (
+                            "connect-src 'self' " + settings.supabase_url + ";"
+                            if settings.identity_provider == "supabase"
+                            else "connect-src 'self';"
+                        )
                     ),
                     "X-Content-Type-Options": "nosniff",
                     "Referrer-Policy": "no-referrer",

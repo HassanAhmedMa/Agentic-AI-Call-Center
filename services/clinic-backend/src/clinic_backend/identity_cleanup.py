@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from clinic_backend.idempotency import IdempotencyKey
 from clinic_backend.identity import Identity, revoke, wipe
 from clinic_backend.identity_models import Challenge, PatientSession
 from clinic_backend.models import ConversationSession, RateLimitEvent
@@ -18,6 +19,9 @@ async def cleanup(
 ) -> None:
     now = datetime.now(UTC)
     async with sessions() as session, session.begin():
+        await session.execute(
+            delete(IdempotencyKey).where(IdempotencyKey.expires_at <= now)
+        )
         # Same lock order as request paths; skip busy conversations. The bounded
         # synthetic milestone has a small session population; batch at scale.
         conversations = list(

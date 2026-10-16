@@ -2,6 +2,10 @@
 .env
 .env.local
 .env.*.local
+.env.cutover-base
+.env.supabase
+.env.n8n
+*.dump
 *.pem
 *.key
 *.cert

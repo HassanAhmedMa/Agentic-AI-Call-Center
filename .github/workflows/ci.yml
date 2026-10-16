@@ -80,6 +80,7 @@ jobs:
           curl --retry 10 --retry-delay 2 --retry-all-errors --fail http://localhost:8000/api/v1/health/ready
           curl --fail --get --data-urlencode 'q=قلب' http://localhost:8000/api/v1/doctors
           python scripts/smoke_identity.py
+          python scripts/smoke_availability.py
       - name: Stop containers
         if: always()
         run: docker compose --profile backend down

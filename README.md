@@ -89,7 +89,9 @@ See [identity review notes](docs/development/phase1-identity-changes.md).
 - ✅ English/Egyptian Arabic catalog data and normalized Arabic/English doctor search.
 - ✅ Health/readiness endpoints, typed public contracts and PostgreSQL integration tests.
 - ✅ Identity endpoints and English/Egyptian Arabic registration page; local Mailpit email testing.
-- ⏳ Availability, appointments, agent tools, RAG and voice remain planned.
+- ✅ Doctor availability and earliest-slot search prepared locally for review; [review notes](docs/development/phase1-availability-changes.md).
+- ✅ Shared Oracle/Supabase registration with n8n verification email tested.
+- ⏳ Appointment writes, agent tools, RAG and voice remain planned.
 - ❌ No production speech recognition or voice pipelines are hooked up.
 - ✅ All architectural boundaries, REST contracts, AI tool schemas, and database entity relationships are formalized and documented.
 - ✅ The monorepo layout, Git conventions, CI pipeline foundation, and AI agent constitutions are in place.

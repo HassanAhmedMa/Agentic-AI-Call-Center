@@ -45,10 +45,19 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/postgres}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-clinic_user}:${POSTGRES_PASSWORD:-clinic_password}@database:5432/${POSTGRES_DB:-clinic_db}}
+      DATABASE_SCHEMA: ${DATABASE_SCHEMA:-public}
+      BOOKING_MIN_LEAD_MINUTES: ${BOOKING_MIN_LEAD_MINUTES:-60}
+      BOOKING_HORIZON_DAYS: ${BOOKING_HORIZON_DAYS:-30}
       # Empty disables lifecycle writes; generate locally, never send to a browser.
       AGENT_SERVICE_TOKEN: ${AGENT_SERVICE_TOKEN:-}
       IDENTITY_ENABLED: ${IDENTITY_ENABLED:-false}
+      IDENTITY_PROVIDER: ${IDENTITY_PROVIDER:-clinic}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_PUBLIC_KEY: ${SUPABASE_PUBLIC_KEY:-}
+      SUPABASE_ISSUER: ${SUPABASE_ISSUER:-}
+      SUPABASE_OTP_LENGTH: ${SUPABASE_OTP_LENGTH:-6}
+      SUPABASE_OTP_TTL_SECONDS: ${SUPABASE_OTP_TTL_SECONDS:-3600}
       OTP_HMAC_SECRET: ${OTP_HMAC_SECRET:-}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SMTP_HOST: ${SMTP_HOST:-mailpit}
@@ -57,9 +66,15 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      EMAIL_DELIVERY: ${EMAIL_DELIVERY:-smtp}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-}
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
     networks:
       - default
       - supabase_default
+    depends_on:
+      database:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready', timeout=6)"]
       interval: 10s

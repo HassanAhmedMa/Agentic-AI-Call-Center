@@ -1,7 +1,10 @@
 import asyncio
 
+import clinic_backend.idempotency  # noqa: F401
 import clinic_backend.identity_models  # noqa: F401
+import clinic_backend.scheduling_models  # noqa: F401
 from alembic import context
+from clinic_backend.database import connection_args
 from clinic_backend.models import Base
 from clinic_backend.settings import Settings
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -17,7 +20,9 @@ def run_migrations(connection):
 async def run_online():
     settings = Settings()
     engine = create_async_engine(
-        settings.database_url.get_secret_value(), poolclass=NullPool
+        settings.database_url.get_secret_value(),
+        poolclass=NullPool,
+        connect_args=connection_args(settings),
     )
     async with engine.connect() as connection:
         await connection.run_sync(run_migrations)

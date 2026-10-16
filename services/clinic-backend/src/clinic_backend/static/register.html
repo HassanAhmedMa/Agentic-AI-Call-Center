@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>عيادتك · Clinic registration</title><link rel="stylesheet" href="/identity-assets/register.css"><script src="/identity-assets/register.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Nile Clinics · تسجيل العيادة</title><link rel="stylesheet" href="/identity-assets/register.css"><script src="/identity-assets/register.js" defer></script></head>
 <body><main>
-<header><span class="brand">عيادتك · Clinic</span><button type="button" id="language">English</button></header>
+<header><span class="brand">Nile Clinics · عيادات النيل</span><button type="button" id="language">English</button></header>
 <h1 data-ar="سجّل حسابك" data-en="Create your account">سجّل حسابك</h1>
 <p data-ar="اكتب بياناتك، وبعدها أكّد بريدك بالكود اللي هنبعتهولك." data-en="Enter your details, then verify your email with the code we send you.">اكتب بياناتك، وبعدها أكّد بريدك بالكود اللي هنبعتهولك.</p>
-<aside data-ar="نسخة تجريبية: استخدم بيانات وهمية للاختبار. البريد المحلي بيتجمع في صندوق الاختبار." data-en="Development demo: use synthetic test details. Local emails are captured in the test inbox.">نسخة تجريبية: استخدم بيانات وهمية للاختبار. البريد المحلي بيتجمع في صندوق الاختبار.</aside>
+<aside data-ar="نسخة تجريبية: استخدم بيانات وهمية للاختبار. الكود هيوصلك على البريد اللي بتستخدمه." data-en="Development demo: use synthetic test details and an inbox you can access.">نسخة تجريبية: استخدم بيانات وهمية للاختبار. الكود هيوصلك على البريد اللي بتستخدمه.</aside>
+<button id="mode" type="button" hidden data-ar="عندي حساب بالفعل" data-en="I already have an account">عندي حساب بالفعل</button>
 <form id="registration">
 <label><span data-ar="الاسم بالكامل" data-en="Full name">الاسم بالكامل</span><input name="full_name" required maxlength="255" autocomplete="name"></label>
 <label><span data-ar="البريد الإلكتروني" data-en="Email address">البريد الإلكتروني</span><input name="email" type="email" required maxlength="254" autocomplete="email" dir="ltr"></label>
@@ -16,10 +17,10 @@
 <button class="primary" type="submit" data-ar="ابعت كود التأكيد" data-en="Send verification code">ابعت كود التأكيد</button>
 </form>
 <section id="verification" hidden><h2 data-ar="أكّد بريدك" data-en="Verify your email">أكّد بريدك</h2>
-<p data-ar="لو البريد متاح للتسجيل، هيوصلك كود من ٦ أرقام. اكتبه هنا خلال ٥ دقايق. لو عندك حساب، استخدم رقم العميل لتسجيل الدخول مع خدمة العيادة." data-en="If this email is available for registration, you will receive a six-digit code. Enter it here within five minutes. Existing accounts should sign in with their customer number through the clinic service.">لو البريد متاح للتسجيل، هيوصلك كود من ٦ أرقام. اكتبه هنا خلال ٥ دقايق. لو عندك حساب، استخدم رقم العميل لتسجيل الدخول مع خدمة العيادة.</p>
+<p data-ar="راجع بريدك واكتب كود التأكيد هنا. لو الكود انتهت صلاحيته، اطلب كود جديد." data-en="Check your email and enter the verification code here. If it expires, request a new code.">راجع بريدك واكتب كود التأكيد هنا. لو الكود انتهت صلاحيته، اطلب كود جديد.</p>
 <form id="code-form"><label><span data-ar="كود التأكيد" data-en="Verification code">كود التأكيد</span><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required dir="ltr"></label>
 <button class="primary" type="submit" data-ar="أكّد البريد" data-en="Verify email">أكّد البريد</button></form>
 <button id="resend" type="button" data-ar="ابعت كود جديد" data-en="Send a new code">ابعت كود جديد</button></section>
-<section id="success" hidden><h2 data-ar="حسابك اتسجل" data-en="Your account is registered">حسابك اتسجل</h2><p data-ar="احتفظ برقم العميل ده لتسجيل الدخول بعد كده. بعتنالك الرقم على بريدك كمان." data-en="Keep your customer number for future sign-in. We also emailed it to you.">احتفظ برقم العميل ده لتسجيل الدخول بعد كده. بعتنالك الرقم على بريدك كمان.</p><strong id="number" dir="ltr"></strong></section>
+<section id="success" hidden><h2 data-ar="حسابك اتسجل" data-en="Your account is registered">حسابك اتسجل</h2><p data-ar="احتفظ برقم العميل ده علشان تستخدمه مع خدمة العيادة." data-en="Keep your customer number for future clinic service requests.">احتفظ برقم العميل ده علشان تستخدمه مع خدمة العيادة.</p><strong id="number" dir="ltr"></strong><button id="logout" type="button" hidden data-ar="تسجيل الخروج" data-en="Sign out">تسجيل الخروج</button></section>
 <p id="status" role="status" aria-live="polite"></p>
 </main></body></html>
