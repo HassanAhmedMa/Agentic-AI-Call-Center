@@ -28,7 +28,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import func, or_, select, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from starlette.exceptions import HTTPException
 from starlette.responses import FileResponse, Response
@@ -176,6 +176,27 @@ def create_app(
         try:
             response = await call_next(request)
         except (SQLAlchemyError, OSError, TimeoutError) as exc:
+            if isinstance(exc, IntegrityError):
+                constraint = str(exc.orig)
+                conflict = (
+                    (
+                        "PHONE_ALREADY_REGISTERED",
+                        "This phone number is already registered.",
+                    )
+                    if "uq_patients_phone" in constraint
+                    else (
+                        (
+                            "EMAIL_ALREADY_REGISTERED",
+                            "This email is already registered.",
+                        )
+                        if "uq_patients_email" in constraint
+                        else None
+                    )
+                )
+                if conflict:
+                    response = error_response(request, 409, *conflict)
+                    response.headers["X-Request-Id"] = request.state.request_id
+                    return response
             logger.error(
                 "Database or IO error request_id=%s type=%s",
                 request.state.request_id,
@@ -705,6 +726,16 @@ def create_app(
                 ),
             }
 
+    def canonical_patient_phone(value: str) -> str:
+        from clinic_schemas.portal import normalize_phone
+
+        try:
+            return normalize_phone(value)
+        except ValueError:
+            raise APIError(
+                400, "INVALID_INPUT", "Enter a valid phone number."
+            ) from None
+
     @app.post("/api/v1/admin/patients", tags=["Patients"])
     async def create_patient(payload: dict[str, Any]) -> dict[str, Any]:
         import random
@@ -717,8 +748,7 @@ def create_app(
         if not full_name or not phone:
             raise APIError(400, "INVALID_INPUT", "Full name and phone are required.")
 
-        if not phone.startswith("+"):
-            phone = f"+{phone}"
+        phone = canonical_patient_phone(phone)
 
         gender = str(payload.get("gender") or "male").strip().lower()
         if gender not in ("male", "female"):
@@ -977,11 +1007,8 @@ def create_app(
             try:
                 message = await asyncio.wait_for(websocket.receive_json(), timeout=10)
                 supplied = message.get("token", "") if isinstance(message, dict) else ""
-                if (
-                    not isinstance(supplied, str)
-                    or not secrets.compare_digest(
-                        supplied.encode(), expected.get_secret_value().encode()
-                    )
+                if not isinstance(supplied, str) or not secrets.compare_digest(
+                    supplied.encode(), expected.get_secret_value().encode()
                 ):
                     await websocket.close(code=4401)
                     return
@@ -990,7 +1017,9 @@ def create_app(
                 return
         else:
             # When admin_api_token is not configured, send CONNECTED immediately
-            await websocket.send_json({"event": "CONNECTED", "data": {"status": "ready"}})
+            await websocket.send_json(
+                {"event": "CONNECTED", "data": {"status": "ready"}}
+            )
         await ws_manager.connect(websocket, accepted=True)
         try:
             from datetime import datetime
@@ -1163,8 +1192,7 @@ def create_app(
                 clean_phone = str(
                     payload.get("phone") or payload.get("patientPhone")
                 ).strip()
-                if not clean_phone.startswith("+"):
-                    clean_phone = f"+{clean_phone}"
+                clean_phone = canonical_patient_phone(clean_phone)
                 patient = await session.scalar(
                     select(Patient).where(Patient.phone == clean_phone)
                 )
@@ -1182,8 +1210,7 @@ def create_app(
                     or payload.get("patientPhone")
                     or "+201000000000"
                 ).strip()
-                if not p_phone.startswith("+"):
-                    p_phone = f"+{p_phone}"
+                p_phone = canonical_patient_phone(p_phone)
 
                 import random
 
@@ -1589,6 +1616,39 @@ def create_app(
                     ),
                     "X-Content-Type-Options": "nosniff",
                     "Referrer-Policy": "no-referrer",
+                },
+            )
+
+    if settings.portal_enabled:
+        from clinic_backend.portal import portal_router
+
+        app.include_router(
+            portal_router(sessions, settings, auth_client or AuthClient(settings))
+        )
+
+        @app.get("/portal", include_in_schema=False)
+        async def portal_entry() -> Response:
+            return Response(status_code=302, headers={"Location": "/portal/auth.html"})
+
+        @app.get("/portal/{asset}", include_in_schema=False)
+        async def portal_asset(asset: str) -> Response:
+            allowed = {
+                "auth.html",
+                "auth.css",
+                "auth.js",
+                "index.html",
+                "styles.css",
+                "app.js",
+                "portal-session.js",
+            }
+            if asset not in allowed or not (settings.portal_assets / asset).is_file():
+                raise APIError(404, "NOT_FOUND", "Page not found.")
+            return FileResponse(
+                settings.portal_assets / asset,
+                headers={
+                    "Cache-Control": "no-store",
+                    "Referrer-Policy": "no-referrer",
+                    "X-Content-Type-Options": "nosniff",
                 },
             )
 

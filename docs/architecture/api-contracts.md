@@ -697,3 +697,40 @@ These are required by the roadmap but are **not** part of the Phase 1 contract. 
 - **Time boundaries:** lead time ≥ exactly one hour; horizon ≤ exactly `now + 30 days` as elapsed time; change notice ≥ exactly four hours. Convert Cairo local slots to exact instants before comparison. Availability cannot enforce patient-specific limits because it is public; writes enforce them. Rescheduling excludes the moved appointment from both active and daily counts. Time-of-day filters are lower-inclusive and upper-exclusive.
 - **Conversation lifecycle:** expiry is checked on each request, not only by cleanup. Gateway liveness detects dropped transports and reports disconnect; one active transport per conversation is allowed. Explicit End and text-session close are reported by the gateway using service credentials. Connection ownership prevents an old socket from ending a newly resumed call. Tokens travel over HTTPS/WSS and stay out of URLs, model context and logs.
 - **Phase 2 escalation dependency:** queue creation, staff authentication and queue acceptance/read contracts must be specified together before implementation. A log or queued request is not a completed live transfer. Anonymous callers can request help without a patient session, but staff access never becomes public.
+
+
+## Patient browser portal (opt-in, 2026-10-17)
+
+Approved patient flow: email/password signup with email OTP, then email/password
+or phone/password login, and email-link password recovery. This is separate from
+service-token agent routes. Enable `PORTAL_ENABLED` to serve `/portal/auth.html`
+and the following same-origin endpoints. See
+[setup and acceptance](../development/patient-portal-auth.md).
+
+All mutations require an exact `Origin` matching `PORTAL_ORIGIN`, JSON input,
+and persisted rate limits. No service/admin token belongs in this frontend.
+Success responses never contain passwords or provider tokens. Cookies are
+HttpOnly, SameSite=Strict and Secure outside loopback development. GET session
+returns only customer_number, first_name and preferred_language. Responses are
+not cached. Input DTOs: `clinic_schemas.portal`.
+
+| Method/path under `/api/v1/portal` | Input | Success |
+| --- | --- | --- |
+| POST `/signup` | Registration fields + password, password_confirm (12–128 characters) | 202 delivery=email; sends signup OTP |
+| POST `/verify` | email, code, registration | 200 PatientProfile; binds verified Auth identity |
+| POST `/resend` | email | 202 delivery=email |
+| POST `/login` | identifier (email or canonical/Egyptian mobile), password | 200 PatientProfile |
+| GET `/session` | HttpOnly cookies | 200 PatientProfile; refreshes provider token when necessary |
+| POST `/logout` | empty object | 204; revokes provider/local binding and clears cookies |
+| POST `/recover` | email | 202 generic response; reset link if account exists |
+| POST `/recovery-session` | access_token from verified recovery callback fragment | 204; short-lived HttpOnly recovery cookie |
+| POST `/reset-password` | same registered email, password, password_confirm | 204; changes Auth password, revokes sessions, clears cookies |
+
+Email is unique case-insensitively; canonical phone is unique across patients.
+Phone remains clinic profile data: phone login resolves the linked email privately,
+then performs the normal Supabase password grant. No SMS verification is implied.
+Duplicate errors are 409 `PHONE_ALREADY_REGISTERED` or `EMAIL_ALREADY_REGISTERED`.
+Wrong credentials return generic 401; wrong origin returns 403; throttling 429.
+A profile conflict after successful OTP may return `details.email_verified=true`;
+retry with corrected profile data uses the already verified HttpOnly identity.
+The browser cannot bypass verification by changing its view/hash.

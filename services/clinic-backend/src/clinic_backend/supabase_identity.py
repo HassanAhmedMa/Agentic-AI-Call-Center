@@ -84,6 +84,12 @@ class SupabaseIdentity(Identity):
                         await self.session.flush()
                     break
                 except IntegrityError as exc:
+                    if "uq_patients_phone" in str(exc.orig):
+                        raise APIError(
+                            409,
+                            "PHONE_ALREADY_REGISTERED",
+                            "This phone number is already registered.",
+                        ) from None
                     if "customer_number" not in str(exc.orig):
                         raise APIError(
                             409, "IDENTITY_CONFLICT", "Account recovery required."

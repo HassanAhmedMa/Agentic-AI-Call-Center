@@ -1,492 +1,242 @@
-/**
- * Nile Clinics - Patient Portal Authentication Logic
- * Pixel-accurate, responsive, 1:1 flow matching design showcase
- * Handles:
- *  - 4 views: Login, Signup, Verify OTP, Success
- *  - URL Hash routing (#login, #signup, #verify, #success)
- *  - Email vs Phone toggle
- *  - Password visibility toggle (with custom SVG icons, zero emojis)
- *  - Date of Birth formatting (DD / MM / YYYY)
- *  - 6-digit OTP box focus auto-advancement & paste handling
- *  - 45s OTP countdown timer with resend capability
- *  - Zero emojis throughout
- */
-
+/* Patient credentials are exchanged only with the same-origin clinic backend. */
 (function () {
   'use strict';
-
-  // --- State ---
-  let otpCountdownTimer = null;
-  let remainingSeconds = 45;
-
-  // --- DOM Elements ---
-  const views = {
-    login: document.getElementById('view-login'),
-    signup: document.getElementById('view-signup'),
-    verify: document.getElementById('view-verify'),
-    success: document.getElementById('view-success'),
+  let language = 'en';
+  let mode = 'email';
+  let pending = null;
+  let authenticated = false;
+  let verifiedIdentity = false;
+  let busy = false;
+  let resendAt = 0;
+  let timer = null;
+  const $ = id => document.getElementById(id);
+  const digits = value => String(value).replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 1632)).replace(/[۰-۹]/g, c => String(c.charCodeAt(0) - 1776));
+  const messages = {
+    PHONE_ALREADY_REGISTERED: ['This phone number is already registered.', 'رقم الموبايل ده متسجل بالفعل.'],
+    EMAIL_ALREADY_REGISTERED: ['This email is already registered. Sign in or reset your password.', 'البريد ده متسجل بالفعل. سجّل دخولك أو غيّر كلمة السر.'],
+    VERIFICATION_REQUIRED: ['Check your credentials or verification link and try again.', 'راجع بيانات الدخول أو لينك التأكيد وحاول تاني.'],
+    SESSION_EXPIRED: ['Your session expired. Sign in again.', 'الجلسة انتهت. سجّل دخولك تاني.'],
+    INVALID_CODE: ['Enter the correct verification code.', 'اكتب كود التأكيد الصحيح.'],
+    VALIDATION_FAILED: ['Check your name, phone, date of birth, consent and matching passwords (at least 12 characters).', 'راجع الاسم والموبايل وتاريخ الميلاد والموافقة. كلمتا السر لازم يكونوا زي بعض ومن ١٢ حرف على الأقل.'],
+    RATE_LIMITED: ['Too many attempts. Wait before trying again.', 'محاولات كتير. استنى شوية وحاول تاني.'],
+    REGISTRATION_REQUIRED: ['Your email is verified. Complete your clinic profile first.', 'بريدك متأكد. كمّل بيانات حساب العيادة الأول.'],
+    unavailable: ['The service is unavailable. Please try again.', 'الخدمة مش متاحة دلوقتي. حاول تاني.'],
+    sent: ['Check your email for the verification code.', 'راجع بريدك علشان كود التأكيد.'],
+    recovered: ['If this email has an account, a password-reset link will arrive shortly.', 'لو البريد ده ليه حساب، هيوصلك لينك تغيير كلمة السر.'],
+    reset: ['Password updated. Sign in with your new password.', 'كلمة السر اتغيرت. سجّل دخولك بكلمة السر الجديدة.']
   };
-
-  const loginTabEmail = document.getElementById('loginTabEmail');
-  const loginTabPhone = document.getElementById('loginTabPhone');
-  const loginEmailGroup = document.getElementById('loginEmailGroup');
-  const loginPhoneGroup = document.getElementById('loginPhoneGroup');
-  const loginEmailInput = document.getElementById('loginEmailInput');
-  const loginPhoneInput = document.getElementById('loginPhoneInput');
-
-  const signupDobInput = document.getElementById('signupDobInput');
-  const verifyTargetEmail = document.getElementById('verifyTargetEmail');
-  const otpContainer = document.getElementById('otpContainer');
-  const resendCodeBtn = document.getElementById('resendCodeBtn');
-  const resendCodeLabel = document.getElementById('resendCodeLabel');
-
-  /**
-   * Navigate between auth screens
-   * @param {string} viewId - 'view-login' | 'view-signup' | 'view-verify' | 'view-success'
-   * @param {boolean} updateHash - whether to update location.hash
-   */
-  function navigateToView(viewId, updateHash = true) {
-    const targetKey = viewId.replace('view-', '');
-    if (!views[targetKey]) return;
-
-    // Switch active view
-    Object.keys(views).forEach((key) => {
-      if (key === targetKey) {
-        views[key].classList.add('active');
-      } else {
-        views[key].classList.remove('active');
-      }
-    });
-
-    // Update URL hash
-    if (updateHash) {
-      history.pushState(null, '', `#${targetKey}`);
-    }
-
-    // Scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Handle view-specific initializations
-    if (targetKey === 'verify') {
-      startOtpTimer(45);
-      focusFirstOtpBox();
-    }
-  }
-
-  /**
-   * Handle hash routing (back/forward button, direct link)
-   */
-  function handleHashRoute() {
-    const hash = window.location.hash.replace('#', '').toLowerCase();
-    if (hash === 'signup') {
-      navigateToView('view-signup', false);
-    } else if (hash === 'verify') {
-      navigateToView('view-verify', false);
-    } else if (hash === 'success') {
-      navigateToView('view-success', false);
-    } else {
-      navigateToView('view-login', false);
-    }
-  }
-
-  /**
-   * Switch Login Channel: Email vs Phone
-   * @param {'email' | 'phone'} channel
-   */
-  function switchLoginChannel(channel) {
-    if (channel === 'phone') {
-      loginTabEmail.classList.remove('active');
-      loginTabPhone.classList.add('active');
-      loginEmailGroup.style.display = 'none';
-      loginPhoneGroup.style.display = 'flex';
-      loginEmailInput.removeAttribute('required');
-      loginPhoneInput.setAttribute('required', 'true');
-      loginPhoneInput.focus();
-    } else {
-      loginTabPhone.classList.remove('active');
-      loginTabEmail.classList.add('active');
-      loginPhoneGroup.style.display = 'none';
-      loginEmailGroup.style.display = 'flex';
-      loginPhoneInput.removeAttribute('required');
-      loginEmailInput.setAttribute('required', 'true');
-      loginEmailInput.focus();
-    }
-  }
-
-  /**
-   * Toggle Password Visibility
-   * @param {string} inputId
-   * @param {HTMLButtonElement} btn
-   */
-  function togglePasswordVisibility(inputId, btn) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-
-    const isPassword = input.type === 'password';
-    input.type = isPassword ? 'text' : 'password';
-
-    // Update SVG icon (Eye vs Eye-Off)
-    if (isPassword) {
-      // Show Eye-Off (visible state -> click to hide)
-      btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-          <line x1="1" y1="1" x2="23" y2="23"/>
-        </svg>
-      `;
-    } else {
-      // Show Eye (hidden state -> click to view)
-      btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      `;
-    }
-  }
-
-  /**
-   * Auto-format Date of Birth: DD / MM / YYYY
-   */
-  function initDobFormatting() {
-    if (!signupDobInput) return;
-
-    signupDobInput.addEventListener('input', (e) => {
-      // Strip everything except digits
-      let val = e.target.value.replace(/\D/g, '');
-      if (val.length > 8) val = val.substring(0, 8);
-
-      let formatted = '';
-      if (val.length > 0) {
-        formatted = val.substring(0, 2);
-      }
-      if (val.length >= 3) {
-        formatted += ' / ' + val.substring(2, 4);
-      }
-      if (val.length >= 5) {
-        formatted += ' / ' + val.substring(4, 8);
-      }
-
-      e.target.value = formatted;
-    });
-  }
-
-  /**
-   * Initialize 6-Digit OTP Box Focus & Paste Handling
-   */
-  function initOtpInputs() {
-    if (!otpContainer) return;
-    const inputs = otpContainer.querySelectorAll('.otp-box');
-
-    inputs.forEach((input, index) => {
-      // Allow only numbers and auto-advance
-      input.addEventListener('input', (e) => {
-        const val = e.target.value.replace(/\D/g, '');
-        e.target.value = val ? val[0] : '';
-
-        if (val && index < inputs.length - 1) {
-          inputs[index + 1].focus();
-        }
-      });
-
-      // Handle Backspace and Arrow navigation
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace') {
-          if (!input.value && index > 0) {
-            inputs[index - 1].focus();
-            inputs[index - 1].value = '';
-          }
-        } else if (e.key === 'ArrowLeft' && index > 0) {
-          inputs[index - 1].focus();
-        } else if (e.key === 'ArrowRight' && index < inputs.length - 1) {
-          inputs[index + 1].focus();
-        }
-      });
-
-      // Handle Paste event across all boxes
-      input.addEventListener('paste', (e) => {
-        e.preventDefault();
-        const pasteData = (e.clipboardData || window.clipboardData).getData('text');
-        const digits = pasteData.replace(/\D/g, '').substring(0, inputs.length);
-
-        digits.split('').forEach((digit, i) => {
-          if (inputs[i]) {
-            inputs[i].value = digit;
-          }
-        });
-
-        // Focus the last filled input or the next empty one
-        const focusIdx = Math.min(digits.length, inputs.length - 1);
-        if (inputs[focusIdx]) inputs[focusIdx].focus();
-      });
-    });
-  }
-
-  function focusFirstOtpBox() {
-    setTimeout(() => {
-      if (!otpContainer) return;
-      const firstInput = otpContainer.querySelector('.otp-box');
-      if (firstInput) {
-        firstInput.focus();
-        firstInput.select();
-      }
-    }, 150);
-  }
-
-  /**
-   * Start 45-second OTP Resend Timer
-   * @param {number} seconds
-   */
-  function startOtpTimer(seconds = 45) {
-    if (otpCountdownTimer) {
-      clearInterval(otpCountdownTimer);
-    }
-
-    remainingSeconds = seconds;
-    resendCodeBtn.disabled = true;
-
-    function updateLabel() {
-      const mins = Math.floor(remainingSeconds / 60);
-      const secs = remainingSeconds % 60;
-      const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-      resendCodeLabel.textContent = `Resend code in ${formatted}`;
-    }
-
-    updateLabel();
-
-    otpCountdownTimer = setInterval(() => {
-      remainingSeconds--;
-      if (remainingSeconds <= 0) {
-        clearInterval(otpCountdownTimer);
-        otpCountdownTimer = null;
-        resendCodeBtn.disabled = false;
-        resendCodeLabel.textContent = 'Resend code';
-      } else {
-        updateLabel();
-      }
-    }, 1000);
-  }
-
-  /**
-   * Handle Resend Code Click
-   */
-  function handleResendCode() {
-    if (resendCodeBtn.disabled) return;
-
-    // Clear existing boxes
-    if (otpContainer) {
-      otpContainer.querySelectorAll('.otp-box').forEach((box) => (box.value = ''));
-    }
-
-    showToast('A new 6-digit verification code has been sent to your email.');
-    startOtpTimer(45);
-    focusFirstOtpBox();
-  }
-
-  /**
-   * Handle Login Form Submission
-   */
-  function handleLoginSubmit(event) {
-    event.preventDefault();
-    const submitBtn = document.getElementById('loginSubmitBtn');
-    const originalText = submitBtn.innerHTML;
-
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `
-      <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
-        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-      </svg>
-      <span>Logging in...</span>
-    `;
-
-    // Simulated authentic authentication flow
-    setTimeout(() => {
-      // Save patient session token
-      localStorage.setItem('clinic_patient_session', JSON.stringify({
-        authenticated: true,
-        email: loginEmailInput.value || 'patient@nileclinics.com',
-        timestamp: new Date().toISOString()
-      }));
-
-      // Redirect to main patient dashboard
-      window.location.href = 'index.html';
-    }, 600);
-  }
-
-  /**
-   * Handle Signup Form Submission
-   */
-  function handleSignupSubmit(event) {
-    event.preventDefault();
-
-    const nameInput = document.getElementById('signupNameInput');
-    const emailInput = document.getElementById('signupEmailInput');
-    const submitBtn = document.getElementById('signupSubmitBtn');
-
-    // Update target email on verify screen
-    if (verifyTargetEmail && emailInput) {
-      verifyTargetEmail.textContent = emailInput.value || 'you@example.com';
-    }
-
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `
-      <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
-        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-      </svg>
-      <span>Creating Account...</span>
-    `;
-
-    setTimeout(() => {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = `
-        <span>Create Account</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-          <line x1="5" y1="12" x2="19" y2="12"/>
-          <polyline points="12 5 19 12 12 19"/>
-        </svg>
-      `;
-      // Navigate to Verify OTP screen
-      navigateToView('view-verify');
-    }, 500);
-  }
-
-  /**
-   * Handle OTP Form Submission
-   */
-  function handleOtpSubmit(event) {
-    event.preventDefault();
-    if (!otpContainer) return;
-
-    const boxes = otpContainer.querySelectorAll('.otp-box');
-    const otpValue = Array.from(boxes).map((b) => b.value).join('');
-
-    if (otpValue.length < 6) {
-      showToast('Please enter all 6 digits of your verification code.');
-      return;
-    }
-
-    const submitBtn = document.getElementById('verifySubmitBtn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `
-      <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
-        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-      </svg>
-      <span>Verifying...</span>
-    `;
-
-    setTimeout(() => {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = `
-        <span>Verify</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-          <line x1="5" y1="12" x2="19" y2="12"/>
-          <polyline points="12 5 19 12 12 19"/>
-        </svg>
-      `;
-
-      // Set session
-      localStorage.setItem('clinic_patient_session', JSON.stringify({
-        authenticated: true,
-        email: verifyTargetEmail.textContent,
-        timestamp: new Date().toISOString()
-      }));
-
-      // Navigate to Success screen
-      navigateToView('view-success');
-    }, 500);
-  }
-
-  /**
-   * Handle Continue to Dashboard
-   */
-  function handleContinueToDashboard() {
-    window.location.href = 'index.html';
-  }
-
-  /**
-   * Handle Google Login
-   */
-  function handleGoogleLogin() {
-    showToast('Connecting with Google authentication...');
-    setTimeout(() => {
-      localStorage.setItem('clinic_patient_session', JSON.stringify({
-        authenticated: true,
-        email: 'google.user@gmail.com',
-        provider: 'google',
-        timestamp: new Date().toISOString()
-      }));
-      window.location.href = 'index.html';
-    }, 600);
-  }
-
-  /**
-   * Handle Forgot Password
-   */
-  function handleForgotPassword(event) {
-    event.preventDefault();
-    const email = loginEmailInput.value;
-    if (email) {
-      showToast(`Password reset link sent to ${email}`);
-    } else {
-      showToast('Please enter your email address to reset your password.');
-      loginEmailInput.focus();
-    }
-  }
-
-  /**
-   * Clean accessible Toast notification (zero emojis)
-   * @param {string} message
-   */
   function showToast(message) {
-    let toast = document.getElementById('authToast');
+    let toast = $('authToast');
     if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'authToast';
-      toast.className = 'auth-toast-notification';
+      toast = document.createElement('div'); toast.id = 'authToast';
+      toast.className = 'auth-toast-notification'; toast.setAttribute('role', 'status');
       document.body.appendChild(toast);
     }
-
-    toast.innerHTML = `
-      <div class="toast-content">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="16" height="16">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="16" x2="12" y2="12"/>
-          <line x1="12" y1="8" x2="12.01" y2="8"/>
-        </svg>
-        <span>${message}</span>
-      </div>
-    `;
-
+    toast.textContent = messages[message] ? messages[message][language === 'ar' ? 1 : 0] : message;
     toast.classList.add('show');
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => {
-      toast.classList.remove('show');
-    }, 3500);
   }
-
-  // --- Expose Globals to Window for inline HTML onclick attributes ---
-  window.navigateToView = navigateToView;
-  window.switchLoginChannel = switchLoginChannel;
-  window.togglePasswordVisibility = togglePasswordVisibility;
-  window.handleLoginSubmit = handleLoginSubmit;
-  window.handleSignupSubmit = handleSignupSubmit;
-  window.handleOtpSubmit = handleOtpSubmit;
-  window.handleResendCode = handleResendCode;
-  window.handleContinueToDashboard = handleContinueToDashboard;
-  window.handleGoogleLogin = handleGoogleLogin;
-  window.handleForgotPassword = handleForgotPassword;
-
-  // --- Initialization ---
-  document.addEventListener('DOMContentLoaded', () => {
-    initDobFormatting();
-    initOtpInputs();
+  async function api(path, body) {
+    const response = await fetch('/api/v1/portal/' + path, {
+      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json'},
+      body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', redirect: 'error'
+    });
+    const result = response.status === 204 ? {} : await response.json();
+    if (!response.ok) {
+      const error = new Error(result.error?.code || 'unavailable');
+      error.details = result.error?.details; throw error;
+    }
+    return result;
+  }
+  async function run(action) {
+    if (busy) return;
+    busy = true;
+    document.querySelectorAll('button[type=submit]').forEach(button => { button.disabled = true; });
+    try { await action(); } catch (error) {
+      showToast(messages[error.message] ? error.message : 'unavailable');
+      if (error.details?.email_verified) { verifiedIdentity = true; if (error.details.email) { pending = {email: error.details.email}; $('signupEmailInput').value = error.details.email; } $('signupPasswordInput').required = false; $('signupPasswordConfirm').required = false; navigateToView('view-signup'); }
+    } finally {
+      busy = false;
+      document.querySelectorAll('button[type=submit]').forEach(button => { button.disabled = false; });
+    }
+  }
+  function normalizePhone(value) {
+    value = digits(value).replace(/[\s()-]/g, '');
+    if (/^01[0125]\d{8}$/.test(value)) value = '+20' + value.slice(1);
+    else if (/^1[0125]\d{8}$/.test(value)) value = '+20' + value;
+    else if (value.startsWith('0020')) value = '+' + value.slice(2);
+    if (!/^\+[1-9]\d{7,14}$/.test(value)) throw Error('VALIDATION_FAILED');
+    return value;
+  }
+  function parseDOB(value) {
+    const match = digits(value).match(/^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/);
+    if (!match) throw Error('VALIDATION_FAILED');
+    const [, day, month, year] = match;
+    const date = new Date(Date.UTC(+year, +month - 1, +day));
+    if (date.getUTCFullYear() !== +year || date.getUTCMonth() !== +month - 1 || date.getUTCDate() !== +day || date >= new Date() || +year < new Date().getFullYear() - 120) throw Error('VALIDATION_FAILED');
+    return `${year}-${month}-${day}`;
+  }
+  function navigateToView(id, updateHash = true) {
+    if (id === 'view-verify' && !pending) id = 'view-signup';
+    if (id === 'view-success' && !authenticated) id = 'view-login';
+    if (id === 'view-reset' && !$('view-reset').dataset.ready) id = 'view-forgot';
+    document.querySelectorAll('.auth-card-view').forEach(view => view.classList.toggle('active', view.id === id));
+    if (updateHash) history.pushState(null, '', '#' + id.replace('view-', ''));
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    if (id === 'view-verify') $('otpContainer').querySelector('input')?.focus();
+  }
+  function startOtpTimer() {
+    clearInterval(timer);
+    function update() {
+      const left = Math.max(0, Math.ceil((resendAt - Date.now()) / 1000));
+      $('resendCodeBtn').disabled = busy || left > 0;
+      $('resendCodeLabel').textContent = left ? (language === 'ar' ? `ابعت كود تاني بعد ${left} ثانية` : `Resend code in ${left}s`) : (language === 'ar' ? 'ابعت كود جديد' : 'Resend code');
+    }
+    update(); timer = setInterval(update, 1000);
+  }
+  function clearCode() { $('otpContainer').querySelectorAll('input').forEach(input => { input.value = ''; }); }
+  function success(profile) {
+    authenticated = true; pending = null; verifiedIdentity = false; clearCode();
+    $('customerNumber').textContent = profile.customer_number;
+    navigateToView('view-success');
+  }
+  function handleSignupSubmit(event) {
+    event.preventDefault();
+    return run(async () => {
+      const password = $('signupPasswordInput').value;
+      const confirm = $('signupPasswordConfirm').value;
+      if ((!verifiedIdentity && (password.length < 12 || password !== confirm)) || !$('signupConsent').checked) throw Error('VALIDATION_FAILED');
+      const registration = {
+        full_name: $('signupNameInput').value.trim(), email: $('signupEmailInput').value.trim().toLowerCase(),
+        phone: normalizePhone($('signupPhoneInput').value), date_of_birth: parseDOB($('signupDobInput').value),
+        preferred_language: language, privacy_notice_accepted: true
+      };
+      if (!registration.full_name) throw Error('VALIDATION_FAILED');
+      if (pending?.email !== registration.email) { verifiedIdentity = false; if (password.length < 12 || password !== confirm) throw Error('VALIDATION_FAILED'); }
+      pending = registration;
+      try {
+        if (verifiedIdentity) {
+          success(await api('verify', {email: pending.email, code: '000000', registration: pending})); return;
+        }
+        await api('signup', {...registration, password, password_confirm: confirm});
+        $('verifyTargetEmail').textContent = pending.email;
+        resendAt = Date.now() + 60000; clearCode(); startOtpTimer();
+        navigateToView('view-verify'); showToast('sent');
+      } finally {
+        $('signupPasswordInput').value = ''; $('signupPasswordConfirm').value = '';
+      }
+    });
+  }
+  function handleLoginSubmit(event) {
+    event.preventDefault();
+    return run(async () => {
+      const identifier = mode === 'phone' ? normalizePhone($('loginPhoneInput').value) : $('loginEmailInput').value.trim().toLowerCase();
+      try { success(await api('login', {identifier, password: $('loginPasswordInput').value})); }
+      finally { $('loginPasswordInput').value = ''; }
+    });
+  }
+  function handleOtpSubmit(event) {
+    event.preventDefault();
+    return run(async () => {
+      if (!pending) throw Error('SESSION_EXPIRED');
+      const code = [...$('otpContainer').querySelectorAll('input')].map(input => digits(input.value)).join('');
+      clearCode(); if (!/^\d{6}$/.test(code)) throw Error('INVALID_CODE');
+      success(await api('verify', {email: pending.email, code, registration: pending}));
+    });
+  }
+  function handleResendCode() {
+    if (Date.now() < resendAt || !pending) return;
+    return run(async () => {
+      await api('resend', {email: pending.email});
+      resendAt = Date.now() + 60000; clearCode(); startOtpTimer(); showToast('sent');
+    });
+  }
+  function switchLoginChannel(channel) {
+    mode = channel;
+    $('loginTabEmail').classList.toggle('active', channel === 'email');
+    $('loginTabPhone').classList.toggle('active', channel === 'phone');
+    $('loginEmailGroup').style.display = channel === 'email' ? 'flex' : 'none';
+    $('loginPhoneGroup').style.display = channel === 'phone' ? 'flex' : 'none';
+    $('loginEmailInput').required = channel === 'email'; $('loginPhoneInput').required = channel === 'phone';
+  }
+  function togglePasswordVisibility(id) { const input = $(id); input.type = input.type === 'password' ? 'text' : 'password'; }
+  function handleForgotPassword(event) { event.preventDefault(); $('recoveryEmail').value = $('loginEmailInput').value; navigateToView('view-forgot'); }
+  function handleRecoverySubmit(event) { event.preventDefault(); return run(async () => { await api('recover', {email: $('recoveryEmail').value.trim().toLowerCase()}); showToast('recovered'); }); }
+  function handleResetSubmit(event) {
+    event.preventDefault(); return run(async () => {
+      try {
+        await api('reset-password', {email: $('resetEmail').value.trim().toLowerCase(), password: $('resetPassword').value, password_confirm: $('resetPasswordConfirm').value});
+        $('view-reset').dataset.ready = ''; authenticated = false; navigateToView('view-login'); showToast('reset');
+      } finally { $('resetPassword').value = ''; $('resetPasswordConfirm').value = ''; }
+    });
+  }
+  async function handleContinueToDashboard() { return run(async () => { await api('session'); window.location.assign('index.html'); }); }
+  function handleGoogleLogin() { showToast(language === 'ar' ? 'تسجيل جوجل مش متاح دلوقتي. استخدم البريد وكلمة السر.' : 'Google sign-in is not configured. Use email and password.'); }
+  function handleHashRoute() {
+    const view = window.location.hash.slice(1);
+    navigateToView(['signup','verify','success','forgot','reset'].includes(view) ? 'view-' + view : 'view-login', false);
+  }
+  const translations = {
+    'Your Health, Our Care':'صحتك ورعايتك عندنا', 'Need help?':'محتاج مساعدة؟', 'Welcome Back':'أهلاً بيك من جديد',
+    'Access your healthcare, anytime':'خدمات عيادتك في أي وقت',
+    'Log in to book appointments, manage your medical records, and chat with our AI assistant.':'سجّل دخولك للوصول لخدمات العيادة والمساعد الذكي.',
+    'Book & manage appointments':'احجز وتابع مواعيدك', 'Access your medical records':'تابع بيانات حسابك',
+    'Get instant help from our AI assistant':'اسأل المساعد الذكي', 'Log in to your account':'سجّل دخولك لحسابك',
+    'Enter your email to continue to Nile Clinics.':'اكتب بريدك وكلمة السر علشان تدخل لعيادات النيل.',
+    'Access your appointments, medical records, and 24/7 AI support.':'ادخل لحساب العيادة وخدمات المساعد الذكي.',
+    'or continue with':'أو كمّل باستخدام', 'Continue with Google':'كمّل بجوجل',
+    "Don't have an account?":'لسه معندكش حساب؟', 'Join Nile Clinics':'انضم لعيادات النيل',
+    'Create your account to start booking appointments, access your records, and get 24/7 support.':'سجّل بياناتك علشان تبدأ تستخدم خدمات العيادة.',
+    'Easy appointment booking':'حجز مواعيد بسهولة', 'Secure access to your medical records':'دخول آمن لحسابك',
+    'AI assistant for instant help':'مساعد ذكي يجاوبك', 'Create your account':'اعمل حسابك',
+    'Fill in your details to get started.':'اكتب بياناتك علشان تبدأ.',
+    'Join Nile Clinics to book appointments, access your records, and get 24/7 support.':'انضم لعيادات النيل واستعمل خدمات العيادة.',
+    'Terms of Service':'شروط الاستخدام', 'Privacy Policy':'سياسة الخصوصية', 'Already have an account?':'عندك حساب بالفعل؟',
+    "Didn't receive the code?":'الكود موصلكش؟', 'You are signed in!':'سجّلت دخولك بنجاح!',
+    'Your verified clinic account is ready. Keep your customer number for future visits.':'حسابك المتأكد جاهز. احتفظ برقم العميل للزيارات الجاية.',
+    'Email':'البريد الإلكتروني','Phone':'الموبايل','Phone number':'رقم الموبايل','Email address':'البريد الإلكتروني',
+    'Password':'كلمة السر','Confirm password':'تأكيد كلمة السر','Full name':'الاسم بالكامل','Date of birth':'تاريخ الميلاد',
+    'Log In':'سجّل دخولك','Sign up':'إنشاء حساب','Log in':'سجّل دخولك','Create Account':'إنشاء حساب',
+    'Forgot password?':'نسيت كلمة السر؟','Verify your email':'أكّد بريدك','Verify':'تأكيد','Resend code':'ابعت كود جديد',
+    'Account created successfully!':'حسابك جاهز!','Continue to Dashboard':'كمّل للصفحة الرئيسية',
+    'Reset your password':'غيّر كلمة السر','Send reset link':'ابعت لينك تغيير كلمة السر','New password':'كلمة السر الجديدة',
+    'Save new password':'احفظ كلمة السر الجديدة','Back to login':'ارجع لتسجيل الدخول',
+    'I agree to use these details to create my clinic account.':'موافق على استخدام البيانات دي لإنشاء حساب العيادة.'
+  };
+  function setLanguage() {
+    language = language === 'en' ? 'ar' : 'en';
+    document.documentElement.lang = language; document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    $('authLanguage').textContent = language === 'ar' ? 'English' : 'العربية';
+    document.querySelectorAll('[data-en]').forEach(node => { node.textContent = language === 'ar' ? node.dataset.ar : node.dataset.en; });
+  }
+  Object.assign(window, {navigateToView,switchLoginChannel,togglePasswordVisibility,handleLoginSubmit,handleSignupSubmit,handleOtpSubmit,handleResendCode,handleContinueToDashboard,handleGoogleLogin,handleForgotPassword,handleRecoverySubmit,handleResetSubmit});
+  window.PortalAuthUtils = {normalizePhone,parseDOB};
+  document.addEventListener('DOMContentLoaded', async () => {
+    try { localStorage.removeItem('clinic_patient_session'); } catch (_) {}
+    $('authLanguage').addEventListener('click', setLanguage);
+    document.querySelectorAll('label, h1, h2, p, span, button, a').forEach(node => {
+      const text = node.textContent.trim();
+      if (translations[text] && node.children.length === 0) { node.dataset.en = text; node.dataset.ar = translations[text]; }
+    });
+    $('signupDobInput').addEventListener('input', event => {
+      const value = digits(event.target.value).replace(/\D/g, '').slice(0,8);
+      event.target.value = [value.slice(0,2),value.slice(2,4),value.slice(4)].filter(Boolean).join(' / ');
+    });
+    const boxes = [...$('otpContainer').querySelectorAll('input')];
+    boxes.forEach((input,index) => {
+      input.addEventListener('input', () => { input.value = digits(input.value).replace(/\D/g,'').slice(0,1); if(input.value) boxes[index+1]?.focus(); });
+      input.addEventListener('keydown', event => { if(event.key==='Backspace' && !input.value) boxes[index-1]?.focus(); });
+      input.addEventListener('paste', event => { event.preventDefault(); const text=digits(event.clipboardData.getData('text')).replace(/\D/g,'').slice(0,6); boxes.forEach((box,i)=>{box.value=text[i]||'';}); boxes[Math.min(text.length,5)].focus(); });
+    });
+    const callback = new URLSearchParams(window.location.hash.slice(1));
+    if (callback.has('access_token') || callback.has('error')) {
+      history.replaceState(null, '', window.location.pathname);
+      if (callback.get('type') !== 'recovery' || !callback.get('access_token')) { navigateToView('view-forgot'); showToast('VERIFICATION_REQUIRED'); return; }
+      await run(async () => { await api('recovery-session', {access_token: callback.get('access_token')}); $('view-reset').dataset.ready='true'; navigateToView('view-reset'); });
+      return;
+    }
     handleHashRoute();
-
+    try { success(await api('session')); } catch (_) {}
     window.addEventListener('hashchange', handleHashRoute);
   });
 })();

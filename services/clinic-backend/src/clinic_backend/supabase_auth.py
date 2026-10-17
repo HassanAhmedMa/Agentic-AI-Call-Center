@@ -27,12 +27,21 @@ class AuthClient:
         self.settings = settings
 
     async def request(
-        self, path: str, *, token: str = "", body: dict[str, object] | None = None
+        self,
+        path: str,
+        *,
+        token: str = "",
+        body: dict[str, object] | None = None,
+        method: str | None = None,
     ) -> dict[str, object]:
-        return await asyncio.to_thread(self._request, path, token, body)
+        return await asyncio.to_thread(self._request, path, token, body, method)
 
     def _request(
-        self, path: str, token: str, body: dict[str, object] | None
+        self,
+        path: str,
+        token: str,
+        body: dict[str, object] | None,
+        method: str | None = None,
     ) -> dict[str, object]:
         if not self.settings.supabase_url or not self.settings.supabase_public_key:
             raise APIError(
@@ -47,6 +56,7 @@ class AuthClient:
         request = Request(
             self.settings.supabase_url.rstrip("/") + "/auth/v1/" + path,
             headers=headers,
+            method=method,
             data=json.dumps(body).encode() if body is not None else None,
         )
         try:

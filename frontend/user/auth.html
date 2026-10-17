@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#2563EB">
   <title>Nile Clinics - Patient Portal Login & Sign Up</title>
 
-  <!-- Typography: Inter for UI, Cairo for Arabic -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- System font fallbacks keep recovery callbacks free of external requests. -->
 
   <link rel="stylesheet" href="auth.css">
 </head>
@@ -30,6 +28,7 @@
       </div>
     </div>
 
+    <button type="button" id="authLanguage" class="portal-language">العربية</button>
     <a href="#" class="header-help-link" id="headerHelpBtn">
       <span>Need help?</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -345,7 +344,7 @@
             </div>
 
             <!-- Google OAuth Social Button -->
-            <button type="button" class="auth-social-btn" onclick="handleGoogleLogin()">
+            <button type="button" class="auth-social-btn" disabled title="Google sign-in is not configured" onclick="handleGoogleLogin()">
               <svg class="google-logo-svg" viewBox="0 0 24 24" width="18" height="18">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -599,7 +598,7 @@
 
               <!-- Phone Number (Optional) -->
               <div class="form-field-group">
-                <label class="form-field-label" for="signupPhoneInput">Phone number (optional)</label>
+                <label class="form-field-label" for="signupPhoneInput">Phone number</label>
                 <div class="phone-input-composite-wrapper">
                   <div class="phone-country-code-pill">
                     <!-- Egypt Flag Vector -->
@@ -611,7 +610,7 @@
                     </svg>
                     <span class="country-dial-code">+20</span>
                   </div>
-                  <input type="tel" id="signupPhoneInput" class="form-input-text" placeholder="101 234 5678" autocomplete="tel">
+                  <input type="tel" id="signupPhoneInput" required class="form-input-text" placeholder="101 234 5678" autocomplete="tel">
                 </div>
               </div>
 
@@ -641,7 +640,7 @@
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                   </span>
-                  <input type="password" id="signupPasswordInput" class="form-input-text" placeholder="Create a strong password" required autocomplete="new-password">
+                  <input type="password" id="signupPasswordInput" minlength="12" maxlength="128" class="form-input-text" placeholder="Create a strong password" required autocomplete="new-password">
                   <button type="button" class="input-trailing-action-btn" onclick="togglePasswordVisibility('signupPasswordInput', this)" title="Toggle visibility">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -650,6 +649,12 @@
                   </button>
                 </div>
               </div>
+
+              <div class="form-field-group">
+                <label class="form-field-label" for="signupPasswordConfirm">Confirm password</label>
+                <input id="signupPasswordConfirm" class="form-input-text portal-password" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+              </div>
+              <label class="portal-consent"><input id="signupConsent" type="checkbox" required><span>I agree to use these details to create my clinic account.</span></label>
 
               <!-- Submit Button -->
               <button type="submit" class="auth-submit-btn" id="signupSubmitBtn">
@@ -719,7 +724,7 @@
 
           <h2 class="verify-title">Verify your email</h2>
           <p class="verify-desc">
-            We've sent a 6-digit code to<br>
+            <span data-en="We have sent a 6-digit code to" data-ar="بعتنالك كود من ٦ أرقام على">We have sent a 6-digit code to</span><br>
             <strong id="verifyTargetEmail" class="verify-target-email">you@example.com</strong>
           </p>
 
@@ -817,11 +822,12 @@
             </svg>
           </div>
 
-          <h2 class="success-main-title">Account created successfully!</h2>
+          <h2 class="success-main-title">You are signed in!</h2>
           <p class="success-subtext">
-            Your account is ready to use. You can now book appointments, access your medical records, and chat with our AI assistant.
+            Your verified clinic account is ready. Keep your customer number for future visits.
           </p>
 
+          <p class="portal-customer-number" id="customerNumber" dir="ltr"></p>
           <button type="button" class="auth-submit-btn success-continue-btn" onclick="handleContinueToDashboard()">
             <span>Continue to Dashboard</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
@@ -834,6 +840,20 @@
 
       </div>
     </section>
+
+
+<section class="auth-card-view" id="view-forgot"><div class="portal-recovery-card">
+<h2>Reset your password</h2><p data-en="Enter your registered email to receive a password-reset link." data-ar="اكتب بريدك المسجل علشان يوصلك لينك تغيير كلمة السر.">Enter your registered email to receive a password-reset link.</p>
+<form onsubmit="handleRecoverySubmit(event)"><label for="recoveryEmail">Email address</label><input id="recoveryEmail" class="form-input-text portal-password" type="email" required autocomplete="email">
+<button type="submit" class="auth-submit-btn"><span>Send reset link</span></button></form><a href="#login" onclick="navigateToView('view-login')">Back to login</a>
+</div></section>
+<section class="auth-card-view" id="view-reset"><div class="portal-recovery-card">
+<h2>Reset your password</h2><p data-en="Use the same email and a new password of at least 12 characters." data-ar="اكتب نفس البريد وكلمة سر جديدة من ١٢ حرف على الأقل.">Use the same email and a new password of at least 12 characters.</p>
+<form onsubmit="handleResetSubmit(event)"><label for="resetEmail">Email address</label><input id="resetEmail" class="form-input-text portal-password" type="email" required autocomplete="email">
+<label for="resetPassword">New password</label><input id="resetPassword" class="form-input-text portal-password" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+<label for="resetPasswordConfirm">Confirm password</label><input id="resetPasswordConfirm" class="form-input-text portal-password" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+<button type="submit" class="auth-submit-btn"><span>Save new password</span></button></form><a href="#forgot" onclick="navigateToView('view-forgot')">Send reset link</a>
+</div></section>
 
   </main>
 

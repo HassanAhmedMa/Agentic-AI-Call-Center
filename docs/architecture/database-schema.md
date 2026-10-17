@@ -569,3 +569,13 @@ Store unusable login/duplicate-registration challenges with no usable code; comp
 Idempotency keys use the request fingerprint defined in api-contracts §10, including the route target. Reservation, successful mutation, history and replay response commit atomically; failed operations roll back their domain changes. A PostgreSQL lock timeout may yield `IDEMPOTENCY_IN_PROGRESS`; no incomplete reservation is committed independently of its outcome. Exclude the moved appointment from **both** daily and total active counts when rescheduling. Booking, rescheduling and cancellation use the same patient-then-appointment lock order after identity locks.
 
 Clinic closures, schedules and time-off are read-only seeded data in Phase 1. Before adding staff schedule mutations, define their locking and treatment of affected bookings in the staff contract. No such undocumented endpoint is authorized by this schema.
+
+
+## Revision 0008 — unique patient phone
+
+`uq_patients_phone` enforces one canonical E.164 phone per patient across all
+records, including unlinked legacy profiles. Existing case-insensitive email
+uniqueness remains. Portal inputs normalize Egyptian local/international numbers
+and Arabic/Persian digits before storage. Migration aborts if duplicate stored
+phones exist; it does not delete, merge or choose patient records automatically.
+Passwords and recovery credentials remain in Supabase Auth, not clinic tables.
