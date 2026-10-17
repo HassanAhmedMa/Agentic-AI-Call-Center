@@ -105,6 +105,8 @@
     if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
       options.body = JSON.stringify(options.body);
+    } else if (typeof options.body === 'string' && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
     }
 
     try {
@@ -235,7 +237,7 @@
     createDoctor: async function (doctorData) {
       const res = await request('/doctors', {
         method: 'POST',
-        body: JSON.stringify(doctorData)
+        body: doctorData
       });
       ClinicCache.invalidate('doctors');
       return res;
