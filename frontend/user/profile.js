@@ -66,12 +66,87 @@
     openModal(
       isAr ? 'تغيير كلمة المرور' : 'Change Password',
       `<div style="display:flex; flex-direction:column; gap:12px;">
-        <input type="password" class="filter-select" placeholder="${isAr ? 'كلمة المرور الحالية' : 'Current Password'}">
-        <input type="password" class="filter-select" placeholder="${isAr ? 'كلمة المرور الجديدة' : 'New Password'}">
-        <input type="password" class="filter-select" placeholder="${isAr ? 'تأكيد كلمة المرور' : 'Confirm New Password'}">
+        <p style="font-size:12.5px; color:#64748B; margin:0 0 4px 0; line-height:1.5;">
+          ${isAr ? 'سيتم تحديث كلمة المرور في قاعدة بيانات Supabase فوراً.' : 'Your password will be securely updated in Supabase DB immediately.'}
+        </p>
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:600; color:#475569; margin-bottom:4px;">
+            ${isAr ? 'كلمة المرور الحالية (اختياري للتحقق)' : 'Current Password (Optional)'}
+          </label>
+          <input type="password" id="modalCurrentPassword" class="filter-select" placeholder="••••••••">
+        </div>
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:600; color:#475569; margin-bottom:4px;">
+            ${isAr ? 'كلمة المرور الجديدة (٨ أحرف على الأقل)' : 'New Password (min 8 characters)'} *
+          </label>
+          <input type="password" id="modalNewPassword" class="filter-select" placeholder="••••••••" minlength="8" required>
+        </div>
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:600; color:#475569; margin-bottom:4px;">
+            ${isAr ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'} *
+          </label>
+          <input type="password" id="modalConfirmPassword" class="filter-select" placeholder="••••••••" minlength="8" required>
+        </div>
       </div>`,
-      `<button class="btn-primary-action" onclick="closeActiveModal(); showToast('${isAr ? 'تم تحديث كلمة المرور' : 'Password updated successfully'}', 'success')">${isAr ? 'تحديث' : 'Update'}</button>`
+      `<button class="btn-secondary-action" onclick="closeActiveModal()">${isAr ? 'إلغاء' : 'Cancel'}</button>
+       <button class="btn-primary-action" id="btnSubmitChangePassword" onclick="submitChangePasswordModal()">${isAr ? 'تحديث وحفظ في Supabase' : 'Update & Save in Supabase'}</button>`
     );
+  };
+
+  window.submitChangePasswordModal = async function () {
+    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
+    const currentPassword = document.getElementById('modalCurrentPassword')?.value || '';
+    const newPassword = document.getElementById('modalNewPassword')?.value || '';
+    const confirmPassword = document.getElementById('modalConfirmPassword')?.value || '';
+    const btn = document.getElementById('btnSubmitChangePassword');
+
+    if (!newPassword || newPassword.length < 8) {
+      showToast(isAr ? 'يجب أن لا تقل كلمة المرور الجديدة عن ٨ أحرف' : 'New password must be at least 8 characters', 'error');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast(isAr ? 'كلمة المرور الجديدة وتأكيدها غير متطابقين' : 'New password and confirmation do not match', 'error');
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = isAr ? 'جاري الحفظ في Supabase...' : 'Saving to Supabase...';
+    }
+
+    try {
+      if (window.ClinicPortalAPI && typeof window.ClinicPortalAPI.request === 'function') {
+        await window.ClinicPortalAPI.request('change-password', {
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword
+        });
+      } else {
+        const res = await fetch('/api/v1/portal/change-password', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || errData?.message || 'Failed to update password');
+        }
+      }
+
+      closeActiveModal();
+      showToast(isAr ? 'تم تحديث كلمة المرور في قاعدة بيانات Supabase بنجاح!' : 'Password updated successfully in Supabase DB!', 'success');
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = isAr ? 'تحديث وحفظ في Supabase' : 'Update & Save in Supabase';
+      }
+      showToast(err.message || (isAr ? 'فشل تحديث كلمة المرور' : 'Failed to update password'), 'error');
+    }
   };
 
   function updateProfileLangButtons(lang) {

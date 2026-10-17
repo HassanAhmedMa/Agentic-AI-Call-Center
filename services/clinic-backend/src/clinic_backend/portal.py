@@ -705,10 +705,20 @@ def portal_router(
             if appt is None or appt.patient_id != binding.patient_id:
                 raise APIError(404, "NOT_FOUND", "Appointment not found.")
 
+            old_status = appt.status
             appt.status = "cancelled"
             appt.cancelled_at = datetime.now(UTC)
             appt.cancelled_by = "patient"
             appt.cancellation_reason = str(body.get("reason") or "Patient cancelled via portal")
+            session.add(
+                AppointmentHistory(
+                    appointment_id=appointment_id,
+                    changed_by="patient",
+                    from_status=old_status,
+                    to_status="cancelled",
+                    reason=appt.cancellation_reason,
+                )
+            )
             await session.flush()
 
         json_resp = JSONResponse(
@@ -740,14 +750,65 @@ def portal_router(
             start_dt = datetime.combine(new_date, new_time)
             end_t = (start_dt + timedelta(minutes=30)).time()
 
+            old_status = appt.status
             appt.appointment_date = new_date
             appt.start_time = new_time
             appt.end_time = end_t
             appt.status = "scheduled"
+            session.add(
+                AppointmentHistory(
+                    appointment_id=appointment_id,
+                    changed_by="patient",
+                    from_status=old_status,
+                    to_status="scheduled",
+                    reason=str(body.get("reason") or "Patient rescheduled via portal"),
+                )
+            )
             await session.flush()
 
         json_resp = JSONResponse(
             {"id": appointment_id, "status": "scheduled", "message": "Appointment rescheduled successfully"}
+        )
+        json_resp.headers["Cache-Control"] = "no-store"
+        return json_resp
+
+    @router.post("/change-password")
+    async def change_password(
+        body: dict[str, str], request: Request, response: Response
+    ) -> Response:
+        user, access = await provider_session(request, response)
+        current_password = str(body.get("current_password") or "").strip()
+        new_password = str(body.get("new_password") or "").strip()
+        confirm_password = str(body.get("confirm_password") or new_password).strip()
+
+        if not new_password or len(new_password) < 8:
+            raise APIError(400, "INVALID_PASSWORD", "New password must be at least 8 characters.")
+        if new_password != confirm_password:
+            raise APIError(400, "PASSWORD_MISMATCH", "New password and confirmation do not match.")
+
+        if current_password:
+            try:
+                await auth.request(
+                    "token?grant_type=password",
+                    body={"email": user.email, "password": current_password},
+                )
+            except APIError as exc:
+                raise APIError(400, "INVALID_CURRENT_PASSWORD", "Current password is incorrect.") from exc
+
+        try:
+            await auth.request(
+                "user",
+                token=access,
+                method="PUT",
+                body={"password": new_password},
+            )
+        except APIError as exc:
+            if exc.status == 503:
+                raise APIError(503, "SERVICE_UNAVAILABLE", "Supabase authentication service unavailable.") from exc
+            raise
+
+        json_resp = JSONResponse(
+            {"status": "success", "message": "Password updated successfully in Supabase."}
         )
         json_resp.headers["Cache-Control"] = "no-store"
         return json_resp
