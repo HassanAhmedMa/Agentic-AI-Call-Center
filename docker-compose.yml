@@ -1,39 +1,16 @@
 # ==============================================================================
-# Agentic Clinic - Docker Compose Foundation (Phase 0)
+# Agentic Clinic - Local Infrastructure and Phase 1 Catalog
 #
 # ARCHITECTURAL NOTE:
-# During Phase 0 (Architecture & Foundation), application services (clinic-backend,
-# ai-agent, rag, voice) are defined as architecture contracts.
+# The catalog backend is opt-in with --profile backend. Other application
+# services remain architecture blueprints until their implementation lands.
 #
-# Below, shared persistence infrastructure (PostgreSQL & Redis) is configured
-# for local development. Service containers are declared and documented as
-# blueprints to be un-commented as service implementations land in Phase 1+.
+# PostgreSQL is external (Supabase); disposable PostgreSQL for CI is defined
+# in docker-compose.ci.yml. Redis and Mailpit are available locally.
+# Other service containers are documented as blueprints to be un-commented as service implementations land in Phase 1+.
 # ==============================================================================
 
-version: '3.8'
-
 services:
-  # ----------------------------------------------------------------------------
-  # Shared Database: PostgreSQL (Relational persistence for Clinic Backend)
-  # ----------------------------------------------------------------------------
-  database:
-    image: postgres:16-alpine
-    container_name: agentic_clinic_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-clinic_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clinic_password}
-      POSTGRES_DB: ${POSTGRES_DB:-clinic_db}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U clinic_user -d clinic_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   # ----------------------------------------------------------------------------
   # Shared Cache & Session Store: Redis
   # ----------------------------------------------------------------------------
@@ -42,7 +19,7 @@ services:
     container_name: agentic_clinic_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -51,26 +28,64 @@ services:
       timeout: 3s
       retries: 5
 
+  # Local synthetic email inbox only. Do not expose it through the public tunnel.
+  mailpit:
+    image: axllent/mailpit:v1.27.4
+    container_name: agentic_clinic_mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+  clinic-backend:
+    profiles: [backend]
+    build:
+      context: .
+      dockerfile: services/clinic-backend/Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-clinic_user}:${POSTGRES_PASSWORD:-clinic_password}@database:5432/${POSTGRES_DB:-clinic_db}}
+      DATABASE_SCHEMA: ${DATABASE_SCHEMA:-public}
+      BOOKING_MIN_LEAD_MINUTES: ${BOOKING_MIN_LEAD_MINUTES:-60}
+      BOOKING_HORIZON_DAYS: ${BOOKING_HORIZON_DAYS:-30}
+      # Empty disables lifecycle writes; generate locally, never send to a browser.
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
+      AGENT_SERVICE_TOKEN: ${AGENT_SERVICE_TOKEN:-}
+      IDENTITY_ENABLED: ${IDENTITY_ENABLED:-false}
+      PORTAL_ENABLED: ${PORTAL_ENABLED:-false}
+      PORTAL_ORIGIN: ${PORTAL_ORIGIN:-http://localhost:8004}
+      PORTAL_COOKIE_SECURE: ${PORTAL_COOKIE_SECURE:-true}
+      IDENTITY_PROVIDER: ${IDENTITY_PROVIDER:-clinic}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_PUBLIC_KEY: ${SUPABASE_PUBLIC_KEY:-}
+      SUPABASE_ISSUER: ${SUPABASE_ISSUER:-}
+      SUPABASE_OTP_LENGTH: ${SUPABASE_OTP_LENGTH:-6}
+      SUPABASE_OTP_TTL_SECONDS: ${SUPABASE_OTP_TTL_SECONDS:-3600}
+      OTP_HMAC_SECRET: ${OTP_HMAC_SECRET:-}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-clinic@example.test}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      EMAIL_DELIVERY: ${EMAIL_DELIVERY:-smtp}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-}
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
+    networks:
+      - default
+    # External Supabase is selected by docker-compose.supabase.yml.
+    # CI adds its disposable database through docker-compose.ci.yml.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready', timeout=6)"]
+      interval: 10s
+      timeout: 7s
+      retries: 5
+
   # ============================================================================
   # FUTURE APPLICATION SERVICES (To be activated in Phase 1+)
   # ============================================================================
-
-  # clinic-backend:
-  #   build:
-  #     context: .
-  #     dockerfile: services/clinic-backend/Dockerfile
-  #   container_name: agentic_clinic_backend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - DATABASE_URL=postgresql://clinic_user:clinic_password@database:5432/clinic_db
-  #     - REDIS_URL=redis://redis:6379/0
-  #   depends_on:
-  #     database:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
 
   # ai-agent:
   #   build:
@@ -114,7 +129,8 @@ services:
   #     - VOICE_API_KEY=${VOICE_API_KEY}
 
 volumes:
-  postgres_data:
-    name: agentic_clinic_postgres_data
   redis_data:
     name: agentic_clinic_redis_data
+
+networks:
+  default:

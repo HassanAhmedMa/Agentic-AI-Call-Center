@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Nile Clinics - Admin Dashboard</title>
+
+  <!-- Clean Typography: Inter for Admin Metrics & Cairo for Arabic Live Transcripts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css?v=2.2">
+</head>
+<body>
+
+  <!-- Admin Main Layout Grid -->
+  <div class="admin-layout">
+
+    <!-- =========================================================================
+         LEFT SIDEBAR NAVIGATION
+         ========================================================================= -->
+    <aside class="admin-sidebar">
+      
+      <!-- Top Brand Header -->
+      <div class="sidebar-brand-box">
+        <div class="brand-logo-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+          </svg>
+        </div>
+        <div class="brand-text-col">
+          <h2 class="brand-title">Nile Clinics</h2>
+          <span class="brand-subtitle">AI Call Center</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <!-- 1. Dashboard (Active) -->
+        <a href="#dashboard" class="nav-link active" id="nav-dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22" fill="#FFFFFF"/>
+          </svg>
+          <span class="nav-text">Dashboard</span>
+        </a>
+
+        <!-- 2. Live Calls -->
+        <a href="live-calls.html" class="nav-link" id="nav-live-calls">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="nav-text">Live Calls</span>
+        </a>
+
+        <!-- 3. Appointments -->
+        <a href="appointments.html" class="nav-link" id="nav-appointments">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="nav-text">Appointments</span>
+        </a>
+
+        <!-- 4. Doctors (Live Supabase Catalog) -->
+        <a href="doctors.html" class="nav-link" id="nav-doctors">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M3 11h6"/>
+            <path d="M6 8v6"/>
+          </svg>
+          <span class="nav-text">Doctors</span>
+          <span class="nav-badge-blue" id="doctorsCountBadge">10</span>
+        </a>
+
+        <!-- 5. Patients -->
+        <a href="patients.html?v=live_v3" class="nav-link" id="nav-patients">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="nav-text">Patients</span>
+        </a>
+
+        <!-- 5. Knowledge Base -->
+        <a href="#knowledge" class="nav-link" id="nav-knowledge">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+          <span class="nav-text">Knowledge Base</span>
+        </a>
+
+        <!-- 6. Documents -->
+        <a href="#documents" class="nav-link" id="nav-documents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          <span class="nav-text">Documents</span>
+        </a>
+
+        <!-- 7. Analytics -->
+        <a href="#analytics" class="nav-link" id="nav-analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <!-- 8. Operators (Above Settings) -->
+        <a href="operators.html" class="nav-link" id="nav-operators">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-text">Operators</span>
+          <span class="nav-badge-blue" id="operatorsCountBadge">2</span>
+        </a>
+
+        <!-- 9. Settings -->
+        <a href="#settings" class="nav-link" id="nav-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom Cluster -->
+      <div class="sidebar-bottom-cluster">
+        <!-- Branch Switcher Card -->
+        <div class="branch-switcher-pill" onclick="toggleBranchDropdown()">
+          <div class="branch-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="branch-name" id="currentBranchName">Main Clinic</span>
+          <svg class="branch-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </div>
+
+        <!-- Admin Profile -->
+        <div class="admin-profile-pill">
+          <div class="admin-avatar-circle">A</div>
+          <div class="admin-profile-meta">
+            <span class="admin-user-name">Ahmed Salah</span>
+            <span class="admin-user-role">Administrator</span>
+          </div>
+        </div>
+
+        <!-- Logout Action -->
+        <button class="logout-btn" onclick="handleLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================================
+         MAIN ADMIN CONTENT WORKSPACE
+         ========================================================================= -->
+    <div class="admin-main-viewport">
+      
+      <!-- Top Search & Status Bar -->
+      <header class="admin-top-bar">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="adminGlobalSearch" placeholder="Search patients, appointments, or calls..." autocomplete="off">
+          <span class="shortcut-tag">Ctrl K</span>
+        </div>
+
+        <div class="top-bar-right">
+          <!-- Notification Bell -->
+          <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="bell-red-badge"></span>
+          </button>
+
+          <!-- Current Date & Time -->
+          <div class="live-clock-box">
+            <span class="live-date" id="liveDateText">Tue, 12 Nov 2024</span>
+            <span class="live-time" id="liveTimeText">10:24 AM</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Dashboard Work Area -->
+      <main class="dashboard-scroll-body">
+        
+        <!-- SECTION 1: TOP 4 METRICS CARDS -->
+        <section class="metrics-grid">
+          
+          <!-- Metric 1: Active Calls -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-green-subtle text-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Active Calls</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricActiveCalls">0</span>
+                <span class="metric-trend text-green">
+                  <span>0</span>
+                  <span class="trend-sub">active calls</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 2: Today's Appointments -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-blue-subtle text-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Today's Appointments</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricTodayAppts">0</span>
+                <span class="metric-trend text-green">
+                  <span>0</span>
+                  <span class="trend-sub">today</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 3: Total Patients -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-purple-subtle text-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Total Patients</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricTotalPatients">0</span>
+                <span class="metric-trend text-green">
+                  <span>Live</span>
+                  <span class="trend-sub">database</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 4: Pending Follow-ups -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-orange-subtle text-orange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Pending Follow-ups</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricPendingFollowups">0</span>
+                <span class="metric-trend text-red">
+                  <span>0</span>
+                  <span class="trend-sub">pending</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- SECTION 2: MIDDLE ROW (LIVE CALL MONITOR & APPOINTMENTS CALENDAR) -->
+        <section class="dashboard-split-row">
+          
+          <!-- LEFT CARD: LIVE CALL MONITOR -->
+          <div class="card-panel live-call-panel" id="liveCallCard">
+            <!-- Header -->
+            <div class="panel-header-row">
+              <div class="panel-title-left">
+                <h3 class="panel-title">Live Call</h3>
+                <span class="live-pill-badge" id="liveCallBadge" style="background:#F1F5F9; color:#64748B;">
+                  <span class="status-indicator-dot dot-disconnected" style="width:6px; height:6px;"></span>
+                  <span>Idle</span>
+                </span>
+              </div>
+              <div class="live-timer-counter" id="liveCallTimer">00:00:00</div>
+            </div>
+
+            <!-- Active Call Content Box -->
+            <div class="live-call-content-box" id="liveCallContent" style="display: none;">
+              <!-- Caller Top Meta & Form Grid -->
+              <div class="caller-meta-grid">
+                
+                <!-- Caller Profile Info -->
+                <div class="caller-profile-block">
+                  <div class="caller-avatar-circle">M</div>
+                  <div class="caller-text-info">
+                    <h4 class="caller-full-name">Mona Ahmed</h4>
+                    <span class="caller-phone-num">+20 101 234 5678</span>
+                    <span class="known-patient-pill">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <polyline points="16 11 18 13 22 9"/>
+                      </svg>
+                      <span>Known Patient</span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Live Extracted Intent & Department Parameters -->
+                <div class="live-params-grid">
+                  <!-- Intent -->
+                  <div class="param-input-box">
+                    <label class="param-label">Intent</label>
+                    <div class="param-field">
+                      <svg class="field-icon-blue" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <span>Book Appointment</span>
+                      <svg class="field-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                  </div>
+
+                  <!-- Department -->
+                  <div class="param-input-box">
+                    <label class="param-label">Department</label>
+                    <div class="param-field">
+                      <svg class="field-icon-red" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                      <span>Cardiology</span>
+                    </div>
+                  </div>
+
+                  <!-- Requested Date -->
+                  <div class="param-input-box">
+                    <label class="param-label">Requested Date</label>
+                    <div class="param-field">
+                      <svg class="field-icon-red" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <span>Thursday, 14 Nov</span>
+                    </div>
+                  </div>
+
+                  <!-- Time Preference -->
+                  <div class="param-input-box">
+                    <label class="param-label">Time Preference</label>
+                    <div class="param-field">
+                      <svg class="field-icon-green" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <span>Afternoon</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Live Audio Transcript Box -->
+              <div class="live-transcript-container">
+                <!-- Caller Message -->
+                <div class="transcript-line caller-line">
+                  <div class="trans-speaker-badge caller-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
+                    </svg>
+                  </div>
+                  <div class="trans-speech-bubble">
+                    <div class="speech-header-row">
+                      <span class="speaker-title">Caller (AR)</span>
+                      <span class="speech-time">10:22 AM</span>
+                    </div>
+                    <p class="arabic-speech-text">عايزه احجز مع دكتور القلب يوم الخميس بعد الضهر</p>
+                  </div>
+                </div>
+
+                <!-- AI Agent Message -->
+                <div class="transcript-line agent-line">
+                  <div class="trans-speaker-badge agent-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2v4"/><path d="m4.93 10.93 2.83-2.83"/><path d="M2 18h4"/><path d="M20 18h2"/><path d="m19.07 10.93-2.83-2.83"/>
+                      <circle cx="12" cy="18" r="4"/>
+                    </svg>
+                  </div>
+                  <div class="trans-speech-bubble">
+                    <div class="speech-header-row">
+                      <span class="speaker-title">AI Agent</span>
+                      <span class="speech-time">10:22 AM</span>
+                    </div>
+                    <p class="agent-speech-text">You'd like to book an appointment with the cardiologist for Thursday afternoon. Let me check the available slots.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Call Controls Bar -->
+              <div class="call-controls-row">
+                <div class="ctrl-buttons-left">
+                  <button class="call-ctrl-btn" title="Mute audio" onclick="toggleMuteCall(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                      <line x1="12" y1="19" x2="12" y2="22"/>
+                    </svg>
+                  </button>
+                  <button class="call-ctrl-btn" title="Put on Hold" onclick="toggleHoldCall(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="6" y="4" width="4" height="16"/>
+                      <rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                  </button>
+                  <button class="call-hangup-btn" title="End / Transfer Call" onclick="endCurrentLiveCall()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
+                      <line x1="22" y1="2" x2="2" y2="22"/>
+                    </svg>
+                  </button>
+                </div>
+                <button class="view-transcript-btn" onclick="openFullTranscriptModal()">
+                  <span>View Full Transcript</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Empty Standby State (Shown if no active live call) -->
+            <div class="empty-state-card" id="liveCallEmptyState" style="display: flex;">
+              <div class="empty-state-icon text-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
+                </svg>
+              </div>
+              <h4 class="empty-state-title">No Live Calls in Progress</h4>
+              <p class="empty-state-desc">AI Voice Agent is in standby mode, ready to receive incoming patient calls.</p>
+            </div>
+
+          </div>
+
+          <!-- RIGHT CARD: APPOINTMENTS CALENDAR & LIST -->
+          <div class="card-panel appointments-panel">
+            <div class="panel-header-row">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 class="panel-title">Appointments</h3>
+                <span class="live-badge-green" title="FastAPI Clinic Backend: Real Doctor Catalog Active">
+                  <span class="status-indicator-dot dot-connected" style="width:6px; height:6px;"></span>
+                  <span>Live Catalog Active</span>
+                </span>
+              </div>
+              <button class="header-link-btn" onclick="window.location.href='appointments.html'">View All</button>
+            </div>
+
+            <!-- Mini Week Calendar Strip -->
+            <div class="calendar-strip-box">
+              <div class="cal-nav-row">
+                <button class="cal-arrow-btn" onclick="shiftWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+                <span class="cal-month-title">November 2024</span>
+                <button class="cal-arrow-btn" onclick="shiftWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+              </div>
+
+              <!-- Days Row -->
+              <div class="cal-days-grid" id="calDaysGrid">
+                <!-- Day 10 -->
+                <div class="cal-day-cell" onclick="selectCalendarDay(10, this)">
+                  <span class="day-name">Sun</span>
+                  <span class="day-num">10</span>
+                </div>
+                <!-- Day 11 -->
+                <div class="cal-day-cell" onclick="selectCalendarDay(11, this)">
+                  <span class="day-name">Mon</span>
+                  <span class="day-num">11</span>
+                </div>
+                <!-- Day 12 (Active) -->
+                <div class="cal-day-cell active" onclick="selectCalendarDay(12, this)">
+                  <span class="day-name">Tue</span>
+                  <span class="day-num-active">12</span>
+                </div>
+                <!-- Day 13 -->
+                <div class="cal-day-cell" onclick="selectCalendarDay(13, this)">
+                  <span class="day-name">Wed</span>
+                  <span class="day-num">13</span>
+                </div>
+                <!-- Day 14 -->
+                <div class="cal-day-cell" onclick="selectCalendarDay(14, this)">
+                  <span class="day-name">Thu</span>
+                  <span class="day-num">14</span>
+                </div>
+                <!-- Day 15 -->
+                <div class="cal-day-cell" onclick="selectCalendarDay(15, this)">
+                  <span class="day-name">Fri</span>
+                  <span class="day-num">15</span>
+                </div>
+                <!-- Day 16 -->
+                <div class="cal-day-cell" onclick="selectCalendarDay(16, this)">
+                  <span class="day-name">Sat</span>
+                  <span class="day-num">16</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Appointments List Rows -->
+            <div class="appointments-list-table" id="appointmentsListContainer" style="display: none;"></div>
+
+            <!-- Empty appointments state (if day has no bookings) -->
+            <div class="empty-state-card" id="appointmentsEmptyState" style="display: flex;">
+              <div class="empty-state-icon text-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <h4 class="empty-state-title">No Appointments Scheduled</h4>
+              <p class="empty-state-desc">No bookings scheduled for the selected date.</p>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- SECTION 3: BOTTOM ROW (RECENT CALLS & QUICK ACTIONS) -->
+        <section class="dashboard-split-row">
+          
+          <!-- LEFT CARD: RECENT CALLS TABLE -->
+          <div class="card-panel recent-calls-panel">
+            <div class="panel-header-row">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 class="panel-title">Recent Calls</h3>
+              </div>
+              <button class="header-link-btn" onclick="openAllCallsModal()">View All</button>
+            </div>
+
+            <div class="table-scroll-container">
+              <table class="recent-calls-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Caller</th>
+                    <th>Intent</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="recentCallsTbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:36px 16px; color:#64748B; font-size:13px;">
+                      No recent call activity recorded. Completed patient calls will appear here.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty table state -->
+            <div class="empty-state-card" id="callsEmptyState" style="display: none;">
+              <div class="empty-state-icon text-muted">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <h4 class="empty-state-title">No Recent Calls</h4>
+              <p class="empty-state-desc">No call records found for this period.</p>
+            </div>
+          </div>
+
+          <!-- RIGHT CARD: QUICK ACTIONS & AI ASSISTANT BANNER -->
+          <div class="card-panel quick-actions-panel">
+            <h3 class="panel-title">Quick Actions</h3>
+
+            <div class="quick-actions-grid">
+              <!-- Action 1: New Appointment -->
+              <div class="action-tile-btn" onclick="openNewAppointmentModal()">
+                <div class="tile-icon-box bg-blue-subtle text-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="tile-text-col">
+                  <h4 class="tile-title">New Appointment</h4>
+                  <span class="tile-subtext">Manual booking</span>
+                </div>
+              </div>
+
+              <!-- Action 2: Find Patient -->
+              <div class="action-tile-btn" onclick="openFindPatientModal()">
+                <div class="tile-icon-box bg-blue-subtle text-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+                </div>
+                <div class="tile-text-col">
+                  <h4 class="tile-title">Find Patient</h4>
+                  <span class="tile-subtext">Search records</span>
+                </div>
+              </div>
+
+              <!-- Action 3: Add Knowledge -->
+              <div class="action-tile-btn" onclick="openAddKnowledgeModal()">
+                <div class="tile-icon-box bg-blue-subtle text-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div class="tile-text-col">
+                  <h4 class="tile-title">Add Knowledge</h4>
+                  <span class="tile-subtext">Upload documents</span>
+                </div>
+              </div>
+
+              <!-- Action 4: View Analytics -->
+              <div class="action-tile-btn" onclick="openAnalyticsModal()">
+                <div class="tile-icon-box bg-purple-subtle text-purple">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </div>
+                <div class="tile-text-col">
+                  <h4 class="tile-title">View Analytics</h4>
+                  <span class="tile-subtext">Call and appointment stats</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom AI Assistant Banner -->
+            <div class="ai-status-banner">
+              <div class="ai-banner-left">
+                <div class="ai-bulb-icon text-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+                    <path d="M9 18h6"/>
+                    <path d="M10 22h4"/>
+                  </svg>
+                </div>
+                <div class="ai-banner-text">
+                  <h4 class="ai-banner-title">AI Assistant Active</h4>
+                  <p class="ai-banner-sub">Handling calls in Egyptian Arabic and English</p>
+                </div>
+              </div>
+              <span class="ai-live-dot"></span>
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       ADMIN INTERACTIVE MODALS
+       ========================================================================= -->
+  <div class="admin-modal-backdrop" id="adminModalBackdrop" onclick="closeAdminModal(event)">
+    <div class="admin-modal-container" id="adminModalContainer">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="adminModalTitle">Details</h3>
+        <button class="modal-close-icon-btn" onclick="closeAdminModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="admin-modal-body" id="adminModalBody">
+        <!-- Content injected dynamically -->
+      </div>
+      <div class="admin-modal-footer" id="adminModalFooter">
+        <!-- Footer buttons -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Stack -->
+  <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Centralized Config & API Client -->
+  <script src="admin-auth.js?v=2.2"></script>
+  <script src="config.js?v=2.2"></script>
+  <script src="api.js?v=2.2"></script>
+
+  <!-- Admin Interaction Script -->
+  <script src="app.js?v=2.2"></script>
+</body>
+</html>

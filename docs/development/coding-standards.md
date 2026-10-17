@@ -26,14 +26,15 @@
 
 ```python
 # Example Python Standard
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 class AppointmentRequest(BaseModel):
-    patient_id: int = Field(..., gt=0, description="Unique patient ID")
+    model_config = ConfigDict(extra="forbid")
+    # Patient identity is resolved from the verified backend session.
     doctor_id: int = Field(..., gt=0, description="Unique doctor ID")
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date YYYY-MM-DD")
-    time: str = Field(..., pattern=r"^\d{2}:\d{2}$", description="Time HH:MM")
-    notes: str | None = Field(default=None, max_length=500)
+    start_time: str = Field(..., pattern=r"^([01][0-9]|2[0-3]):(00|30)$", description="Cairo time HH:MM")
+    visit_reason: str | None = Field(default=None, max_length=300)
 ```
 
 ---

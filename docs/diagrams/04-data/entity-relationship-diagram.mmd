@@ -1,73 +1,176 @@
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
 erDiagram
+    SPECIALTIES {
+        bigserial id PK
+        varchar name_en
+        varchar name_ar
+        text_array synonyms
+        text_array search_terms
+        timestamptz created_at
+    }
+    DOCTORS {
+        bigserial id PK
+        varchar name_en
+        varchar name_ar
+        varchar title_en
+        varchar title_ar
+        bigint specialty_id FK
+        text bio_en
+        text bio_ar
+        text_array languages
+        numeric consultation_fee
+        smallint_array working_days
+        time shift_start
+        time shift_end
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    DOCTOR_TIME_OFF {
+        bigserial id PK
+        bigint doctor_id FK
+        date off_date
+        time start_time
+        time end_time
+        varchar reason
+        timestamptz created_at
+    }
+    CLINIC_CLOSURES {
+        date closure_date PK
+        varchar reason_en
+        varchar reason_ar
+        timestamptz created_at
+    }
+    SERVICES {
+        bigserial id PK
+        varchar name_en
+        varchar name_ar
+        varchar category
+        text description_en
+        text description_ar
+        numeric price
+        int duration_minutes
+        text preparation_instructions_en
+        text preparation_instructions_ar
+        boolean is_available
+        timestamptz created_at
+        timestamptz updated_at
+    }
     PATIENTS {
-        bigint id PK
-        varchar name
-        varchar phone UK
-        varchar email UK
+        bigserial id PK
+        char customer_number
+        varchar full_name
+        varchar email
+        timestamptz email_verified_at
+        varchar phone
         date date_of_birth
+        preferred_language preferred_language
         varchar gender
         varchar insurance_provider
         varchar insurance_policy_number
-        timestamp created_at
-        timestamp updated_at
+        timestamptz created_at
+        timestamptz updated_at
     }
-
-    DOCTORS {
-        bigint id PK
-        varchar name
-        varchar specialty
-        varchar title
-        text description
-        text_array languages
-        numeric consultation_fee
-        varchar_array working_days
-        time shift_start
-        time shift_end
-        integer slot_duration_minutes
-        boolean is_active
-        timestamp created_at
-        timestamp updated_at
-    }
-
     APPOINTMENTS {
-        bigint id PK
+        bigserial id PK
         bigint patient_id FK
         bigint doctor_id FK
         date appointment_date
         time start_time
         time end_time
         appointment_status status
-        text notes
-        text cancellation_reason
-        timestamp created_at
-        timestamp updated_at
+        varchar visit_reason
+        varchar cancellation_reason
+        timestamptz cancelled_at
+        actor_type cancelled_by
+        timestamptz created_at
+        timestamptz updated_at
     }
-
-    SERVICES {
-        bigint id PK
-        varchar name UK
-        varchar category
-        text description
-        numeric price
-        integer duration_minutes
-        text preparation_instructions
-        boolean is_available
-        timestamp created_at
+    APPOINTMENT_HISTORY {
+        bigserial id PK
+        bigint appointment_id FK
+        appointment_event event
+        date previous_date
+        time previous_start_time
+        date new_date
+        time new_start_time
+        actor_type actor
+        uuid conversation_session_id FK
+        timestamptz created_at
     }
-
     SUPPORT_TICKETS {
-        bigint id PK
+        bigserial id PK
         bigint patient_id FK
         varchar subject
         text description
         ticket_status status
         ticket_priority priority
         text resolution_notes
-        timestamp created_at
-        timestamp updated_at
+        actor_type created_via
+        uuid conversation_session_id FK
+        timestamptz created_at
+        timestamptz updated_at
     }
-
-    PATIENTS ||--o{ APPOINTMENTS : "places (1:N)"
-    DOCTORS ||--o{ APPOINTMENTS : "conducts (1:N)"
-    PATIENTS ||--o{ SUPPORT_TICKETS : "files (1:N)"
+    CONVERSATION_SESSIONS {
+        uuid id PK
+        bytea token_hash
+        conversation_status status
+        varchar channel
+        inet client_ip
+        timestamptz started_at
+        timestamptz last_seen_at
+        timestamptz disconnected_at
+        timestamptz ended_at
+    }
+    PATIENT_SESSIONS {
+        uuid id PK
+        bigint patient_id FK
+        uuid conversation_session_id FK
+        uuid verified_via FK
+        timestamptz created_at
+        timestamptz last_activity_at
+        timestamptz expires_at
+        timestamptz revoked_at
+        varchar revoke_reason
+    }
+    VERIFICATION_CHALLENGES {
+        uuid id PK
+        verification_purpose purpose
+        uuid conversation_session_id FK
+        bigint patient_id FK
+        jsonb pending_registration
+        bytea code_hash
+        challenge_status status
+        smallint failed_attempts
+        inet client_ip
+        timestamptz created_at
+        timestamptz expires_at
+        timestamptz verified_at
+    }
+    IDEMPOTENCY_KEYS {
+        bigint patient_id FK
+        varchar operation
+        varchar idempotency_key
+        bytea request_hash
+        smallint response_status
+        jsonb response_body
+        timestamptz created_at
+        timestamptz expires_at
+    }
+    RATE_LIMIT_EVENTS {
+        bigserial id PK
+        varchar bucket
+        varchar subject
+        timestamptz created_at
+    }
+    SPECIALTIES ||--o{ DOCTORS : categorizes
+    PATIENTS ||--o{ APPOINTMENTS : owns
+    DOCTORS ||--o{ APPOINTMENTS : schedules
+    DOCTORS ||--o{ DOCTOR_TIME_OFF : exceptions
+    APPOINTMENTS ||--o{ APPOINTMENT_HISTORY : history
+    PATIENTS ||--o{ SUPPORT_TICKETS : owns
+    CONVERSATION_SESSIONS ||--o{ PATIENT_SESSIONS : binds
+    PATIENTS ||--o{ PATIENT_SESSIONS : verifies
+    CONVERSATION_SESSIONS ||--o{ VERIFICATION_CHALLENGES : scopes
+    PATIENTS o|--o{ VERIFICATION_CHALLENGES : login_target
+    VERIFICATION_CHALLENGES o|--o{ PATIENT_SESSIONS : verified_via
+    PATIENTS ||--o{ IDEMPOTENCY_KEYS : scopes

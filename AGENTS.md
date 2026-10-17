@@ -1,7 +1,7 @@
 # AGENTS.md - Repository Operating Constitution for AI Coding Agents & Engineers
 
 > **PROJECT:** Agentic Clinic  
-> **CURRENT PHASE:** Phase 0 — Architecture, Contracts & Repository Foundation  
+> **CURRENT PHASE:** Phase 1 — Catalog, conversations and patient identity
 > **TARGET AUDIENCE:** All AI coding agents (and human engineers) collaborating on this repository.
 
 ---
@@ -131,11 +131,16 @@ All AI coding agents operate as **pair-programming assistants**, not autonomous 
 - **Run Checks:** Verify that tests, linters, and repository validators pass before finalizing work.
 - **Explain Trade-offs:** Document rationale for significant decisions in PR descriptions.
 - **Synthetic Data Only:** Use exclusively synthetic demonstration data. Never handle real patient data.
+- **Localhost-First Compatibility:** Every feature, authentication flow, and API endpoint MUST be runnable and testable locally on `localhost` and `127.0.0.1` (on ports such as 5500, 5501, 8000, 8002, 3000) without requiring a remote cloud deployment.
+- **Detailed Backend & Container Commit Logs:** Any commit that modifies backend business logic, authentication origins, environment variables, or Docker container configurations MUST include a detailed body in the commit message explaining: (1) exact files and endpoints modified, (2) container runtime impact, and (3) port, origin, or tunnel implications for teammates (Hassan, Ziad, Ali, Omar).
+- **Shared Server Non-Interference:** Never break shared server ports, reverse proxy rules (Caddy/Envoy), or container settings. Production security constraints (e.g., Caddy SSL, `Secure` cookies) must always coexist gracefully with local loopback testing.
 
 ### What AI Agents MUST NOT Do:
 - ❌ **NEVER commit secrets, tokens, private keys, or credentials.**
 - ❌ **NEVER allow the LLM to directly query the database or execute arbitrary code.**
 - ❌ **NEVER bypass backend validation, authentication, or authorization.**
+- ❌ **NEVER hardcode production-only origins or cookie restrictions that break local testing on `localhost` or `127.0.0.1`.**
+- ❌ **NEVER make uncoordinated changes to shared server ports, container runtime environments, or reverse proxy configs that disrupt teammates' workflows.**
 - ❌ **NEVER rewrite unrelated modules or refactor working code outside the task scope.**
 - ❌ **NEVER delete working functionality without explicit human approval.**
 - ❌ **NEVER introduce new heavy dependencies or architectural patterns without an ADR.**
@@ -211,5 +216,34 @@ Before declaring any task complete, ask:
 - [ ] Are all schemas and contracts preserved and respected?
 - [ ] Are all new paths covered by automated tests?
 - [ ] Are there zero secrets, keys, or real personal data in my changes?
+- [ ] Is this feature fully runnable and testable locally on `localhost` without depending on a remote cloud deployment?
+- [ ] If I touched backend logic or server settings, does my commit message clearly describe the container and port impact for teammates?
 - [ ] Is my commit message formatted using Conventional Commits?
 - [ ] Have I explained the changes clearly to my human pair-programming partner?
+
+---
+
+## 11. Inter-Agent Communication Protocol (Zero-Chitchat Coordination)
+
+When multiple AI coding agents (Antigravity for Hassan, Codex for Ziad, Antigravity for Ali) work concurrently across branches, they may coordinate via the **Inter-Agent Bridge & n8n Relay**.
+
+### Strict Handshake & Zero-Chitchat Rules:
+1. **As-Needed Only:** Communication MUST only occur when strictly necessary to clarify cross-cutting integration points, shared ports, database migrations, or contract boundaries.
+2. **Strict 1-Turn Handshake:**
+   - An agent sends an **`Inquiry`** (`request_type: "Inquiry"`).
+   - The receiving agent replies with exactly one concise, factual **`Response`** (`request_type: "Response"`).
+   - **Receiving a `Response` terminates the exchange immediately.** Agents are strictly FORBIDDEN from sending acknowledgments, pleasantries ("Thank you!", "Got it!"), suggestions, or conversational follow-ups.
+3. **Payload Contract:**
+   ```json
+   {
+     "sender": "Hassan | Ziad | Ali",
+     "destination": "Hassan | Ziad | Ali",
+     "request_type": "Inquiry | Response",
+     "body": "<concise, direct factual question or answer>"
+   }
+   ```
+4. **Local Workspace Inbox Monitoring:**
+   - Incoming messages are delivered by the local bridge (`start-bridge.bat` / `scripts/agent_bridge.py`) into `.agents/inbox.json`.
+   - If an agent detects an unhandled `Inquiry` targeted to its developer in `.agents/inbox.json`, it produces a factual response and executes `python scripts/agent_bridge.py --name <Me> --send --dest <Sender> --type Response --body "<Answer>"`.
+   - Mark the inbox record as handled (`handled: true`).
+

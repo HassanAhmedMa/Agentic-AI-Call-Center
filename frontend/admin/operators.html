@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Nile Clinics - Operators Management</title>
+
+  <!-- Clean Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css?v=2.2">
+  <style>
+    /* Clean Search Bar Styling */
+    .operator-search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 380px;
+      max-width: 100%;
+    }
+    .operator-search-wrapper .search-blue-icon {
+      position: absolute;
+      left: 14px;
+      width: 18px;
+      height: 18px;
+      color: #2563EB;
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+    .operator-search-input {
+      width: 100%;
+      height: 40px;
+      background: #FFFFFF;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 0 14px 0 42px;
+      font-size: 13.5px;
+      color: #0F172A;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .operator-search-input:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .operator-search-input::placeholder {
+      color: #94A3B8;
+      font-size: 13px;
+    }
+
+    .operator-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    .badge-op-active {
+      background: #ECFDF5;
+      color: #059669;
+    }
+    .badge-op-inactive {
+      background: #F1F5F9;
+      color: #64748B;
+    }
+    .op-admin-only-alert {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #92400E;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .op-grid-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 20px;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .op-grid-card:hover {
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      border-color: #CBD5E1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Admin Main Layout Grid -->
+  <div class="admin-layout">
+
+    <!-- =========================================================================
+         LEFT SIDEBAR NAVIGATION
+         ========================================================================= -->
+    <aside class="admin-sidebar">
+      
+      <!-- Top Brand Header -->
+      <div class="sidebar-brand-box">
+        <div class="brand-logo-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+          </svg>
+        </div>
+        <div class="brand-text-col">
+          <h2 class="brand-title">Nile Clinics</h2>
+          <span class="brand-subtitle">AI Call Center</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <!-- 1. Dashboard -->
+        <a href="index.html" class="nav-link" id="nav-dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="nav-text">Dashboard</span>
+        </a>
+
+        <!-- 2. Live Calls -->
+        <a href="live-calls.html" class="nav-link" id="nav-live-calls">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="nav-text">Live Calls</span>
+        </a>
+
+        <!-- 3. Appointments -->
+        <a href="appointments.html" class="nav-link" id="nav-appointments">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="nav-text">Appointments</span>
+        </a>
+
+        <!-- 4. Doctors -->
+        <a href="doctors.html" class="nav-link" id="nav-doctors">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M3 11h6"/>
+            <path d="M6 8v6"/>
+          </svg>
+          <span class="nav-text">Doctors</span>
+          <span class="nav-badge-blue" id="doctorsCountBadge">10</span>
+        </a>
+
+        <!-- 5. Patients -->
+        <a href="patients.html?v=live_v3" class="nav-link" id="nav-patients">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="nav-text">Patients</span>
+        </a>
+
+        <!-- 6. Knowledge Base -->
+        <a href="index.html#knowledge" class="nav-link" id="nav-knowledge">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+          <span class="nav-text">Knowledge Base</span>
+        </a>
+
+        <!-- 7. Documents -->
+        <a href="index.html#documents" class="nav-link" id="nav-documents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          <span class="nav-text">Documents</span>
+        </a>
+
+        <!-- 8. Analytics -->
+        <a href="index.html#analytics" class="nav-link" id="nav-analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <!-- 9. Operators (Active - Above Settings) -->
+        <a href="operators.html" class="nav-link active" id="nav-operators">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-text">Operators</span>
+          <span class="nav-badge-blue" id="operatorsCountBadge">2</span>
+        </a>
+
+        <!-- 10. Settings -->
+        <a href="index.html#settings" class="nav-link" id="nav-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom Cluster -->
+      <div class="sidebar-bottom-cluster">
+        <!-- Branch Switcher Card -->
+        <div class="branch-switcher-pill" onclick="handleBranchChange()">
+          <div class="branch-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="branch-name" id="currentBranchName">Main Clinic</span>
+          <svg class="branch-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </div>
+
+        <!-- Admin / Operator Profile Pill -->
+        <div class="admin-profile-pill">
+          <div class="admin-avatar-circle">A</div>
+          <div class="admin-profile-meta">
+            <span class="admin-user-name">Ahmed Salah</span>
+            <span class="admin-user-role">Administrator</span>
+          </div>
+        </div>
+
+        <!-- Logout Action -->
+        <button class="logout-btn" onclick="handleLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Sign Out / Switch</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================================
+         MAIN VIEWPORT
+         ========================================================================= -->
+    <div class="admin-main-viewport">
+      
+      <!-- Top Action Bar -->
+      <header class="admin-top-bar">
+        <div class="operator-search-wrapper">
+          <svg class="search-blue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="operatorsGlobalSearch" class="operator-search-input" placeholder="Search operators by name or email..." oninput="handleOperatorSearch(this.value)" autocomplete="off">
+        </div>
+
+        <div class="topbar-actions-group">
+          <!-- Backend API Connection Badge -->
+          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="Click to view or test FastAPI connection">
+            <span class="status-indicator-dot dot-connected" id="apiStatusDot"></span>
+            <span class="api-status-text" id="apiStatusText">Live FastAPI</span>
+          </div>
+
+          <!-- Notification Bell -->
+          <button class="icon-button-circle" onclick="toggleNotifications()" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="bell-red-badge"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Workspace Body -->
+      <main class="dashboard-scroll-body">
+        
+        <!-- Header & Action Row -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px;">
+          <div>
+            <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; margin-bottom: 4px;">Clinic Operators Directory</h1>
+            <p style="font-size: 13.5px; color: #64748B;">Manage clinic operator accounts. Operators can view doctors and patients and edit patients, but cannot delete records.</p>
+          </div>
+
+          <!-- Add Operator Button (Admin Only) -->
+          <button class="modal-btn-primary" id="btnAddOperator" onclick="openAddOperatorModal()" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; font-size: 13px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Create New Operator</span>
+          </button>
+        </div>
+
+        <!-- Role Banner when viewed as Operator -->
+        <div id="operatorNoticeBanner" class="op-admin-only-alert" style="display: none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <strong>Notice for Operators:</strong> Only clinic administrators have privileges to create or remove operators.
+          </div>
+        </div>
+
+        <!-- Metrics Overview -->
+        <section class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 22px;">
+          <div class="metric-card">
+            <div class="metric-icon-box bg-blue-subtle text-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Total Operators</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricTotalOperators">2</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box bg-green-subtle text-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Active on Shift</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricActiveOperators">2</span>
+                <span class="metric-trend text-green"><span>100% On-Duty</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box bg-purple-subtle text-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Permission Tier</span>
+              <div class="metric-value-row">
+                <span class="metric-number" style="font-size: 16px; font-weight: 700; color: #2563EB;">Operator (@operator)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Operators Grid View -->
+        <div class="doctors-cards-grid" id="operatorsGridContainer">
+          <!-- Populated dynamically by script -->
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- Shared Modal Container -->
+  <div class="admin-modal-backdrop" id="adminModalBackdrop" onclick="closeAdminModal(event)">
+    <div class="admin-modal-container" id="adminModalContainer">
+      <div class="admin-modal-header">
+        <h3 id="adminModalTitle">Modal Title</h3>
+        <button class="modal-close-btn" onclick="closeAdminModal(event)" aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="admin-modal-body" id="adminModalBody"></div>
+      <div class="admin-modal-footer" id="adminModalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="adminToastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="admin-auth.js"></script>
+  <script src="api.js"></script>
+  <script>
+    let allOperators = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadOperators();
+      checkOperatorRoleRestrictions();
+    });
+
+    function checkOperatorRoleRestrictions() {
+      if (AdminAuth.isOperator()) {
+        const btnAdd = document.getElementById('btnAddOperator');
+        if (btnAdd) {
+          btnAdd.style.opacity = '0.5';
+          btnAdd.onclick = () => AdminAuth.showAdminPrivilegeWarning('Creating an operator');
+        }
+        const banner = document.getElementById('operatorNoticeBanner');
+        if (banner) banner.style.display = 'flex';
+      }
+    }
+
+    function loadOperators() {
+      allOperators = AdminAuth.getStoredOperators();
+      renderOperatorsGrid(allOperators);
+
+      const metricTotal = document.getElementById('metricTotalOperators');
+      const metricActive = document.getElementById('metricActiveOperators');
+      if (metricTotal) metricTotal.textContent = allOperators.length;
+      if (metricActive) metricActive.textContent = allOperators.filter(o => o.status === 'active').length;
+      AdminAuth.updateOperatorsCountBadge();
+    }
+
+    function renderOperatorsGrid(list) {
+      const container = document.getElementById('operatorsGridContainer');
+      if (!container) return;
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: #64748B;">
+            <p>No operators registered yet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(op => {
+        const initial = (op.name || 'O').charAt(0).toUpperCase();
+        const canDelete = AdminAuth.isAdmin();
+
+        return `
+          <div class="op-grid-card">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">
+                    ${initial}
+                  </div>
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0;">${escapeHtml(op.name)}</h3>
+                    <span style="font-size: 12.5px; color: #2563EB; font-weight: 500;">${escapeHtml(op.email)}</span>
+                  </div>
+                </div>
+                <span class="operator-badge-tag badge-op-active">Active</span>
+              </div>
+
+              <div style="background: #F8FAFC; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 12.5px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div><span style="color:#64748B;">Gender:</span> <strong>${escapeHtml(op.gender || '—')}</strong></div>
+                <div><span style="color:#64748B;">Birthdate:</span> <strong>${escapeHtml(op.birthdate || '—')}</strong></div>
+                <div><span style="color:#64748B;">Phone:</span> <strong>${escapeHtml(op.phone || '—')}</strong></div>
+                <div><span style="color:#64748B;">Role:</span> <strong style="color: #2563EB;">Operator</strong></div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #F1F5F9; padding-top: 12px;">
+              <button class="modal-btn-secondary" style="height: 32px; font-size: 12px;" onclick="openOperatorDetails(${op.id})">
+                View Permissions
+              </button>
+              ${canDelete ? `
+                <button class="modal-btn-secondary" style="height: 32px; font-size: 12px; color: #DC2626; border-color: #FCA5A5;" onclick="confirmDeleteOperator(${op.id}, '${escapeJs(op.name)}')">
+                  Remove
+                </button>
+              ` : `
+                <button class="modal-btn-secondary" style="height: 32px; font-size: 12px; opacity: 0.5;" onclick="AdminAuth.showAdminPrivilegeWarning('Deleting an operator')">
+                  Remove
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleOperatorSearch(term) {
+      const q = (term || '').toLowerCase().trim();
+      if (!q) {
+        renderOperatorsGrid(allOperators);
+        return;
+      }
+      const filtered = allOperators.filter(o => 
+        (o.name || '').toLowerCase().includes(q) ||
+        (o.email || '').toLowerCase().includes(q)
+      );
+      renderOperatorsGrid(filtered);
+    }
+
+    /* Modal Management */
+    function openAdminModal(title, bodyHtml, footerHtml = '') {
+      const backdrop = document.getElementById('adminModalBackdrop');
+      const titleEl = document.getElementById('adminModalTitle');
+      const bodyEl = document.getElementById('adminModalBody');
+      const footerEl = document.getElementById('adminModalFooter');
+
+      if (!backdrop || !bodyEl) return;
+      if (titleEl) titleEl.textContent = title;
+      bodyEl.innerHTML = bodyHtml;
+
+      if (footerEl) {
+        footerEl.innerHTML = footerHtml;
+        footerEl.style.display = footerHtml ? 'flex' : 'none';
+      }
+      backdrop.classList.add('active');
+    }
+
+    function closeAdminModal(e) {
+      if (e && e.target && e.target.id !== 'adminModalBackdrop' && !e.target.closest('.modal-close-btn') && !e.target.classList.contains('close-btn')) {
+        return;
+      }
+      const backdrop = document.getElementById('adminModalBackdrop');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('adminToastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast-item toast-${type}`;
+      toast.innerHTML = `<span style="font-size:13px; font-weight:600;">${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    /* Add Operator Dialog */
+    function openAddOperatorModal() {
+      if (!AdminAuth.isAdmin()) {
+        AdminAuth.showAdminPrivilegeWarning('Creating an operator');
+        return;
+      }
+
+      const html = `
+        <form id="createOperatorForm" onsubmit="handleCreateOperatorSubmit(event)" style="display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Full Name *</label>
+            <input type="text" id="newOpName" required placeholder="e.g. Mariam Nabil" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Operator Email (@operator) *</label>
+              <input type="email" id="newOpEmail" required placeholder="mariam@operator.clinic" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+              <span style="font-size:11px; color:#64748B;">Must contain @operator to enforce operator role.</span>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Password *</label>
+              <input type="password" id="newOpPassword" required placeholder="Set secure password" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Gender *</label>
+              <select id="newOpGender" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 10px; font-size:13px; background:#fff;">
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Birthdate *</label>
+              <input type="date" id="newOpBirthdate" required value="1998-05-20" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 10px; font-size:13px;">
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Phone Number</label>
+            <input type="tel" id="newOpPhone" placeholder="+20 100 000 0000" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+          </div>
+
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:10px 12px; font-size:12px; color:#1E40AF;">
+            <strong>Permissions Granted:</strong> Operators can view doctors and patients and edit patient details. They cannot delete patients or doctors.
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+            <button type="button" class="modal-btn-secondary" onclick="closeAdminModal()">Cancel</button>
+            <button type="submit" class="modal-btn-primary">Create Operator Account</button>
+          </div>
+        </form>
+      `;
+
+      openAdminModal('Create New Clinic Operator', html);
+    }
+
+    function handleCreateOperatorSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('newOpName').value.trim();
+      const email = document.getElementById('newOpEmail').value.trim();
+      const gender = document.getElementById('newOpGender').value;
+      const birthdate = document.getElementById('newOpBirthdate').value;
+      const phone = document.getElementById('newOpPhone').value.trim();
+
+      if (!email.toLowerCase().includes('@operator')) {
+        alert('Operator email must include "@operator" (e.g. name@operator.clinic).');
+        return;
+      }
+
+      const newOp = {
+        id: Date.now(),
+        name,
+        email,
+        gender,
+        birthdate,
+        phone: phone || '+20 100 000 0000',
+        role: 'operator',
+        status: 'active',
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+
+      allOperators.push(newOp);
+      AdminAuth.saveOperators(allOperators);
+      closeAdminModal();
+      showToast(`Operator ${name} created successfully!`, 'success');
+      loadOperators();
+    }
+
+    function confirmDeleteOperator(id, name) {
+      if (!AdminAuth.isAdmin()) {
+        AdminAuth.showAdminPrivilegeWarning('Removing an operator');
+        return;
+      }
+
+      const html = `
+        <div style="padding:10px 0; text-align:center;">
+          <h4 style="font-size:16px; margin-bottom:8px; color:#0F172A;">Remove Operator ${escapeHtml(name)}?</h4>
+          <p style="font-size:13px; color:#64748B; margin-bottom:16px;">This operator will lose access to the clinic admin console.</p>
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="modal-btn-secondary" onclick="closeAdminModal()">Cancel</button>
+            <button class="modal-btn-primary" style="background:#DC2626; border-color:#DC2626;" onclick="executeDeleteOperator(${id}, '${escapeJs(name)}')">
+              Yes, Remove Operator
+            </button>
+          </div>
+        </div>
+      `;
+      openAdminModal('Confirm Operator Removal', html);
+    }
+
+    function executeDeleteOperator(id, name) {
+      allOperators = allOperators.filter(o => o.id !== id);
+      AdminAuth.saveOperators(allOperators);
+      closeAdminModal();
+      showToast(`Operator ${name} removed.`, 'success');
+      loadOperators();
+    }
+
+    function openOperatorDetails(id) {
+      const op = allOperators.find(o => o.id === id);
+      if (!op) return;
+
+      const html = `
+        <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+          <div style="background:#F8FAFC; border-radius:8px; padding:12px;">
+            <p style="margin-bottom:4px;"><strong>Operator Name:</strong> ${escapeHtml(op.name)}</p>
+            <p style="margin-bottom:4px;"><strong>Email:</strong> ${escapeHtml(op.email)}</p>
+            <p style="margin-bottom:4px;"><strong>Gender:</strong> ${escapeHtml(op.gender)}</p>
+            <p style="margin-bottom:4px;"><strong>Birthdate:</strong> ${escapeHtml(op.birthdate)}</p>
+          </div>
+
+          <h4 style="font-size:14px; font-weight:700; color:#0F172A;">Role Privilege Matrix</h4>
+          <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:6px;">
+            <li style="color:#059669;">✔ Check & Search Doctors Directory</li>
+            <li style="color:#DC2626;">✖ Delete / Remove Doctors (Restricted to Admin)</li>
+            <li style="color:#DC2626;">✖ Add New Doctors (Restricted to Admin)</li>
+            <li style="color:#059669;">✔ Check & Search Patients Directory</li>
+            <li style="color:#059669;">✔ Edit Patient Profiles & Contact Info</li>
+            <li style="color:#059669;">✔ Register New Patients</li>
+            <li style="color:#DC2626;">✖ Delete / Cancel Patients (Restricted to Admin)</li>
+          </ul>
+
+          <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+            <button class="modal-btn-primary" onclick="closeAdminModal()">Close</button>
+          </div>
+        </div>
+      `;
+      openAdminModal(`Operator Profile: ${op.name}`, html);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    async function handleLogout() {
+      AdminAuth.logout();
+    }
+
+    function handleBranchChange() {
+      showToast('Clinic Branch: Main Clinic', 'info');
+    }
+
+    function toggleNotifications() {
+      showToast('Operators System: All accounts operating normally.', 'info');
+    }
+  </script>
+</body>
+</html>
