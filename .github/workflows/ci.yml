@@ -65,6 +65,8 @@ jobs:
           python -m ruff check services/clinic-backend/src packages/schemas/src tests/unit tests/integration database/migrations
           python -m black --check services/clinic-backend/src packages/schemas/src tests/unit tests/integration database/migrations
           python -m mypy
+      - name: Patient frontend auth tests
+        run: node --test tests/frontend/portal-auth.test.cjs
       - name: Unit and real PostgreSQL integration tests
         run: python -m pytest -q
       - name: Build backend image

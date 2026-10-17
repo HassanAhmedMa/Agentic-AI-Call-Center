@@ -49,9 +49,13 @@ async def test_conflicts_limits_ownership_and_atomic_changes(engine, monkeypatch
                 pid = await conn.scalar(
                     text("""INSERT INTO patients(customer_number,
                     full_name,email,email_verified_at,phone,date_of_birth)
-                    VALUES (:number,'Synthetic',:email,now(),'+201000000001',
+                    VALUES (:number,'Synthetic',:email,now(),:phone,
                     '1988-01-01') RETURNING id"""),
-                    {"number": f"{i:06d}", "email": f"patient{i}@example.test"},
+                    {
+                        "number": f"{i:06d}",
+                        "email": f"patient{i}@example.test",
+                        "phone": f"+20100000000{i}",
+                    },
                 )
                 patient_ids.append(pid)
                 await conn.execute(

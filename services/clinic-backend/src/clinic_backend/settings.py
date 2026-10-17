@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     agent_service_token: SecretStr | None = None
     admin_api_token: SecretStr | None = None
     identity_enabled: bool = False
+    portal_enabled: bool = False
+    portal_origin: str = "http://localhost:8004"
+    portal_cookie_secure: bool = True
+    portal_assets: Path = Path("frontend/user")
     identity_provider: Literal["clinic", "supabase"] = "clinic"
     supabase_url: str = ""
     supabase_public_key: SecretStr | None = None
@@ -54,6 +58,29 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def identity_configuration(self) -> "Settings":
+        if self.portal_enabled:
+            origin = urlsplit(self.portal_origin)
+            if (
+                origin.path not in {"", "/"}
+                or origin.query
+                or origin.fragment
+                or origin.username
+                or not origin.hostname
+            ):
+                raise ValueError("Portal requires one trusted origin")
+            if origin.scheme != "https" and not (
+                self.environment in {"test", "development"}
+                and origin.scheme == "http"
+                and origin.hostname in {"localhost", "127.0.0.1", "test"}
+            ):
+                raise ValueError("Portal requires HTTPS outside local development")
+            if (
+                self.environment not in {"test", "development"}
+                and not self.portal_cookie_secure
+            ):
+                raise ValueError("Production portal cookies must be Secure")
+            if not self.identity_enabled or self.identity_provider != "supabase":
+                raise ValueError("Portal requires Supabase identity")
         if self.admin_api_token:
             token = self.admin_api_token.get_secret_value()
             if len(token.encode()) < 32 or token.startswith("replace-with-"):

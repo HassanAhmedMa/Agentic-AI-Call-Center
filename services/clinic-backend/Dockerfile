@@ -6,11 +6,12 @@ COPY pyproject.toml ./
 COPY services/clinic-backend/src services/clinic-backend/src
 COPY packages/schemas/src packages/schemas/src
 RUN pip install --no-cache-dir . && useradd --create-home clinic
+COPY frontend/user frontend/user
 COPY alembic.ini ./
 COPY database/migrations database/migrations
 COPY database/seed/catalog.json database/seed/catalog.json
 COPY database/seed/scheduling.json database/seed/scheduling.json
-RUN chmod -R a+rX /app/database/migrations /app/database/seed \
+RUN chmod -R a+rX /app/database/migrations /app/database/seed /app/frontend/user \
     && chmod a+r /app/pyproject.toml /app/alembic.ini
 USER clinic
 RUN python -c "from pathlib import Path; import clinic_backend; p=Path(clinic_backend.__file__).parent/'static/supabase-otp.html'; assert '{{ .Token }}' in p.read_text()"

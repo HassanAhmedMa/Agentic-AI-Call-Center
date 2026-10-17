@@ -1306,3 +1306,14 @@ body {
   gap: 10px;
 }
 
+
+/* Backend-connected portal additions reuse the existing palette. */
+.portal-language{flex-shrink:0;background:white;color:#2563eb;border:1px solid #bfdbfe;border-radius:10px;padding:8px 14px;cursor:pointer;font-family:inherit}
+.portal-password{width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;box-sizing:border-box;background:white}
+.portal-consent{display:flex;gap:10px;font-size:13px;color:#475569;align-items:flex-start;line-height:1.6}
+.portal-recovery-card{background:white;border:1px solid #e2e8f0;border-radius:24px;padding:32px;max-width:480px;margin:48px auto;box-shadow:0 8px 30px #0f172a08}
+.portal-recovery-card form{display:grid;gap:14px;margin:24px 0}.portal-customer-number{font-size:26px;color:#2563eb;font-weight:700;letter-spacing:3px}
+[dir=rtl] .form-field-label,[dir=rtl] .form-desc{text-align:right}[dir=rtl] input[type=email],[dir=rtl] input[type=tel]{direction:ltr;text-align:left}
+
+[dir=rtl] .form-input-wrapper input[type=password],[dir=rtl] .form-input-wrapper input[type=text]{padding-inline-end:42px}
+[dir=rtl] .phone-prefix{direction:ltr}

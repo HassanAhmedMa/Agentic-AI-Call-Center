@@ -29,6 +29,7 @@ class Patient(Base):
         CheckConstraint("gender IN ('male','female')", name="ck_patient_gender"),
         Index("uq_patients_email", func.lower(text("email")), unique=True),
         Index("idx_patients_phone", "phone"),
+        Index("uq_patients_phone", "phone", unique=True),
     )
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     customer_number: Mapped[str] = mapped_column(String(6), unique=True)
