@@ -44,7 +44,34 @@
     }
   }
 
+  async function syncAppointmentBadge() {
+    const badge = document.getElementById('navApptBadge');
+    if (!badge) return;
+    try {
+      if (window.ClinicPortalAPI && typeof window.ClinicPortalAPI.request === 'function') {
+        const res = await window.ClinicPortalAPI.request('appointments');
+        const list = Array.isArray(res?.appointments) ? res.appointments : [];
+        const count = list.filter(a => a.status !== 'cancelled' && a.status !== 'canceled' && a.status !== 'completed').length;
+        badge.textContent = String(count);
+        try { localStorage.setItem('clinic_upcoming_count', String(count)); } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  function initBadgeFromCache() {
+    const badge = document.getElementById('navApptBadge');
+    if (!badge) return;
+    try {
+      const cached = localStorage.getItem('clinic_upcoming_count');
+      badge.textContent = cached !== null ? cached : '0';
+    } catch (_) {
+      badge.textContent = '0';
+    }
+  }
+
   async function checkSession() {
+    initBadgeFromCache();
+
     try {
       let session = null;
       if (window.ClinicPortalAPI && typeof window.ClinicPortalAPI.request === 'function') {
@@ -60,6 +87,7 @@
         } else if (response.status === 401) {
           try {
             localStorage.removeItem('clinic_patient_session');
+            localStorage.removeItem('clinic_upcoming_count');
           } catch (_) {}
           window.ClinicSession = null;
           return null;
@@ -72,6 +100,13 @@
           localStorage.setItem('clinic_patient_session', JSON.stringify(session));
         } catch (_) {}
         applySessionToUI(session);
+
+        // Sync real appointment count if on portal dashboard pages
+        const isAuthPage = window.location && typeof window.location.pathname === 'string' && window.location.pathname.includes('auth.html');
+        if (!isAuthPage) {
+          syncAppointmentBadge();
+        }
+
         return window.ClinicSession;
       }
     } catch (error) {
@@ -115,6 +150,7 @@
     try {
       localStorage.removeItem('clinic_patient_session');
       localStorage.removeItem('clinic_user_session');
+      localStorage.removeItem('clinic_upcoming_count');
     } catch (_) {}
 
     window.location.href = 'auth.html';
@@ -124,6 +160,12 @@
     checkSession,
     logout,
     applySessionToUI,
+    syncAppointmentBadge,
+    setAppointmentBadgeCount: (count) => {
+      const badge = document.getElementById('navApptBadge');
+      if (badge) badge.textContent = String(count);
+      try { localStorage.setItem('clinic_upcoming_count', String(count)); } catch (_) {}
+    },
     getDefaultProfile: () => ({
       first_name: 'Patient',
       full_name: 'Patient User',

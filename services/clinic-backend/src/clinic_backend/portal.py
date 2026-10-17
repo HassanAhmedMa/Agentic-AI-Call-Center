@@ -19,7 +19,7 @@ from clinic_backend.errors import APIError, error_response
 from clinic_backend.identity import Identity, revoke, socket_ip
 from clinic_backend.identity_models import Patient, PatientSession
 from clinic_backend.models import ConversationSession, Doctor, Specialty
-from clinic_backend.scheduling_models import Appointment
+from clinic_backend.scheduling_models import Appointment, AppointmentHistory
 from clinic_backend.settings import Settings
 from clinic_backend.supabase_auth import AuthClient, VerifiedAuthUser
 from clinic_backend.supabase_identity import SupabaseIdentity, active_auth_session
@@ -523,6 +523,54 @@ def portal_router(
         response.headers["Cache-Control"] = "no-store"
         return result
 
+    @router.get("/doctors")
+    async def list_portal_doctors() -> Response:
+        async with sessions() as session:
+            stmt = (
+                select(Doctor, Specialty)
+                .join(Specialty, Doctor.specialty_id == Specialty.id)
+                .where(Doctor.is_active.is_(True))
+                .order_by(Doctor.id)
+            )
+            res = await session.execute(stmt)
+            docs = []
+            for d, s in res:
+                docs.append({
+                    "id": d.id,
+                    "name_en": d.name_en,
+                    "name_ar": d.name_ar,
+                    "full_name_en": d.name_en,
+                    "full_name_ar": d.name_ar,
+                    "title_en": d.title_en,
+                    "title_ar": d.title_ar,
+                    "specialty_id": s.id,
+                    "specialty_name_en": s.name_en,
+                    "specialty_name_ar": s.name_ar,
+                    "specialty": {
+                        "id": s.id,
+                        "name_en": s.name_en,
+                        "name_ar": s.name_ar,
+                    },
+                    "shift_start": str(d.shift_start)[:5],
+                    "shift_end": str(d.shift_end)[:5],
+                    "consultation_fee": float(d.consultation_fee),
+                })
+        json_resp = JSONResponse({"total": len(docs), "doctors": docs})
+        json_resp.headers["Cache-Control"] = "no-store"
+        return json_resp
+
+    @router.get("/specialties")
+    async def list_portal_specialties() -> Response:
+        async with sessions() as session:
+            res = await session.scalars(select(Specialty).order_by(Specialty.id))
+            specs = [
+                {"id": s.id, "name_en": s.name_en, "name_ar": s.name_ar}
+                for s in res
+            ]
+        json_resp = JSONResponse({"total": len(specs), "specialties": specs})
+        json_resp.headers["Cache-Control"] = "no-store"
+        return json_resp
+
     @router.get("/appointments")
     async def patient_appointments(request: Request, response: Response) -> Response:
         user, _ = await provider_session(request, response)
@@ -597,12 +645,14 @@ def portal_router(
             if binding is None or binding.supabase_session_id != user.session_id:
                 raise APIError(401, "SESSION_EXPIRED", "Sign in again.")
 
-            doctor_id = int(body.get("doctor_id", 0))
-            appt_date = datetime.strptime(str(body.get("appointment_date")), "%Y-%m-%d").date()
-            start_t = datetime.strptime(str(body.get("start_time"))[:5], "%H:%M").time()
+            doctor_id = int(body.get("doctor_id") or body.get("doctorId") or 1)
+            date_raw = str(body.get("appointment_date") or body.get("date") or "")[:10]
+            appt_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+            time_raw = str(body.get("start_time") or body.get("time") or "10:00")[:5]
+            start_t = datetime.strptime(time_raw, "%H:%M").time()
             start_dt = datetime.combine(appt_date, start_t)
             end_t = (start_dt + timedelta(minutes=30)).time()
-            visit_reason = str(body.get("visit_reason") or "Routine consultation via patient portal")
+            visit_reason = str(body.get("visit_reason") or body.get("reason") or "Routine consultation via patient portal")
 
             new_appt = Appointment(
                 patient_id=binding.patient_id,
@@ -616,6 +666,17 @@ def portal_router(
             session.add(new_appt)
             await session.flush()
             created_id = new_appt.id
+
+            session.add(
+                AppointmentHistory(
+                    appointment_id=created_id,
+                    changed_by="patient",
+                    from_status=None,
+                    to_status="scheduled",
+                    reason=visit_reason,
+                )
+            )
+            await session.flush()
 
         json_resp = JSONResponse(
             {"id": created_id, "status": "scheduled", "message": "Appointment booked successfully"},
