@@ -4,7 +4,7 @@ import base64
 import hashlib
 import re
 import secrets
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from urllib.parse import quote, urlencode, urlsplit
 
 from clinic_schemas import portal as dto
@@ -12,13 +12,14 @@ from clinic_schemas.identity import PatientProfile, Registration
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from clinic_backend.conversations import creation_retry
 from clinic_backend.errors import APIError, error_response
 from clinic_backend.identity import Identity, revoke, socket_ip
 from clinic_backend.identity_models import Patient, PatientSession
-from clinic_backend.models import ConversationSession
+from clinic_backend.models import ConversationSession, Doctor, Specialty
+from clinic_backend.scheduling_models import Appointment
 from clinic_backend.settings import Settings
 from clinic_backend.supabase_auth import AuthClient, VerifiedAuthUser
 from clinic_backend.supabase_identity import SupabaseIdentity, active_auth_session
@@ -512,9 +513,181 @@ def portal_router(
                 customer_number=patient.customer_number,
                 first_name=patient.full_name.split()[0],
                 preferred_language=patient.preferred_language,
+                full_name=patient.full_name,
+                email=patient.email,
+                phone=patient.phone,
+                date_of_birth=patient.date_of_birth,
+                gender=patient.gender,
+                address=patient.address,
             )
         response.headers["Cache-Control"] = "no-store"
         return result
+
+    @router.get("/appointments")
+    async def patient_appointments(request: Request, response: Response) -> Response:
+        user, _ = await provider_session(request, response)
+        async with sessions() as session, session.begin():
+            identity = Identity(session, settings)
+            row = await identity.conversation(request.cookies.get(CONVERSATION, ""))
+            if isinstance(row, APIError):
+                raise row
+            binding, _ = await identity.live_session(row, refresh=True)
+            if binding is None or binding.supabase_session_id != user.session_id:
+                raise APIError(401, "SESSION_EXPIRED", "Sign in again.")
+
+            stmt = (
+                select(
+                    Appointment.id,
+                    Appointment.appointment_date,
+                    Appointment.start_time,
+                    Appointment.end_time,
+                    Appointment.status,
+                    Appointment.visit_reason,
+                    Doctor.id.label("doctor_id"),
+                    Doctor.name_en.label("doctor_name"),
+                    Doctor.name_ar.label("doctor_name_ar"),
+                    Specialty.name_en.label("specialty_name"),
+                    Specialty.name_ar.label("specialty_name_ar"),
+                )
+                .join(Doctor, Appointment.doctor_id == Doctor.id)
+                .join(Specialty, Doctor.specialty_id == Specialty.id)
+                .where(Appointment.patient_id == binding.patient_id)
+                .order_by(Appointment.appointment_date.desc(), Appointment.start_time.desc())
+            )
+            res = await session.execute(stmt)
+            appointments = []
+            for item in res.mappings():
+                t_str = str(item["start_time"])[:5]
+                try:
+                    dt = datetime.strptime(t_str, "%H:%M")
+                    t_12 = dt.strftime("%I:%M %p")
+                except Exception:
+                    t_12 = t_str
+                appointments.append({
+                    "id": item["id"],
+                    "appointment_date": str(item["appointment_date"]),
+                    "start_time": str(item["start_time"]),
+                    "time_short": t_12,
+                    "doctor_name": item["doctor_name"],
+                    "doctor_name_ar": item["doctor_name_ar"],
+                    "doctor_id": item["doctor_id"],
+                    "specialty_name": item["specialty_name"],
+                    "specialty_name_ar": item["specialty_name_ar"],
+                    "branch_name": "Main Branch - Heliopolis",
+                    "branch_name_ar": "الفرع الرئيسي - مصر الجديدة",
+                    "status": item["status"],
+                    "visit_reason": item["visit_reason"],
+                    "avatar": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=120&h=120&fit=crop&crop=faces",
+                })
+        json_resp = JSONResponse({"total": len(appointments), "appointments": appointments})
+        json_resp.headers["Cache-Control"] = "no-store"
+        return json_resp
+
+    @router.post("/appointments", status_code=201)
+    async def book_patient_appointment(
+        body: dict[str, object], request: Request, response: Response
+    ) -> Response:
+        user, _ = await provider_session(request, response)
+        async with sessions() as session, session.begin():
+            identity = Identity(session, settings)
+            row = await identity.conversation(request.cookies.get(CONVERSATION, ""))
+            if isinstance(row, APIError):
+                raise row
+            binding, _ = await identity.live_session(row, refresh=True)
+            if binding is None or binding.supabase_session_id != user.session_id:
+                raise APIError(401, "SESSION_EXPIRED", "Sign in again.")
+
+            doctor_id = int(body.get("doctor_id", 0))
+            appt_date = datetime.strptime(str(body.get("appointment_date")), "%Y-%m-%d").date()
+            start_t = datetime.strptime(str(body.get("start_time"))[:5], "%H:%M").time()
+            start_dt = datetime.combine(appt_date, start_t)
+            end_t = (start_dt + timedelta(minutes=30)).time()
+            visit_reason = str(body.get("visit_reason") or "Routine consultation via patient portal")
+
+            new_appt = Appointment(
+                patient_id=binding.patient_id,
+                doctor_id=doctor_id,
+                appointment_date=appt_date,
+                start_time=start_t,
+                end_time=end_t,
+                status="scheduled",
+                visit_reason=visit_reason,
+            )
+            session.add(new_appt)
+            await session.flush()
+            created_id = new_appt.id
+
+        json_resp = JSONResponse(
+            {"id": created_id, "status": "scheduled", "message": "Appointment booked successfully"},
+            status_code=201,
+        )
+        json_resp.headers["Cache-Control"] = "no-store"
+        return json_resp
+
+    @router.patch("/appointments/{appointment_id}/cancel")
+    async def cancel_patient_appointment(
+        appointment_id: int, body: dict[str, object], request: Request, response: Response
+    ) -> Response:
+        user, _ = await provider_session(request, response)
+        async with sessions() as session, session.begin():
+            identity = Identity(session, settings)
+            row = await identity.conversation(request.cookies.get(CONVERSATION, ""))
+            if isinstance(row, APIError):
+                raise row
+            binding, _ = await identity.live_session(row, refresh=True)
+            if binding is None or binding.supabase_session_id != user.session_id:
+                raise APIError(401, "SESSION_EXPIRED", "Sign in again.")
+
+            appt = await session.get(Appointment, appointment_id)
+            if appt is None or appt.patient_id != binding.patient_id:
+                raise APIError(404, "NOT_FOUND", "Appointment not found.")
+
+            appt.status = "cancelled"
+            appt.cancelled_at = datetime.now(UTC)
+            appt.cancelled_by = "patient"
+            appt.cancellation_reason = str(body.get("reason") or "Patient cancelled via portal")
+            await session.flush()
+
+        json_resp = JSONResponse(
+            {"id": appointment_id, "status": "cancelled", "message": "Appointment cancelled successfully"}
+        )
+        json_resp.headers["Cache-Control"] = "no-store"
+        return json_resp
+
+    @router.patch("/appointments/{appointment_id}/reschedule")
+    async def reschedule_patient_appointment(
+        appointment_id: int, body: dict[str, object], request: Request, response: Response
+    ) -> Response:
+        user, _ = await provider_session(request, response)
+        async with sessions() as session, session.begin():
+            identity = Identity(session, settings)
+            row = await identity.conversation(request.cookies.get(CONVERSATION, ""))
+            if isinstance(row, APIError):
+                raise row
+            binding, _ = await identity.live_session(row, refresh=True)
+            if binding is None or binding.supabase_session_id != user.session_id:
+                raise APIError(401, "SESSION_EXPIRED", "Sign in again.")
+
+            appt = await session.get(Appointment, appointment_id)
+            if appt is None or appt.patient_id != binding.patient_id:
+                raise APIError(404, "NOT_FOUND", "Appointment not found.")
+
+            new_date = datetime.strptime(str(body.get("new_date")), "%Y-%m-%d").date()
+            new_time = datetime.strptime(str(body.get("new_start_time"))[:5], "%H:%M").time()
+            start_dt = datetime.combine(new_date, new_time)
+            end_t = (start_dt + timedelta(minutes=30)).time()
+
+            appt.appointment_date = new_date
+            appt.start_time = new_time
+            appt.end_time = end_t
+            appt.status = "scheduled"
+            await session.flush()
+
+        json_resp = JSONResponse(
+            {"id": appointment_id, "status": "scheduled", "message": "Appointment rescheduled successfully"}
+        )
+        json_resp.headers["Cache-Control"] = "no-store"
+        return json_resp
 
     @router.post("/logout", status_code=204)
     async def logout(request: Request) -> Response:

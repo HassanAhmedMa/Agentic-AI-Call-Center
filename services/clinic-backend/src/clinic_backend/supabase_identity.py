@@ -125,4 +125,10 @@ class SupabaseIdentity(Identity):
             customer_number=patient.customer_number,
             first_name=patient.full_name.split()[0],
             preferred_language=patient.preferred_language,
+            full_name=patient.full_name,
+            email=patient.email,
+            phone=patient.phone,
+            date_of_birth=patient.date_of_birth,
+            gender=patient.gender,
+            address=patient.address,
         )
