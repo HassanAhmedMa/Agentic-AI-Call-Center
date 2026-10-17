@@ -1,14 +1,15 @@
 /**
- * Nile Clinics - Patient Portal Authentication Logic
+ * Nile Clinics - Patient Portal Authentication & Password Reset Logic
  * Pixel-accurate, responsive, 1:1 flow matching design showcase
  * Handles:
- *  - 4 views: Login, Signup, Verify OTP, Success
- *  - URL Hash routing (#login, #signup, #verify, #success)
+ *  - 7 views: Login, Signup, Verify OTP, Success, Forgot Email, Forgot Code, Forgot Reset
+ *  - URL Hash routing (#login, #signup, #verify, #success, #forgot, #forgot-code, #forgot-reset)
  *  - Email vs Phone toggle
  *  - Password visibility toggle (with custom SVG icons, zero emojis)
  *  - Date of Birth formatting (DD / MM / YYYY)
- *  - 6-digit OTP box focus auto-advancement & paste handling
- *  - 45s OTP countdown timer with resend capability
+ *  - 6-digit OTP box focus auto-advancement & paste handling for both Sign Up & Forgot Password
+ *  - 45s OTP countdown timers with resend capability
+ *  - Dynamic real-time Password Strength Meter with 4 security criteria
  *  - Zero emojis throughout
  */
 
@@ -17,7 +18,9 @@
 
   // --- State ---
   let otpCountdownTimer = null;
+  let forgotOtpCountdownTimer = null;
   let remainingSeconds = 45;
+  let forgotRemainingSeconds = 45;
 
   // --- DOM Elements ---
   const views = {
@@ -25,7 +28,13 @@
     signup: document.getElementById('view-signup'),
     verify: document.getElementById('view-verify'),
     success: document.getElementById('view-success'),
+    'forgot-email': document.getElementById('view-forgot-email'),
+    'forgot-code': document.getElementById('view-forgot-code'),
+    'forgot-reset': document.getElementById('view-forgot-reset'),
   };
+
+  const headerHelpBtn = document.getElementById('headerHelpBtn');
+  const headerBackToLoginBtn = document.getElementById('headerBackToLoginBtn');
 
   const loginTabEmail = document.getElementById('loginTabEmail');
   const loginTabPhone = document.getElementById('loginTabPhone');
@@ -40,9 +49,23 @@
   const resendCodeBtn = document.getElementById('resendCodeBtn');
   const resendCodeLabel = document.getElementById('resendCodeLabel');
 
+  // Forgot Password Elements
+  const forgotEmailInput = document.getElementById('forgotEmailInput');
+  const forgotOtpContainer = document.getElementById('forgotOtpContainer');
+  const forgotResendCodeBtn = document.getElementById('forgotResendCodeBtn');
+  const forgotResendCodeLabel = document.getElementById('forgotResendCodeLabel');
+  const resetNewPasswordInput = document.getElementById('resetNewPasswordInput');
+  const resetConfirmPasswordInput = document.getElementById('resetConfirmPasswordInput');
+
+  // Success Elements
+  const successTitle = document.getElementById('successTitle');
+  const successSubtext = document.getElementById('successSubtext');
+  const successContinueBtn = document.getElementById('successContinueBtn');
+  const successContinueLabel = document.getElementById('successContinueLabel');
+
   /**
    * Navigate between auth screens
-   * @param {string} viewId - 'view-login' | 'view-signup' | 'view-verify' | 'view-success'
+   * @param {string} viewId - e.g. 'view-login', 'view-forgot-email', etc.
    * @param {boolean} updateHash - whether to update location.hash
    */
   function navigateToView(viewId, updateHash = true) {
@@ -51,12 +74,26 @@
 
     // Switch active view
     Object.keys(views).forEach((key) => {
-      if (key === targetKey) {
-        views[key].classList.add('active');
-      } else {
-        views[key].classList.remove('active');
+      if (views[key]) {
+        if (key === targetKey) {
+          views[key].classList.add('active');
+        } else {
+          views[key].classList.remove('active');
+        }
       }
     });
+
+    // Update Header Actions: show "Back to Login" for recovery flows, "Need Help?" for standard flows
+    const isForgotFlow = targetKey.startsWith('forgot-');
+    if (headerBackToLoginBtn && headerHelpBtn) {
+      if (isForgotFlow) {
+        headerBackToLoginBtn.style.display = 'inline-flex';
+        headerHelpBtn.style.display = 'none';
+      } else {
+        headerBackToLoginBtn.style.display = 'none';
+        headerHelpBtn.style.display = 'inline-flex';
+      }
+    }
 
     // Update URL hash
     if (updateHash) {
@@ -69,7 +106,14 @@
     // Handle view-specific initializations
     if (targetKey === 'verify') {
       startOtpTimer(45);
-      focusFirstOtpBox();
+      focusFirstOtpBox(otpContainer);
+    } else if (targetKey === 'forgot-code') {
+      startForgotOtpTimer(45);
+      focusFirstOtpBox(forgotOtpContainer);
+    } else if (targetKey === 'forgot-reset') {
+      setTimeout(() => {
+        if (resetNewPasswordInput) resetNewPasswordInput.focus();
+      }, 150);
     }
   }
 
@@ -84,6 +128,12 @@
       navigateToView('view-verify', false);
     } else if (hash === 'success') {
       navigateToView('view-success', false);
+    } else if (hash === 'forgot' || hash === 'forgot-password' || hash === 'forgot-email') {
+      navigateToView('view-forgot-email', false);
+    } else if (hash === 'forgot-code' || hash === 'forgot-verify') {
+      navigateToView('view-forgot-code', false);
+    } else if (hash === 'forgot-reset' || hash === 'reset-password') {
+      navigateToView('view-forgot-reset', false);
     } else {
       navigateToView('view-login', false);
     }
@@ -125,9 +175,7 @@
     const isPassword = input.type === 'password';
     input.type = isPassword ? 'text' : 'password';
 
-    // Update SVG icon (Eye vs Eye-Off)
     if (isPassword) {
-      // Show Eye-Off (visible state -> click to hide)
       btn.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
@@ -135,7 +183,6 @@
         </svg>
       `;
     } else {
-      // Show Eye (hidden state -> click to view)
       btn.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -152,7 +199,6 @@
     if (!signupDobInput) return;
 
     signupDobInput.addEventListener('input', (e) => {
-      // Strip everything except digits
       let val = e.target.value.replace(/\D/g, '');
       if (val.length > 8) val = val.substring(0, 8);
 
@@ -172,14 +218,14 @@
   }
 
   /**
-   * Initialize 6-Digit OTP Box Focus & Paste Handling
+   * Generic 6-Digit OTP Box Focus & Paste Handling
+   * @param {HTMLElement} container
    */
-  function initOtpInputs() {
-    if (!otpContainer) return;
-    const inputs = otpContainer.querySelectorAll('.otp-box');
+  function setupOtpBoxContainer(container) {
+    if (!container) return;
+    const inputs = container.querySelectorAll('.otp-box');
 
     inputs.forEach((input, index) => {
-      // Allow only numbers and auto-advance
       input.addEventListener('input', (e) => {
         const val = e.target.value.replace(/\D/g, '');
         e.target.value = val ? val[0] : '';
@@ -189,7 +235,6 @@
         }
       });
 
-      // Handle Backspace and Arrow navigation
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Backspace') {
           if (!input.value && index > 0) {
@@ -203,7 +248,6 @@
         }
       });
 
-      // Handle Paste event across all boxes
       input.addEventListener('paste', (e) => {
         e.preventDefault();
         const pasteData = (e.clipboardData || window.clipboardData).getData('text');
@@ -215,17 +259,16 @@
           }
         });
 
-        // Focus the last filled input or the next empty one
         const focusIdx = Math.min(digits.length, inputs.length - 1);
         if (inputs[focusIdx]) inputs[focusIdx].focus();
       });
     });
   }
 
-  function focusFirstOtpBox() {
+  function focusFirstOtpBox(container) {
     setTimeout(() => {
-      if (!otpContainer) return;
-      const firstInput = otpContainer.querySelector('.otp-box');
+      if (!container) return;
+      const firstInput = container.querySelector('.otp-box');
       if (firstInput) {
         firstInput.focus();
         firstInput.select();
@@ -234,22 +277,19 @@
   }
 
   /**
-   * Start 45-second OTP Resend Timer
-   * @param {number} seconds
+   * Start 45-second Sign Up OTP Resend Timer
    */
   function startOtpTimer(seconds = 45) {
-    if (otpCountdownTimer) {
-      clearInterval(otpCountdownTimer);
-    }
+    if (otpCountdownTimer) clearInterval(otpCountdownTimer);
 
     remainingSeconds = seconds;
-    resendCodeBtn.disabled = true;
+    if (resendCodeBtn) resendCodeBtn.disabled = true;
 
     function updateLabel() {
       const mins = Math.floor(remainingSeconds / 60);
       const secs = remainingSeconds % 60;
       const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-      resendCodeLabel.textContent = `Resend code in ${formatted}`;
+      if (resendCodeLabel) resendCodeLabel.textContent = `Resend code in ${formatted}`;
     }
 
     updateLabel();
@@ -259,8 +299,8 @@
       if (remainingSeconds <= 0) {
         clearInterval(otpCountdownTimer);
         otpCountdownTimer = null;
-        resendCodeBtn.disabled = false;
-        resendCodeLabel.textContent = 'Resend code';
+        if (resendCodeBtn) resendCodeBtn.disabled = false;
+        if (resendCodeLabel) resendCodeLabel.textContent = 'Resend code';
       } else {
         updateLabel();
       }
@@ -268,19 +308,64 @@
   }
 
   /**
-   * Handle Resend Code Click
+   * Start 45-second Forgot Password OTP Resend Timer
+   */
+  function startForgotOtpTimer(seconds = 45) {
+    if (forgotOtpCountdownTimer) clearInterval(forgotOtpCountdownTimer);
+
+    forgotRemainingSeconds = seconds;
+    if (forgotResendCodeBtn) forgotResendCodeBtn.disabled = true;
+
+    function updateLabel() {
+      const mins = Math.floor(forgotRemainingSeconds / 60);
+      const secs = forgotRemainingSeconds % 60;
+      const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      if (forgotResendCodeLabel) forgotResendCodeLabel.textContent = `Resend code in ${formatted}`;
+    }
+
+    updateLabel();
+
+    forgotOtpCountdownTimer = setInterval(() => {
+      forgotRemainingSeconds--;
+      if (forgotRemainingSeconds <= 0) {
+        clearInterval(forgotOtpCountdownTimer);
+        forgotOtpCountdownTimer = null;
+        if (forgotResendCodeBtn) forgotResendCodeBtn.disabled = false;
+        if (forgotResendCodeLabel) forgotResendCodeLabel.textContent = 'Resend code';
+      } else {
+        updateLabel();
+      }
+    }, 1000);
+  }
+
+  /**
+   * Handle Resend Code Click (Sign Up)
    */
   function handleResendCode() {
-    if (resendCodeBtn.disabled) return;
+    if (resendCodeBtn && resendCodeBtn.disabled) return;
 
-    // Clear existing boxes
     if (otpContainer) {
       otpContainer.querySelectorAll('.otp-box').forEach((box) => (box.value = ''));
     }
 
     showToast('A new 6-digit verification code has been sent to your email.');
     startOtpTimer(45);
-    focusFirstOtpBox();
+    focusFirstOtpBox(otpContainer);
+  }
+
+  /**
+   * Handle Resend Code Click (Forgot Password)
+   */
+  function handleForgotResendCode() {
+    if (forgotResendCodeBtn && forgotResendCodeBtn.disabled) return;
+
+    if (forgotOtpContainer) {
+      forgotOtpContainer.querySelectorAll('.otp-box').forEach((box) => (box.value = ''));
+    }
+
+    showToast('A new 6-digit recovery code has been sent to your email.');
+    startForgotOtpTimer(45);
+    focusFirstOtpBox(forgotOtpContainer);
   }
 
   /**
@@ -289,9 +374,7 @@
   function handleLoginSubmit(event) {
     event.preventDefault();
     const submitBtn = document.getElementById('loginSubmitBtn');
-    const originalText = submitBtn.innerHTML;
 
-    // Show loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = `
       <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
@@ -301,16 +384,13 @@
       <span>Logging in...</span>
     `;
 
-    // Simulated authentic authentication flow
     setTimeout(() => {
-      // Save patient session token
       localStorage.setItem('clinic_patient_session', JSON.stringify({
         authenticated: true,
         email: loginEmailInput.value || 'patient@nileclinics.com',
         timestamp: new Date().toISOString()
       }));
 
-      // Redirect to main patient dashboard
       window.location.href = 'index.html';
     }, 600);
   }
@@ -320,17 +400,13 @@
    */
   function handleSignupSubmit(event) {
     event.preventDefault();
-
-    const nameInput = document.getElementById('signupNameInput');
     const emailInput = document.getElementById('signupEmailInput');
     const submitBtn = document.getElementById('signupSubmitBtn');
 
-    // Update target email on verify screen
     if (verifyTargetEmail && emailInput) {
       verifyTargetEmail.textContent = emailInput.value || 'you@example.com';
     }
 
-    // Show loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = `
       <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
@@ -349,13 +425,12 @@
           <polyline points="12 5 19 12 12 19"/>
         </svg>
       `;
-      // Navigate to Verify OTP screen
       navigateToView('view-verify');
     }, 500);
   }
 
   /**
-   * Handle OTP Form Submission
+   * Handle OTP Form Submission (Sign Up)
    */
   function handleOtpSubmit(event) {
     event.preventDefault();
@@ -389,16 +464,220 @@
         </svg>
       `;
 
-      // Set session
+      // Reset success screen to "Account created"
+      if (successTitle) successTitle.textContent = 'Account created successfully!';
+      if (successSubtext) successSubtext.textContent = 'Your account is ready to use. You can now book appointments, access your medical records, and chat with our AI assistant.';
+      if (successContinueLabel) successContinueLabel.textContent = 'Continue to Dashboard';
+      if (successContinueBtn) successContinueBtn.onclick = handleContinueToDashboard;
+
       localStorage.setItem('clinic_patient_session', JSON.stringify({
         authenticated: true,
         email: verifyTargetEmail.textContent,
         timestamp: new Date().toISOString()
       }));
 
-      // Navigate to Success screen
       navigateToView('view-success');
     }, 500);
+  }
+
+  // =========================================================================
+  // FORGOT PASSWORD FLOW HANDLERS
+  // =========================================================================
+
+  /**
+   * Triggered when clicking "Forgot password?" from the login screen
+   */
+  function handleForgotPassword(event) {
+    if (event) event.preventDefault();
+
+    // Pre-fill email if user already typed one
+    if (loginEmailInput && loginEmailInput.value && forgotEmailInput) {
+      forgotEmailInput.value = loginEmailInput.value;
+    }
+
+    navigateToView('view-forgot-email');
+  }
+
+  /**
+   * Step 1: Submit email to request password reset code
+   */
+  function handleForgotEmailSubmit(event) {
+    event.preventDefault();
+    if (!forgotEmailInput) return;
+
+    const email = forgotEmailInput.value.trim();
+    if (!email) {
+      showToast('Please enter a valid email address.');
+      return;
+    }
+
+    // Update target email on step 2
+    document.querySelectorAll('.forgot-email-display').forEach((el) => {
+      el.textContent = email;
+    });
+
+    const submitBtn = document.getElementById('forgotEmailSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
+        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+      </svg>
+      <span>Sending Code...</span>
+    `;
+
+    setTimeout(() => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `
+        <span>Send Code</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      `;
+
+      navigateToView('view-forgot-code');
+    }, 500);
+  }
+
+  /**
+   * Step 2: Verify 6-digit reset code
+   */
+  function handleForgotCodeSubmit(event) {
+    event.preventDefault();
+    if (!forgotOtpContainer) return;
+
+    const boxes = forgotOtpContainer.querySelectorAll('.otp-box');
+    const otpValue = Array.from(boxes).map((b) => b.value).join('');
+
+    if (otpValue.length < 6) {
+      showToast('Please enter all 6 digits of your recovery code.');
+      return;
+    }
+
+    const submitBtn = document.getElementById('forgotCodeSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
+        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+      </svg>
+      <span>Verifying Code...</span>
+    `;
+
+    setTimeout(() => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `
+        <span>Verify Code</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      `;
+
+      navigateToView('view-forgot-reset');
+    }, 500);
+  }
+
+  /**
+   * Real-time Password Strength Evaluator (Step 3)
+   */
+  function initPasswordStrengthMeter() {
+    if (!resetNewPasswordInput) return;
+
+    const ruleLength = document.getElementById('rule-length');
+    const ruleNumber = document.getElementById('rule-number');
+    const ruleUppercase = document.getElementById('rule-uppercase');
+    const ruleLowercase = document.getElementById('rule-lowercase');
+    const segs = document.querySelectorAll('.strength-bar-seg');
+
+    resetNewPasswordInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+
+      const isLength = val.length >= 8;
+      const isNumber = /\d/.test(val);
+      const isUpper = /[A-Z]/.test(val);
+      const isLower = /[a-z]/.test(val);
+
+      if (ruleLength) ruleLength.classList.toggle('met', isLength);
+      if (ruleNumber) ruleNumber.classList.toggle('met', isNumber);
+      if (ruleUppercase) ruleUppercase.classList.toggle('met', isUpper);
+      if (ruleLowercase) ruleLowercase.classList.toggle('met', isLower);
+
+      const score = [isLength, isNumber, isUpper, isLower].filter(Boolean).length;
+
+      // Update segment bars
+      segs.forEach((seg, idx) => {
+        seg.className = 'strength-bar-seg';
+        if (idx < score) {
+          if (score === 1) seg.classList.add('active-weak');
+          else if (score === 2) seg.classList.add('active-medium');
+          else if (score === 3) seg.classList.add('active-good');
+          else if (score === 4) seg.classList.add('active-strong');
+        }
+      });
+    });
+  }
+
+  /**
+   * Step 3: Set and confirm new password
+   */
+  function handleResetPasswordSubmit(event) {
+    event.preventDefault();
+    if (!resetNewPasswordInput || !resetConfirmPasswordInput) return;
+
+    const newPass = resetNewPasswordInput.value;
+    const confirmPass = resetConfirmPasswordInput.value;
+
+    const isLength = newPass.length >= 8;
+    const isNumber = /\d/.test(newPass);
+    const isUpper = /[A-Z]/.test(newPass);
+    const isLower = /[a-z]/.test(newPass);
+
+    if (!isLength || !isNumber || !isUpper || !isLower) {
+      showToast('Please fulfill all 4 password strength requirements.');
+      resetNewPasswordInput.focus();
+      return;
+    }
+
+    if (newPass !== confirmPass) {
+      showToast('Passwords do not match. Please verify and try again.');
+      resetConfirmPasswordInput.focus();
+      return;
+    }
+
+    const submitBtn = document.getElementById('resetPasswordSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="spinner-spin" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
+        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+      </svg>
+      <span>Resetting Password...</span>
+    `;
+
+    setTimeout(() => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `
+        <span>Reset Password</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      `;
+
+      // Configure success screen for password reset
+      if (successTitle) successTitle.textContent = 'Password reset successfully!';
+      if (successSubtext) successSubtext.textContent = 'Your password has been securely updated. You can now log in to your account with your new credentials.';
+      if (successContinueLabel) successContinueLabel.textContent = 'Continue to Log In';
+      if (successContinueBtn) {
+        successContinueBtn.onclick = () => {
+          navigateToView('view-login');
+        };
+      }
+
+      navigateToView('view-success');
+    }, 600);
   }
 
   /**
@@ -422,20 +701,6 @@
       }));
       window.location.href = 'index.html';
     }, 600);
-  }
-
-  /**
-   * Handle Forgot Password
-   */
-  function handleForgotPassword(event) {
-    event.preventDefault();
-    const email = loginEmailInput.value;
-    if (email) {
-      showToast(`Password reset link sent to ${email}`);
-    } else {
-      showToast('Please enter your email address to reset your password.');
-      loginEmailInput.focus();
-    }
   }
 
   /**
@@ -480,11 +745,17 @@
   window.handleContinueToDashboard = handleContinueToDashboard;
   window.handleGoogleLogin = handleGoogleLogin;
   window.handleForgotPassword = handleForgotPassword;
+  window.handleForgotEmailSubmit = handleForgotEmailSubmit;
+  window.handleForgotCodeSubmit = handleForgotCodeSubmit;
+  window.handleForgotResendCode = handleForgotResendCode;
+  window.handleResetPasswordSubmit = handleResetPasswordSubmit;
 
   // --- Initialization ---
   document.addEventListener('DOMContentLoaded', () => {
     initDobFormatting();
-    initOtpInputs();
+    setupOtpBoxContainer(otpContainer);
+    setupOtpBoxContainer(forgotOtpContainer);
+    initPasswordStrengthMeter();
     handleHashRoute();
 
     window.addEventListener('hashchange', handleHashRoute);
