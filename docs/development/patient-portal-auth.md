@@ -110,3 +110,8 @@ or written by an administrator to bypass verification.
 Date of birth now uses a native calendar input, with typed ISO date validation,
 a calendar button and age bounds. Returning-patient login navigates directly to
 the dashboard after a successful server response. The dashboard data remains demo.
+
+When a trusted source address changes, the portal starts a fresh conversation
+while retaining the old conversation audit record. This also repairs cookies
+created before proxy trust was configured, so they cannot keep applying a stale
+proxy-wide registration quota. No rate-limit or patient rows are deleted.

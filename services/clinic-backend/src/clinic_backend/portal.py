@@ -101,9 +101,15 @@ def portal_router(
         token = request.cookies.get(CONVERSATION, "")
         async with sessions() as session, session.begin():
             identity = Identity(session, settings)
-            if token and not isinstance(await identity.conversation(token), APIError):
-                return token
             peer = socket_ip(request.client.host if request.client else None)
+            if token:
+                existing = await identity.conversation(token)
+                if not isinstance(existing, APIError) and str(
+                    existing.client_ip or "unknown"
+                ) == str(peer or "unknown"):
+                    return token
+            # Preserve the old audit record; a changed source starts a fresh
+            # conversation so profile quotas use the current trusted peer.
             retry = await creation_retry(session, peer or "unknown", datetime.now(UTC))
             if retry:
                 raise APIError(

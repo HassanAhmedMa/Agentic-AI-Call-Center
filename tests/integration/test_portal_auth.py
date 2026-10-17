@@ -343,3 +343,25 @@ async def test_profile_throttle_preserves_retry_information(portal, engine):
     assert result.json()["error"]["details"]["email_verified"] is True
     assert result.json()["error"]["details"]["retry_after"] > 0
     assert int(result.headers["retry-after"]) > 0
+
+
+async def test_profile_retry_replaces_conversation_from_old_proxy_address(
+    portal, engine
+):
+    client, _ = portal
+    await client.post(
+        "/api/v1/portal/login", json={"identifier": FORM["email"], "password": PASSWORD}
+    )
+    previous = client.cookies.get("clinic_portal_conversation")
+    async with engine.begin() as connection:
+        await connection.execute(
+            text("UPDATE conversation_sessions SET client_ip='172.18.0.1'")
+        )
+        await connection.execute(text("""INSERT INTO rate_limit_events(bucket,subject)
+            SELECT 'registration:ip','172.18.0.1' FROM generate_series(1,3)"""))
+    result = await client.post(
+        "/api/v1/portal/verify",
+        json={"email": FORM["email"], "code": "000000", "registration": FORM},
+    )
+    assert result.status_code == 200, result.text
+    assert client.cookies.get("clinic_portal_conversation") != previous
