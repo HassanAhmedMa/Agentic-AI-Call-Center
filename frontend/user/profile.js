@@ -67,7 +67,7 @@
       isAr ? 'تغيير كلمة المرور' : 'Change Password',
       `<div style="display:flex; flex-direction:column; gap:12px;">
         <p style="font-size:12.5px; color:#64748B; margin:0 0 4px 0; line-height:1.5;">
-          ${isAr ? 'سيتم تحديث كلمة المرور في قاعدة بيانات Supabase فوراً.' : 'Your password will be securely updated in Supabase DB immediately.'}
+          ${isAr ? 'سيتم تحديث كلمة المرور في حسابك فوراً.' : 'Your password will be securely updated immediately.'}
         </p>
         <div>
           <label style="display:block; font-size:11.5px; font-weight:600; color:#475569; margin-bottom:4px;">
@@ -89,7 +89,7 @@
         </div>
       </div>`,
       `<button class="btn-secondary-action" onclick="closeActiveModal()">${isAr ? 'إلغاء' : 'Cancel'}</button>
-       <button class="btn-primary-action" id="btnSubmitChangePassword" onclick="submitChangePasswordModal()">${isAr ? 'تحديث وحفظ في Supabase' : 'Update & Save in Supabase'}</button>`
+       <button class="btn-primary-action" id="btnSubmitChangePassword" onclick="submitChangePasswordModal()">${isAr ? 'تحديث كلمة المرور' : 'Update Password'}</button>`
     );
   };
 
@@ -111,7 +111,7 @@
 
     if (btn) {
       btn.disabled = true;
-      btn.textContent = isAr ? 'جاري الحفظ في Supabase...' : 'Saving to Supabase...';
+      btn.textContent = isAr ? 'جاري الحفظ...' : 'Saving...';
     }
 
     try {
@@ -139,11 +139,11 @@
       }
 
       closeActiveModal();
-      showToast(isAr ? 'تم تحديث كلمة المرور في قاعدة بيانات Supabase بنجاح!' : 'Password updated successfully in Supabase DB!', 'success');
+      showToast(isAr ? 'تم تحديث كلمة المرور بنجاح!' : 'Password updated successfully!', 'success');
     } catch (err) {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = isAr ? 'تحديث وحفظ في Supabase' : 'Update & Save in Supabase';
+        btn.textContent = isAr ? 'تحديث كلمة المرور' : 'Update Password';
       }
       showToast(err.message || (isAr ? 'فشل تحديث كلمة المرور' : 'Failed to update password'), 'error');
     }

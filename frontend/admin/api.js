@@ -630,7 +630,7 @@
           {
             type: 'completed',
             title: 'Patient Registered',
-            sub: 'Database profile verified',
+            sub: 'Clinical profile verified',
             date: regDate,
             time: raw.created_at ? new Date(raw.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''
           }
@@ -963,19 +963,19 @@
         dot.className = 'status-indicator-dot';
         if (state === 'connected') {
           dot.classList.add('dot-connected');
-          text.textContent = 'Live Backend: Connected';
-          badge.title = `Connected to FastAPI Backend at ${baseUrl}\n(Click to view settings)`;
+          text.textContent = 'System Online';
+          badge.title = `Clinic System Online (Active)\n(Click to view settings)`;
         } else if (state === 'connecting') {
           dot.classList.add('dot-connecting');
-          text.textContent = 'API: Connecting...';
+          text.textContent = 'Connecting...';
         } else if (state === 'error') {
           dot.classList.add('dot-error');
-          text.textContent = 'API: Error (Click to view)';
-          badge.title = `Error connecting to ${baseUrl}\n(Click to view details)`;
+          text.textContent = 'System Error';
+          badge.title = `Connection error\n(Click to view details)`;
         } else {
           dot.classList.add('dot-disconnected');
-          text.textContent = 'Backend: Offline (Click to setup)';
-          badge.title = `Cannot reach ${baseUrl}\n(Click to configure URL or SSH tunnel)`;
+          text.textContent = 'System Offline';
+          badge.title = `Clinic System Offline\n(Click to configure)`;
         }
       }
     });
@@ -1181,7 +1181,7 @@
               <strong>Active Endpoint:</strong> <code style="background:#E2E8F0; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:12px;">${currentBase}</code>
             </div>
             <div style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;">
-              All requests communicate strictly with FastAPI (<code style="font-size:11px;">services/clinic-backend</code>). Direct database and Supabase client access are prohibited.
+              All requests communicate strictly with the secure Clinic API gateway. Direct database access is strictly prohibited.
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-light);">
               <span style="font-size:12px; font-weight:600; color:var(--text-dark);">Real-time Sync (WebSockets):</span>

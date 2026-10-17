@@ -85,7 +85,7 @@
           <span class="nav-text">Appointments</span>
         </a>
 
-        <!-- 4. Doctors (Live Supabase Catalog) -->
+        <!-- 4. Doctors (Catalog) -->
         <a href="doctors.html" class="nav-link" id="nav-doctors">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
@@ -94,7 +94,6 @@
             <path d="M6 8v6"/>
           </svg>
           <span class="nav-text">Doctors</span>
-          <span class="nav-badge-blue" id="doctorsCountBadge">10</span>
         </a>
 
         <!-- 5. Patients (Active) -->
@@ -241,8 +240,8 @@
               <div class="metric-value-row">
                 <span class="metric-number" id="metricTotalPatients">0</span>
                 <span class="metric-trend text-green">
-                  <span>Live</span>
-                  <span class="trend-sub">database</span>
+                  <span>Active</span>
+                  <span class="trend-sub">records</span>
                 </span>
               </div>
             </div>
@@ -324,9 +323,9 @@
             <div class="patients-panel-header">
               <div style="display:flex; align-items:center; gap:10px;">
                 <h2 class="patients-panel-title">Patients</h2>
-                <span class="live-status-pill" style="display:inline-flex; align-items:center; gap:5px; background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:12px; border:1px solid #BBF7D0;" title="Live Patient Directory connected to backend database">
+                <span class="live-status-pill" style="display:inline-flex; align-items:center; gap:5px; background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:12px; border:1px solid #BBF7D0;" title="Patient Directory connected to clinic registry">
                   <span style="width:7px; height:7px; border-radius:50%; background:#16A34A; display:inline-block;"></span>
-                  <span>Live Database Synced</span>
+                  <span>Verified Directory</span>
                 </span>
               </div>
               <div class="patients-header-actions">
@@ -719,7 +718,7 @@
             <div id="patientDetailsEmptyNotice" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
               <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">No Patient Selected</h4>
-              <p style="color:#64748B; font-size:13px; margin:0;">Select a patient from the live database directory to review their profile.</p>
+              <p style="color:#64748B; font-size:13px; margin:0;">Select a patient from the directory to review their profile.</p>
             </div>
 
           </div>

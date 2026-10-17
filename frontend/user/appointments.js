@@ -424,7 +424,7 @@
 
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'اختر الطبيب المعالج من قاعدة البيانات *' : 'Select Doctor from Live Database *'}
+            ${isAr ? 'اختر الطبيب المعالج *' : 'Select Doctor *'}
           </label>
           <select id="modalBookDoctor" class="filter-select">
             ${docOptions || `<option value="1">${isAr ? 'د. أمل نور (أمراض القلب)' : 'Dr. Amal Nour (Cardiology)'}</option>`}

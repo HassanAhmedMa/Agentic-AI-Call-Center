@@ -433,7 +433,7 @@
     bodyEl.innerHTML = `
       <div style="padding: 24px; text-align: center; color: var(--text-muted);">
         <div class="status-indicator-dot dot-connecting" style="width:12px; height:12px; margin:0 auto 12px auto;"></div>
-        Loading live doctor profile from Supabase PostgreSQL...
+        Loading doctor profile...
       </div>
     `;
 
@@ -442,7 +442,7 @@
 
     try {
       const doc = await window.ClinicApi.getDoctor(doctorId);
-      const spec = doc.specialty || allSpecialties.find(s => s.id === doc.specialty_id) || {};
+      const spec = doc.specialty || allSpecialties.find(s => s.id === docSpecId) || {};
       
       const fee = doc.consultation_fee 
         ? `${doc.consultation_fee.amount ?? doc.consultation_fee} ${doc.consultation_fee.currency || 'EGP'}`
@@ -504,7 +504,7 @@
           ` : ''}
 
           <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:10px 12px; font-size:12px; color:#1E40AF;">
-            <strong>Verified Record:</strong> Doctor ID #${doc.id} mapped from PostgreSQL <code style="font-family:monospace;">clinic.doctors</code> table.
+            <strong>Verified Record:</strong> Doctor ID #${doc.id} mapped to Nile Clinics staff registry.
           </div>
         </div>
       `;
@@ -677,7 +677,7 @@
     if (footerEl) {
       footerEl.innerHTML = `
         <button type="button" class="modal-btn-secondary" onclick="closeDoctorModal()">Cancel</button>
-        <button type="button" id="btnSubmitAddDoctor" class="modal-btn-primary" onclick="document.getElementById('addDoctorForm').requestSubmit()">Save Doctor to Supabase</button>
+        <button type="button" id="btnSubmitAddDoctor" class="modal-btn-primary" onclick="document.getElementById('addDoctorForm').requestSubmit()">Save Doctor Profile</button>
       `;
     }
 
@@ -721,7 +721,7 @@
 
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Saving to Database...';
+      btn.textContent = 'Saving Profile...';
     }
 
     try {
@@ -739,18 +739,18 @@
         bio_ar: 'استشاري متميز في عيادات النيل.'
       });
 
-      showToast(`Doctor ${nameEn} added successfully to Supabase!`, 'success');
+      showToast(`Doctor ${nameEn} added successfully!`, 'success');
       closeDoctorModal();
       await loadLiveDoctors();
     } catch (err) {
       console.error('[Doctors] Error adding doctor:', err);
       if (errBox) {
-        errBox.textContent = err.message || 'Failed to save doctor to database.';
+        errBox.textContent = err.message || 'Failed to save doctor profile.';
         errBox.style.display = 'block';
       }
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Save Doctor to Supabase';
+        btn.textContent = 'Save Doctor Profile';
       }
     }
   };

@@ -1699,7 +1699,7 @@ async function openNewAppointmentModal() {
         <label style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 6px;">
           <span style="display: inline-flex; align-items: center; gap: 5px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Link Registered Patient (Supabase DB)
+            Link Registered Patient
           </span>
           <span style="font-size: 11px; font-weight: 500; color: #15803D;">Auto-fills details below</span>
         </label>
@@ -1724,7 +1724,7 @@ async function openNewAppointmentModal() {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Doctor (Database) *</label>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Doctor *</label>
           <select id="newApptDoctor" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
             ${doctorOptions}
           </select>
@@ -1992,7 +1992,7 @@ async function submitNewAppointment() {
     if (window.ClinicApi) {
       const created = await window.ClinicApi.createAppointment(payload);
       closeAdminModal();
-      showToast(`Successfully scheduled appointment in Supabase for ${name} with ${doctor}.`, 'success');
+      showToast(`Successfully scheduled appointment for ${name} with ${doctor}.`, 'success');
       await loadLiveCatalog();
       if (created && created.id) {
         selectScheduleSlot(created.id, null);

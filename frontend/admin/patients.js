@@ -170,7 +170,7 @@
           emptyNotice.style.display = 'flex';
           emptyNotice.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">No Patients in Database</h4>
+            <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">No Patients Found</h4>
             <p style="color:#64748B; font-size:13px; margin:0 0 14px 0;">Use the "Add Patient" button above to register your first patient.</p>
             <button class="modal-btn-primary" style="font-size:12px; height:32px;" onclick="openAddPatientModal()">+ Add New Patient</button>
           `;
@@ -183,7 +183,7 @@
           <tr>
             <td colspan="10" style="text-align:center; padding:35px 20px;">
               <div style="color:#DC2626; font-size:14px; font-weight:700; margin-bottom:6px;">
-                Failed to load patients from database
+                Failed to load patients
               </div>
               <div style="font-size:12.5px; color:#64748B; margin-bottom:14px;">
                 ${escapeHtml(err.message || 'API request error')}
@@ -198,13 +198,13 @@
           emptyNotice.style.display = 'flex';
           emptyNotice.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">Database Connection Offline</h4>
-            <p style="color:#64748B; font-size:13px; margin:0 0 12px 0;">Please ensure SSH tunnel on port 8002 and clinic backend container are active.</p>
+            <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">Service Connection Offline</h4>
+            <p style="color:#64748B; font-size:13px; margin:0 0 12px 0;">Please verify service connectivity and try again.</p>
             <button class="modal-btn-secondary" style="font-size:12px; height:32px;" onclick="loadLivePatients()">Retry</button>
           `;
         }
       }
-      showToast('Error syncing with database: ' + err.message, 'warning');
+      showToast('Error syncing patient directory: ' + err.message, 'warning');
     }
   }
 
@@ -273,7 +273,7 @@
     if (emptyState) emptyState.style.display = 'none';
     if (paginationText) {
       paginationText.textContent = allPatients.length === 1
-        ? 'Showing 1 patient (Live Database)'
+        ? 'Showing 1 patient'
         : `Showing 1 to ${patients.length} of ${allPatients.length} patients`;
     }
     if (paginationControls) {
@@ -790,7 +790,7 @@
             <span style="font-size:12px; color:#64748B;">Patient Code: <strong style="color:#0F172A;">${escapeHtml(patient.customer_number || patient.patientCode || 'PT-2024')}</strong></span>
             <div style="display:flex; gap:10px;">
               <button type="button" class="modal-btn-secondary" onclick="closeAdminModal()">Cancel</button>
-              <button type="submit" class="modal-btn-primary">Save to Database</button>
+              <button type="submit" class="modal-btn-primary">Save Changes</button>
             </div>
           </div>
         </form>
@@ -831,7 +831,7 @@
           </div>
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
             <button type="button" class="modal-btn-secondary" onclick="closeAdminModal()">Cancel</button>
-            <button type="submit" class="modal-btn-primary">Save to Database</button>
+            <button type="submit" class="modal-btn-primary">Save Changes</button>
           </div>
         </form>
       `;
@@ -906,7 +906,7 @@
           </div>
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
             <button type="button" class="modal-btn-secondary" onclick="closeAdminModal()">Cancel</button>
-            <button type="submit" class="modal-btn-primary">Save to Database</button>
+            <button type="submit" class="modal-btn-primary">Save Changes</button>
           </div>
         </form>
       `;
@@ -923,7 +923,7 @@
     const saveBtn = e.target.querySelector('button[type="submit"]');
     if (saveBtn) {
       saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving to Database...';
+      saveBtn.textContent = 'Saving Changes...';
     }
 
     const payload = {};
@@ -1006,7 +1006,7 @@
       patient.activities.unshift({
         type: 'updated',
         title: section === 'medical' ? 'Medical Information Updated' : (section === 'personal' ? 'Personal Details Updated' : 'Patient Record Updated'),
-        sub: 'Successfully saved to PostgreSQL database',
+        sub: 'Profile updated successfully',
         date: 'Today',
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       });
@@ -1014,20 +1014,20 @@
       renderPatientDetails(patient);
       renderPatientsTable(allPatients);
       closeAdminModal();
-      showToast(`Patient ${patient.name} record updated successfully in database!`, 'success');
+      showToast(`Patient ${patient.name} record updated successfully!`, 'success');
     } catch (err) {
       console.error('[Patients] Update failed:', err);
       if (err.status === 404) {
-        showToast('This record only existed in the old database and does not exist in Supabase. Refreshing live records...', 'warning');
+        showToast('Record not found in clinic records. Refreshing directory...', 'warning');
         if (window.ClinicCache) window.ClinicCache.invalidate('patients');
         closeAdminModal();
         loadLivePatients();
         return;
       }
-      showToast('Database error updating patient: ' + err.message, 'warning');
+      showToast('Error updating patient: ' + err.message, 'warning');
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save to Database';
+        saveBtn.textContent = 'Save Changes';
       }
     }
   }
@@ -1035,7 +1035,7 @@
   function handleExportPatients() {
     const html = `
       <div style="display:flex; flex-direction:column; gap:14px;">
-        <p style="font-size:13px; color:#475569; margin:0;">Export ${allPatients.length} patient records adhering to clinic database compliance standards.</p>
+        <p style="font-size:13px; color:#475569; margin:0;">Export ${allPatients.length} patient records adhering to clinic compliance standards.</p>
         <div style="display:flex; flex-direction:column; gap:10px;">
           <label style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; cursor:pointer;">
             <input type="radio" name="exportFormat" value="csv" checked>
@@ -1147,7 +1147,7 @@
   function openDateFilterModal() {
     const html = `
       <div style="display:flex; flex-direction:column; gap:12px;">
-        <p style="font-size:13px; color:#64748B; margin:0;">Filter patients by database registration date range:</p>
+        <p style="font-size:13px; color:#64748B; margin:0;">Filter patients by registration date range:</p>
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">From Registration Date</label>
           <input type="date" id="dateFilterFromInput" value="${filterDateFrom || ''}" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
@@ -1279,7 +1279,7 @@
       navPatientsBtn.addEventListener('click', (e) => {
         e.preventDefault();
         loadLivePatients();
-        showToast('Refreshing patient directory from database...', 'info');
+        showToast('Refreshing patient directory...', 'info');
       });
     }
   }
@@ -1303,7 +1303,7 @@
   }
 
   function toggleNotifications() {
-    showToast('Patient Directory: All records synchronized with PostgreSQL clinic backend.', 'info');
+    showToast('Patient Directory: All records synchronized.', 'info');
   }
 
   /* =============================================================================
@@ -1407,7 +1407,7 @@
         </div>
         <h4 style="margin:0 0 8px 0; font-size:16px; font-weight:700; color:#1E293B;">Cancel Patient Record for ${escapeHtml(patientName)}?</h4>
         <p style="margin:0 0 16px 0; font-size:13px; color:#64748B; line-height:1.5;">
-          This action will cancel all upcoming scheduled appointments and deactivate the patient profile in the clinic database.
+          This action will cancel all upcoming scheduled appointments and deactivate the patient profile in clinic records.
         </p>
         <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px; font-size:12px; color:#92400E; text-align:left;">
           This patient will no longer be able to sign in or book appointments unless re-registered.
