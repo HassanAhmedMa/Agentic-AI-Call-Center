@@ -220,3 +220,30 @@ Before declaring any task complete, ask:
 - [ ] If I touched backend logic or server settings, does my commit message clearly describe the container and port impact for teammates?
 - [ ] Is my commit message formatted using Conventional Commits?
 - [ ] Have I explained the changes clearly to my human pair-programming partner?
+
+---
+
+## 11. Inter-Agent Communication Protocol (Zero-Chitchat Coordination)
+
+When multiple AI coding agents (Antigravity for Hassan, Codex for Ziad, Antigravity for Ali) work concurrently across branches, they may coordinate via the **Inter-Agent Bridge & n8n Relay**.
+
+### Strict Handshake & Zero-Chitchat Rules:
+1. **As-Needed Only:** Communication MUST only occur when strictly necessary to clarify cross-cutting integration points, shared ports, database migrations, or contract boundaries.
+2. **Strict 1-Turn Handshake:**
+   - An agent sends an **`Inquiry`** (`request_type: "Inquiry"`).
+   - The receiving agent replies with exactly one concise, factual **`Response`** (`request_type: "Response"`).
+   - **Receiving a `Response` terminates the exchange immediately.** Agents are strictly FORBIDDEN from sending acknowledgments, pleasantries ("Thank you!", "Got it!"), suggestions, or conversational follow-ups.
+3. **Payload Contract:**
+   ```json
+   {
+     "sender": "Hassan | Ziad | Ali",
+     "destination": "Hassan | Ziad | Ali",
+     "request_type": "Inquiry | Response",
+     "body": "<concise, direct factual question or answer>"
+   }
+   ```
+4. **Local Workspace Inbox Monitoring:**
+   - Incoming messages are delivered by the local bridge (`start-bridge.bat` / `scripts/agent_bridge.py`) into `.agents/inbox.json`.
+   - If an agent detects an unhandled `Inquiry` targeted to its developer in `.agents/inbox.json`, it produces a factual response and executes `python scripts/agent_bridge.py --name <Me> --send --dest <Sender> --type Response --body "<Answer>"`.
+   - Mark the inbox record as handled (`handled: true`).
+

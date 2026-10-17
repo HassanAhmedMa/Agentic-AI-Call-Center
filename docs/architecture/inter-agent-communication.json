@@ -1,0 +1,200 @@
+{
+  "name": "Agentic Clinic - Inter-Agent Relay",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-relay",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "agent-relay-webhook",
+      "name": "Central Agent Webhook"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.destination }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "Ziad",
+              "outputKey": "Ziad"
+            },
+            {
+              "value2": "Ali",
+              "outputKey": "Ali"
+            },
+            {
+              "value2": "Hassan",
+              "outputKey": "Hassan"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        260,
+        0
+      ],
+      "id": "agent-destination-router",
+      "name": "Route by Destination"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:9102/agent-message",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        -120
+      ],
+      "id": "http-ziad-bridge",
+      "name": "Forward to Ziad (Port 9102)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:9103/agent-message",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "http-ali-bridge",
+      "name": "Forward to Ali (Port 9103)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:9101/agent-message",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        120
+      ],
+      "id": "http-hassan-bridge",
+      "name": "Forward to Hassan (Port 9101)"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'delivered', destination: $('Central Agent Webhook').item.json.body.destination, request_type: $('Central Agent Webhook').item.json.body.request_type, timestamp: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        0
+      ],
+      "id": "agent-webhook-response",
+      "name": "Respond to Caller"
+    }
+  ],
+  "connections": {
+    "Central Agent Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route by Destination",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Destination": {
+      "main": [
+        [
+          {
+            "node": "Forward to Ziad (Port 9102)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Forward to Ali (Port 9103)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Forward to Hassan (Port 9101)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to Ziad (Port 9102)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Caller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to Ali (Port 9103)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Caller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to Hassan (Port 9101)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Caller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
