@@ -239,6 +239,18 @@
     },
 
     /**
+     * Remove doctor from active directory
+     * DELETE /api/v1/doctors/{id}
+     */
+    deleteDoctor: async function (doctorId) {
+      const res = await request(`/doctors/${encodeURIComponent(doctorId)}`, {
+        method: 'DELETE'
+      });
+      ClinicCache.invalidate('doctors');
+      return res;
+    },
+
+    /**
      * Fetch clinic services list
      * GET /api/v1/services?category=...&limit=...
      * Response: { total: number, services: Array<Service> }
@@ -474,6 +486,18 @@
       });
       ClinicCache.invalidate('patients');
       return ClinicApi.normalizePatient(res);
+    },
+
+    /**
+     * Cancel / delete patient record from database
+     * DELETE /api/v1/admin/patients/{id}
+     */
+    deletePatient: async function (patientId) {
+      const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
+        method: 'DELETE'
+      });
+      ClinicCache.invalidate('patients');
+      return res;
     },
 
     /**

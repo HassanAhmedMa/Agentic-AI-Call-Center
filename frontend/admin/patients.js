@@ -1115,6 +1115,10 @@
           <div class="tile-icon-box bg-green-subtle text-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
           <div class="tile-text-col"><h4 class="tile-title">Dispatch SMS Notification</h4><span class="tile-subtext">Appointment reminders</span></div>
         </button>
+        <button class="action-tile-btn" style="width:100%; border:none; background:#FEF2F2;" onclick="confirmCancelPatient(${id}, '${escapeJs(name)}'); closeAdminModal();">
+          <div class="tile-icon-box" style="background:#FEE2E2; color:#DC2626;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg></div>
+          <div class="tile-text-col"><h4 class="tile-title" style="color:#DC2626;">Cancel / Remove Patient</h4><span class="tile-subtext" style="color:#991B1B;">Cancel record & appointments</span></div>
+        </button>
       </div>
     `;
 
@@ -1376,6 +1380,56 @@
     return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
   }
 
+  function confirmCancelSelectedPatient() {
+    const patient = allPatients.find(p => p.id === currentlySelectedPatientId);
+    if (!patient) return;
+    confirmCancelPatient(patient.id, patient.name || patient.full_name);
+  }
+
+  function confirmCancelPatient(patientId, patientName) {
+    const html = `
+      <div style="padding:10px 0; text-align:center;">
+        <div style="width:48px; height:48px; border-radius:50%; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="17" y1="8" x2="23" y2="14"/>
+            <line x1="23" y1="8" x2="17" y2="14"/>
+          </svg>
+        </div>
+        <h4 style="margin:0 0 8px 0; font-size:16px; font-weight:700; color:#1E293B;">Cancel Patient Record for ${escapeHtml(patientName)}?</h4>
+        <p style="margin:0 0 16px 0; font-size:13px; color:#64748B; line-height:1.5;">
+          This action will cancel all upcoming scheduled appointments and deactivate the patient profile in the clinic database.
+        </p>
+        <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px; font-size:12px; color:#92400E; text-align:left;">
+          This patient will no longer be able to sign in or book appointments unless re-registered.
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button class="modal-btn-secondary" onclick="closeAdminModal()">Keep Patient</button>
+          <button class="modal-btn-primary" style="background:#DC2626; border-color:#DC2626;" onclick="executeCancelPatient(${patientId}, '${escapeJs(patientName)}')">
+            Yes, Cancel Patient
+          </button>
+        </div>
+      </div>
+    `;
+
+    openAdminModal(`Cancel Patient: ${patientName}`, html);
+  }
+
+  async function executeCancelPatient(patientId, patientName) {
+    try {
+      if (typeof ClinicApi !== 'undefined' && typeof ClinicApi.deletePatient === 'function') {
+        await ClinicApi.deletePatient(patientId);
+      }
+      closeAdminModal();
+      showToast(`Patient record for ${patientName} was cancelled successfully.`, 'success');
+      closePatientDetailsPanel();
+      await loadLivePatients();
+    } catch (err) {
+      showToast(`Failed to cancel patient: ${err.message}`, 'error');
+    }
+  }
+
   // Export functions to window for HTML event bindings
   window.loadLivePatients = loadLivePatients;
   window.selectPatientRow = selectPatientRow;
@@ -1392,6 +1446,9 @@
   window.handleExportPatients = handleExportPatients;
   window.triggerDownloadExport = triggerDownloadExport;
   window.openRowActionMenu = openRowActionMenu;
+  window.confirmCancelPatient = confirmCancelPatient;
+  window.confirmCancelSelectedPatient = confirmCancelSelectedPatient;
+  window.executeCancelPatient = executeCancelPatient;
   window.openAllPatientActivityModal = openAllPatientActivityModal;
   window.openDateFilterModal = openDateFilterModal;
   window.applyDateFilterModal = applyDateFilterModal;

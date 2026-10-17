@@ -616,6 +616,30 @@
                 </div>
               </div>
 
+              <!-- Danger Zone: Cancel Patient Record -->
+              <div class="details-card-section" style="border: 1px dashed #FECACA; background: #FFF5F5;">
+                <div class="section-header-row" style="margin-bottom: 6px;">
+                  <div class="section-header-left" style="color: #DC2626;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <line x1="17" y1="8" x2="23" y2="14"/>
+                      <line x1="23" y1="8" x2="17" y2="14"/>
+                    </svg>
+                    <span style="font-weight: 600; color: #DC2626;">Cancel Patient Account</span>
+                  </div>
+                </div>
+                <p style="font-size: 12px; color: #991B1B; margin: 0 0 10px 0; line-height: 1.4;">
+                  Cancelling this patient record will immediately cancel any pending appointments and revoke active sessions.
+                </p>
+                <button type="button" class="btn-appt-cancel" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600;" onclick="confirmCancelSelectedPatient()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                  Cancel Patient Record
+                </button>
+              </div>
+
             </div>
 
             <!-- Dynamic Tab Content: Appointments -->

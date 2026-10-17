@@ -482,6 +482,27 @@ def create_app(
                 "is_active": new_doc.is_active,
             }
 
+    @app.delete("/api/v1/doctors/{doctor_id}", tags=["Doctors"])
+    async def delete_doctor(doctor_id: int) -> dict[str, Any]:
+        from clinic_backend.models import Doctor
+
+        async with sessions() as session:
+            doc = await session.get(Doctor, doctor_id)
+            if not doc:
+                raise APIError(404, "DOCTOR_NOT_FOUND", "Doctor not found.")
+
+            doc.is_active = False
+            await session.commit()
+
+            if hasattr(app.state, "cache"):
+                await app.state.cache.clear()
+
+            return {
+                "success": True,
+                "message": "Doctor removed successfully from active directory.",
+                "id": doctor_id,
+            }
+
     @app.get("/api/v1/services", response_model=dto.ServiceList, responses=errors)
     async def services(
         query: Annotated[dto.ServiceQuery, Query()],
@@ -996,6 +1017,71 @@ def create_app(
                 "updated_at": (
                     patient.updated_at.isoformat() if patient.updated_at else None
                 ),
+            }
+
+    @app.delete("/api/v1/admin/patients/{patient_id}", tags=["Patients"])
+    async def delete_patient(patient_id: str) -> dict[str, Any]:
+        async with sessions() as session:
+            stmt = select(Patient)
+            if patient_id.isdigit():
+                stmt = stmt.where(
+                    or_(
+                        Patient.id == int(patient_id),
+                        Patient.customer_number == patient_id,
+                    )
+                )
+            else:
+                stmt = stmt.where(Patient.customer_number == patient_id)
+            patient = await session.scalar(stmt)
+            if not patient:
+                raise APIError(404, "PATIENT_NOT_FOUND", "Patient not found.")
+
+            pid = patient.id
+            try:
+                await session.execute(
+                    text(
+                        "UPDATE clinic.appointments SET status = 'cancelled' WHERE patient_id = :pid"
+                    ),
+                    {"pid": pid},
+                )
+            except Exception:
+                pass
+
+            try:
+                await session.execute(
+                    text(
+                        "DELETE FROM clinic.verification_challenges WHERE patient_id = :pid"
+                    ),
+                    {"pid": pid},
+                )
+            except Exception:
+                pass
+
+            try:
+                await session.execute(
+                    text(
+                        "DELETE FROM clinic.patient_sessions WHERE patient_id = :pid"
+                    ),
+                    {"pid": pid},
+                )
+            except Exception:
+                pass
+
+            try:
+                await session.delete(patient)
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                async with sessions() as s2:
+                    p = await s2.get(Patient, pid)
+                    if p:
+                        p.full_name = f"[Cancelled] {p.full_name}"
+                        await s2.commit()
+
+            return {
+                "success": True,
+                "message": "Patient record cancelled successfully.",
+                "id": pid,
             }
 
     @app.websocket("/api/v1/ws")
