@@ -58,6 +58,10 @@ if errorlevel 1 (
     )
 )
 
+REM Determine SSH user
+set SSH_USER=ubuntu
+if "%AGENT_NAME%"=="Ali" set SSH_USER=ali
+
 echo [*] Starting Python Agent Bridge listener in background...
 start "Agent Bridge - %AGENT_NAME%" !PYTHON_CMD! -u scripts\agent_bridge.py --name %AGENT_NAME% --port %BRIDGE_PORT%
 
@@ -67,6 +71,6 @@ echo.
 echo Tunnel is now active. Press Ctrl+C to disconnect.
 echo =======================================================
 
-ssh -i %SSH_KEY% -o StrictHostKeyChecking=no -N -R 0.0.0.0:%BRIDGE_PORT%:127.0.0.1:%BRIDGE_PORT% ubuntu@193.122.68.159
+ssh -i %SSH_KEY% -o StrictHostKeyChecking=no -N -R 0.0.0.0:%BRIDGE_PORT%:127.0.0.1:%BRIDGE_PORT% %SSH_USER%@193.122.68.159
 
 pause
