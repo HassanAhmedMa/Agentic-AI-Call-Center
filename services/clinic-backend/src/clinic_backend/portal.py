@@ -5,7 +5,7 @@ import hashlib
 import re
 import secrets
 from datetime import UTC, datetime
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlsplit
 
 from clinic_schemas import portal as dto
 from clinic_schemas.identity import PatientProfile, Registration
@@ -47,22 +47,12 @@ def is_allowed_portal_origin(origin_val: str, portal_origin: str) -> bool:
 def is_loopback_http(request: Request | None) -> bool:
     if request is None:
         return False
-    origin = (request.headers.get("Origin", "") or "").strip().rstrip("/")
-    if origin:
-        return bool(LOOPBACK_ORIGIN_REGEX.fullmatch(origin))
-    proto = (
-        request.headers.get("X-Forwarded-Proto")
-        or request.scope.get("scheme", "http")
-        or "http"
-    ).split(",")[0].strip().lower()
-    if proto != "http":
-        return False
-    host = (
-        request.headers.get("Host")
-        or (request.scope.get("server") and request.scope["server"][0])
-        or ""
-    ).split(":")[0].strip().lower()
-    return host in {"localhost", "127.0.0.1"}
+    # Use the actual request scheme/host (trusted proxy handling happens in Uvicorn).
+    # A loopback Origin header on a public HTTPS request must not downgrade cookies.
+    return request.url.scheme == "http" and request.url.hostname in {
+        "localhost",
+        "127.0.0.1",
+    }
 
 
 def portal_router(
@@ -234,7 +224,20 @@ def portal_router(
         save_provider(response, data, request=request)
         return profile
 
-    def clear_google(response: Response, request: Request | None = None) -> None:
+    def callback_url(request: Request, return_path: str | None = None) -> str:
+        # POST Origin has already passed the configured/loopback allowlist.
+        base = request.headers.get("Origin", "").strip().rstrip(
+            "/"
+        ) or settings.portal_origin.rstrip("/")
+        if return_path is None:
+            return_path = (
+                "/auth.html"
+                if urlsplit(base).port in {5500, 5501, 3000, 5173}
+                else "/portal/auth.html"
+            )
+        return base + return_path
+
+    def clear_google(response: Response, request: Request) -> None:
         response.delete_cookie(
             GOOGLE,
             path=PREFIX,
@@ -245,7 +248,9 @@ def portal_router(
         response.headers["Cache-Control"] = "no-store"
 
     @router.post("/google")
-    async def google_start(request: Request, response: Response) -> dict[str, str]:
+    async def google_start(
+        body: dto.GoogleStart, request: Request, response: Response
+    ) -> dict[str, str]:
         if not settings.portal_google_enabled:
             raise APIError(503, "SERVICE_UNAVAILABLE", "Google sign-in unavailable.")
         await limit(request, "google")
@@ -267,15 +272,9 @@ def portal_router(
             path=PREFIX,
         )
         response.headers["Cache-Control"] = "no-store"
-        req_origin = request.headers.get("Origin", "").rstrip("/")
-        base_origin = (
-            req_origin
-            if req_origin and is_allowed_portal_origin(req_origin, settings.portal_origin)
-            else settings.portal_origin.rstrip("/")
-        )
         redirect = (
-            base_origin
-            + "/portal/auth.html?"
+            callback_url(request, body.return_path)
+            + "?"
             + urlencode({"oauth_state": state})
         )
         return {
@@ -336,15 +335,15 @@ def portal_router(
                 for header in response.raw_headers:
                     if header[0].lower() == b"set-cookie":
                         failure.raw_headers.append(header)
-                clear_google(failure, request=request)
+                clear_google(failure, request)
                 return failure
-            clear_google(response, request=request)
+            clear_google(response, request)
             return result
         except APIError as error:
             failure = error_response(
                 request, error.status, error.code, error.message, error.details
             )
-            clear_google(failure, request=request)
+            clear_google(failure, request)
             return failure
 
     @router.post("/signup", status_code=202, response_model=dto.Delivery)
@@ -543,16 +542,10 @@ def portal_router(
 
     @router.post("/recover", status_code=202, response_model=dto.Delivery)
     async def recover(
-        body: dto.Email, request: Request, response: Response
+        body: dto.RecoveryEmail, request: Request, response: Response
     ) -> dto.Delivery:
         await limit(request, "recover", body.email)
-        req_origin = request.headers.get("Origin", "").rstrip("/")
-        base_origin = (
-            req_origin
-            if req_origin and is_allowed_portal_origin(req_origin, settings.portal_origin)
-            else settings.portal_origin.rstrip("/")
-        )
-        redirect = base_origin + "/portal/auth.html"
+        redirect = callback_url(request, body.return_path)
         await auth.request(
             "recover?redirect_to=" + quote(redirect, safe=""),
             body={"email": body.email},

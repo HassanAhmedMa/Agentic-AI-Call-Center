@@ -223,9 +223,7 @@ def create_app(
         clean = settings.portal_origin.strip().rstrip("/")
         if clean:
             portal_origins = [clean, clean + "/"]
-            allow_origin_regex = (
-                rf"(?i)^(http://(localhost|127\.0\.0\.1)(:\d+)?/?|{re.escape(clean)}/?)$"
-            )
+            allow_origin_regex = rf"(?i)^(http://(localhost|127\.0\.0\.1)(:\d+)?/?|{re.escape(clean)}/?)$"
 
     app.add_middleware(
         CORSMiddleware,
@@ -1051,7 +1049,8 @@ def create_app(
             try:
                 await session.execute(
                     text(
-                        "UPDATE clinic.appointments SET status = 'cancelled' WHERE patient_id = :pid"
+                        "UPDATE clinic.appointments SET status = 'cancelled' "
+                        "WHERE patient_id = :pid"
                     ),
                     {"pid": pid},
                 )
@@ -1061,7 +1060,8 @@ def create_app(
             try:
                 await session.execute(
                     text(
-                        "DELETE FROM clinic.verification_challenges WHERE patient_id = :pid"
+                        "DELETE FROM clinic.verification_challenges "
+                        "WHERE patient_id = :pid"
                     ),
                     {"pid": pid},
                 )
@@ -1070,9 +1070,7 @@ def create_app(
 
             try:
                 await session.execute(
-                    text(
-                        "DELETE FROM clinic.patient_sessions WHERE patient_id = :pid"
-                    ),
+                    text("DELETE FROM clinic.patient_sessions WHERE patient_id = :pid"),
                     {"pid": pid},
                 )
             except Exception:
@@ -1737,6 +1735,7 @@ def create_app(
                 "styles.css",
                 "app.js",
                 "portal-session.js",
+                "portal-api.js",
             }
             if asset not in allowed or not (settings.portal_assets / asset).is_file():
                 raise APIError(404, "NOT_FOUND", "Page not found.")

@@ -109,7 +109,7 @@ class Settings(BaseSettings):
         if self.supabase_url:
             url = urlsplit(self.supabase_url)
             local = (
-                self.environment == "test"
+                self.environment in {"test", "development"}
                 and url.scheme == "http"
                 and url.hostname in {"127.0.0.1", "localhost"}
             )
@@ -132,7 +132,7 @@ class Settings(BaseSettings):
         if self.email_delivery == "n8n":
             url = urlsplit(self.n8n_webhook_url or "")
             local_test = (
-                self.environment == "test"
+                self.environment in {"test", "development"}
                 and url.scheme == "http"
                 and url.hostname in {"localhost", "127.0.0.1", "::1"}
             )

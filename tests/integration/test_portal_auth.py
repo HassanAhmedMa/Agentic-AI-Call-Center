@@ -52,7 +52,7 @@ class Provider:
 
 
 @pytest.fixture
-async def portal(engine):
+async def portal(engine, request):
     provider = Provider()
     async with engine.begin() as c:
         await c.execute(
@@ -69,7 +69,7 @@ async def portal(engine):
             portal_enabled=True,
             portal_google_enabled=True,
             portal_origin="http://test",
-            portal_cookie_secure=False,
+            portal_cookie_secure=getattr(request, "param", False),
             environment="test",
             supabase_url="https://auth.example.test",
             supabase_public_key="synthetic-public-key",
@@ -475,4 +475,129 @@ async def test_google_rejected_provider_code_clears_flow_without_session(portal)
     assert result.status_code == 401
     assert client.cookies.get("clinic_portal_google") is None
     assert client.cookies.get("clinic_portal_access") is None
+    assert (await client.get("/api/v1/portal/session")).status_code == 401
+
+
+@pytest.mark.parametrize("portal", [True], indirect=True)
+@pytest.mark.parametrize("host", ["localhost", "127.0.0.1"])
+@pytest.mark.parametrize("port", [5500, 5501, 8000, 8002])
+async def test_google_and_recovery_use_local_frontend_origin(portal, host, port):
+    client, provider = portal
+    origin = f"http://{host}:{port}"
+    client.base_url = f"http://{host}:8002"
+    client.headers["Origin"] = origin
+    preflight = await client.options(
+        "/api/v1/portal/google",
+        headers={
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type",
+        },
+    )
+    assert preflight.status_code == 200
+    assert preflight.headers["access-control-allow-origin"] == origin
+    result = await client.post("/api/v1/portal/google", json={})
+    assert result.status_code == 200, result.text
+    assert "; Secure" not in result.headers["set-cookie"]
+    query = parse_qs(urlsplit(result.json()["url"]).query)
+    assert query["redirect_to"][0].startswith(
+        origin + "/auth.html?"
+        if port in [5500, 5501]
+        else origin + "/portal/auth.html?"
+    )
+    state = parse_qs(urlsplit(query["redirect_to"][0]).query)["oauth_state"][0]
+    result = await client.post(
+        "/api/v1/portal/google/exchange",
+        json={"code": "synthetic-local-code", "state": state},
+    )
+    assert result.status_code == 409, result.text
+    assert "; Secure" not in result.headers["set-cookie"]
+    assert client.cookies.get("clinic_portal_access") == "synthetic-access"
+    result = await client.post(
+        "/api/v1/portal/verify",
+        json={"email": FORM["email"], "code": "000000", "registration": FORM},
+    )
+    assert result.status_code == 200, result.text
+    assert (await client.get("/api/v1/portal/session")).status_code == 200
+    assert (
+        await client.post("/api/v1/portal/recover", json={"email": FORM["email"]})
+    ).status_code == 202
+    recover = next(path for path, _, _ in provider.calls if path.startswith("recover"))
+    assert parse_qs(urlsplit(recover).query)["redirect_to"] == [
+        origin + ("/auth.html" if port in [5500, 5501] else "/portal/auth.html")
+    ]
+
+
+@pytest.mark.parametrize("portal", [True], indirect=True)
+async def test_loopback_header_cannot_downgrade_https_google_cookie(portal):
+    client, _ = portal
+    client.base_url = "https://clinic.example.test"
+    client.headers["Origin"] = "http://localhost:5501"
+    result = await client.post("/api/v1/portal/google", json={})
+    assert result.status_code == 200
+    assert "; Secure" in result.headers["set-cookie"]
+
+
+async def test_google_rejects_arbitrary_callback_paths(portal):
+    client, _ = portal
+    for path in [
+        "https://outside.example/auth.html",
+        "//outside.example/auth.html",
+        "/api/v1/admin/patients",
+    ]:
+        result = await client.post("/api/v1/portal/google", json={"return_path": path})
+        assert result.status_code == 400
+
+
+@pytest.mark.parametrize("portal", [True], indirect=True)
+@pytest.mark.parametrize("host", ["localhost", "127.0.0.1"])
+@pytest.mark.parametrize("frontend_port,backend_port", [(5500, 8000), (5501, 8002)])
+async def test_local_password_otp_and_reset_round_trip(
+    portal, host, frontend_port, backend_port
+):
+    client, _ = portal
+    client.base_url = f"http://{host}:{backend_port}"
+    client.headers["Origin"] = f"http://{host}:{frontend_port}"
+    body = {**FORM, "password": PASSWORD, "password_confirm": PASSWORD}
+    signup = await client.post("/api/v1/portal/signup", json=body)
+    assert signup.status_code == 202, signup.text
+    assert "; Secure" not in signup.headers["set-cookie"]
+    assert (
+        await client.post("/api/v1/portal/resend", json={"email": FORM["email"]})
+    ).status_code == 202
+    assert (
+        await client.post(
+            "/api/v1/portal/verify",
+            json={"email": FORM["email"], "code": "123456", "registration": FORM},
+        )
+    ).status_code == 200
+    assert (await client.get("/portal/portal-api.js")).status_code == 200
+    for identifier in [FORM["email"], "01012345678"]:
+        assert (await client.post("/api/v1/portal/logout", json={})).status_code == 204
+        assert (
+            await client.post(
+                "/api/v1/portal/login",
+                json={"identifier": identifier, "password": PASSWORD},
+            )
+        ).status_code == 200
+        assert (await client.get("/api/v1/portal/session")).status_code == 200
+    assert (
+        await client.post(
+            "/api/v1/portal/recover",
+            json={"email": FORM["email"], "return_path": "/auth.html"},
+        )
+    ).status_code == 202
+    assert (
+        await client.post(
+            "/api/v1/portal/recovery-session", json={"access_token": "synthetic-access"}
+        )
+    ).status_code == 204
+    reset = await client.post(
+        "/api/v1/portal/reset-password",
+        json={
+            "email": FORM["email"],
+            "password": PASSWORD,
+            "password_confirm": PASSWORD,
+        },
+    )
+    assert reset.status_code == 204, reset.text
     assert (await client.get("/api/v1/portal/session")).status_code == 401

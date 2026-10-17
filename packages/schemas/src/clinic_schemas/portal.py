@@ -1,6 +1,7 @@
 """Patient portal inputs; passwords and callback credentials are never DTO output."""
 
 import re
+from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 
@@ -84,3 +85,15 @@ class Delivery(Input):
 class GoogleExchange(Input):
     code: SecretStr = Field(min_length=1, max_length=2048)
     state: str = Field(min_length=43, max_length=43, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class GoogleStart(Input):
+    return_path: (
+        Literal["/auth.html", "/portal/auth.html", "/frontend/user/auth.html"] | None
+    ) = None
+
+
+class RecoveryEmail(Email):
+    return_path: (
+        Literal["/auth.html", "/portal/auth.html", "/frontend/user/auth.html"] | None
+    ) = None

@@ -121,7 +121,9 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             res_allowed_host.headers.get("access-control-allow-origin")
             == "http://localhost:8002"
         )
-        assert res_allowed_host.headers.get("access-control-allow-credentials") == "true"
+        assert (
+            res_allowed_host.headers.get("access-control-allow-credentials") == "true"
+        )
 
         res_allowed_case = http.get(
             "/api/v1/health",
@@ -132,7 +134,9 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             res_allowed_case.headers.get("access-control-allow-origin")
             == "http://LOCALHOST:5500"
         )
-        assert res_allowed_case.headers.get("access-control-allow-credentials") == "true"
+        assert (
+            res_allowed_case.headers.get("access-control-allow-credentials") == "true"
+        )
 
         res_allowed_trailing_slash = http.get(
             "/api/v1/health",
@@ -143,9 +147,12 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             res_allowed_trailing_slash.headers.get("access-control-allow-origin")
             == "http://127.0.0.1:8002/"
         )
-        assert res_allowed_trailing_slash.headers.get("access-control-allow-credentials") == "true"
+        assert (
+            res_allowed_trailing_slash.headers.get("access-control-allow-credentials")
+            == "true"
+        )
 
-        # 3. Allowed: Configured loopback portal origin (http://localhost:8004) with credentials
+        # 3. Configured loopback portal origin with credentials
         res_allowed_portal = http.get(
             "/api/v1/health",
             headers={"Origin": "http://localhost:8004"},
@@ -155,7 +162,9 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             res_allowed_portal.headers.get("access-control-allow-origin")
             == "http://localhost:8004"
         )
-        assert res_allowed_portal.headers.get("access-control-allow-credentials") == "true"
+        assert (
+            res_allowed_portal.headers.get("access-control-allow-credentials") == "true"
+        )
 
         # 4. Allowed: CORS preflight (OPTIONS)
         res_preflight = http.options(
