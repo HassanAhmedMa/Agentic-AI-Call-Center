@@ -90,10 +90,15 @@ class BridgeHandler(BaseHTTPRequestHandler):
         print(f"  Message:\n  {body}")
         print("=" * 65 + "\n")
 
+        response_bytes = json.dumps({"status": "received", "record": record}).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(response_bytes)))
         self.end_headers()
-        self.wfile.write(json.dumps({"status": "received", "record": record}).encode("utf-8"))
+        self.wfile.write(response_bytes)
+
+        # Show desktop notification toast
+        show_desktop_notification(sender, request_type, body)
 
         # Auto-invoke the active session for this agent
         invoke_active_agent(self.name, record)
@@ -101,6 +106,39 @@ class BridgeHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         # Suppress routine HTTP access logs
         return
+
+
+def show_desktop_notification(sender: str, request_type: str, body: str):
+    import platform
+    import subprocess
+    import threading
+
+    def _notify():
+        try:
+            sys_name = platform.system()
+            title = f"Agent Relay [{request_type}] from {sender}"
+            clean_body = body.replace('"', "'").replace("\n", " ")[:140]
+            if sys_name == "Windows":
+                ps_code = f"""
+                [void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
+                $notify = New-Object System.Windows.Forms.NotifyIcon
+                $notify.Icon = [System.Drawing.SystemIcons]::Information
+                $notify.BalloonTipTitle = "{title}"
+                $notify.BalloonTipText = "{clean_body}"
+                $notify.Visible = $true
+                $notify.ShowBalloonTip(10000)
+                Start-Sleep -Seconds 2
+                $notify.Dispose()
+                """
+                subprocess.run(["powershell", "-NoProfile", "-Command", ps_code], capture_output=True)
+            elif sys_name == "Darwin":
+                subprocess.run(["osascript", "-e", f'display notification "{clean_body}" with title "{title}"'])
+            elif sys_name == "Linux":
+                subprocess.run(["notify-send", title, clean_body])
+        except Exception:
+            pass
+
+    threading.Thread(target=_notify, daemon=True).start()
 
 
 def find_executable(name: str) -> str | None:
