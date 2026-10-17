@@ -163,7 +163,12 @@
     try {
       await action();
     } catch (error) {
-      showToast(messages[error.message] ? error.message : 'unavailable');
+      if (error.message === 'RATE_LIMITED' && error.details?.retry_after) {
+        const minutes = Math.max(1, Math.ceil(error.details.retry_after / 60));
+        showToast(language === 'ar' ? `محاولات كتير. جرّب تاني بعد ${minutes} دقيقة.` : `Too many attempts. Try again in ${minutes} minute(s).`);
+      } else {
+        showToast(messages[error.message] ? error.message : 'unavailable');
+      }
       if (error.details?.email_verified) {
         verifiedIdentity = true;
         if (error.details.email) {
@@ -196,20 +201,40 @@
    * Egyptian Date of Birth Parser
    */
   function parseDOB(value) {
-    const match = digits(value).match(/^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/);
+    let text = digits(value);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) text = text.split('-').reverse().join(' / ');
+    const match = text.match(/^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/);
     if (!match) throw Error('VALIDATION_FAILED');
     const [, day, month, year] = match;
     const date = new Date(Date.UTC(+year, +month - 1, +day));
+    const today = new Date();
+    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const age = today.getFullYear() - +year - ((today.getMonth() + 1 < +month || (today.getMonth() + 1 === +month && today.getDate() < +day)) ? 1 : 0);
     if (
       date.getUTCFullYear() !== +year ||
       date.getUTCMonth() !== +month - 1 ||
       date.getUTCDate() !== +day ||
-      date >= new Date() ||
-      +year < new Date().getFullYear() - 120
+      date.getTime() >= todayUTC ||
+      age > 120
     ) {
       throw Error('VALIDATION_FAILED');
     }
     return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Open Date of Birth Picker
+   */
+  function openDobPicker() {
+    const input = $('signupDobInput');
+    if (!input) return;
+    try {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+        return;
+      }
+    } catch (_) {}
+    input.focus();
   }
 
   /**
@@ -448,6 +473,7 @@
           password: $('loginPasswordInput').value
         });
         success(res);
+        window.location.assign('index.html');
       } finally {
         if ($('loginPasswordInput')) $('loginPasswordInput').value = '';
       }
@@ -668,11 +694,11 @@
       node.textContent = language === 'ar' ? node.dataset.ar : node.dataset.en;
     });
   }
-
   /**
    * Expose public contract on window
    */
   Object.assign(window, {
+    openDobPicker,
     navigateToView,
     switchLoginChannel,
     togglePasswordVisibility,
@@ -716,13 +742,12 @@
         node.dataset.ar = translations[text];
       }
     });
-
+    const today = new Date();
+    const isoDate = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const dobInput = $('signupDobInput');
     if (dobInput) {
-      dobInput.addEventListener('input', event => {
-        const val = digits(event.target.value).replace(/\D/g, '').slice(0, 8);
-        event.target.value = [val.slice(0, 2), val.slice(2, 4), val.slice(4)].filter(Boolean).join(' / ');
-      });
+      dobInput.max = isoDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1));
+      dobInput.min = isoDate(new Date(today.getFullYear() - 121, today.getMonth(), today.getDate() + 1));
     }
 
     const otpContainer = $('otpContainer');

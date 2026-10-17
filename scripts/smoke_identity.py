@@ -1,5 +1,6 @@
 """Exercise actual SMTP delivery into local Mailpit; never prints OTPs/tokens."""
 
+import argparse
 import json
 import re
 import time
@@ -12,12 +13,16 @@ def get(url):
         return json.load(response)
 
 
+BASE_URL = "http://localhost:8000"
+MAILPIT_URL = "http://localhost:8025"
+
+
 def post(path, body, token=None):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["X-Conversation-Token"] = token
     request = urllib.request.Request(
-        "http://localhost:8000/api/v1/" + path,
+        BASE_URL + "/api/v1/" + path,
         data=json.dumps(body).encode(),
         headers=headers,
         method="POST",
@@ -27,6 +32,13 @@ def post(path, body, token=None):
 
 
 def main():
+    global BASE_URL, MAILPIT_URL
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base-url", default=BASE_URL)
+    parser.add_argument("--mailpit-url", default=MAILPIT_URL)
+    args = parser.parse_args()
+    BASE_URL = args.base_url.rstrip("/")
+    MAILPIT_URL = args.mailpit_url.rstrip("/")
     recipient = "smtp-smoke-" + uuid4().hex + "@example.com"
     token = post("conversations", {"channel": "text"})["conversation_token"]
     post(
@@ -43,10 +55,10 @@ def main():
     )
     message = None
     for _ in range(30):
-        messages = get("http://localhost:8025/api/v1/messages")["messages"]
+        messages = get(MAILPIT_URL + "/api/v1/messages")["messages"]
         for candidate in messages:
             if any(item["Address"] == recipient for item in candidate["To"]):
-                message = get("http://localhost:8025/api/v1/message/" + candidate["ID"])
+                message = get(MAILPIT_URL + "/api/v1/message/" + candidate["ID"])
                 break
         if message:
             break

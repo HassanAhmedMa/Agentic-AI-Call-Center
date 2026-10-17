@@ -101,9 +101,15 @@ def portal_router(
         token = request.cookies.get(CONVERSATION, "")
         async with sessions() as session, session.begin():
             identity = Identity(session, settings)
-            if token and not isinstance(await identity.conversation(token), APIError):
-                return token
             peer = socket_ip(request.client.host if request.client else None)
+            if token:
+                existing = await identity.conversation(token)
+                if not isinstance(existing, APIError) and str(
+                    existing.client_ip or "unknown"
+                ) == str(peer or "unknown"):
+                    return token
+            # Preserve the old audit record; a changed source starts a fresh
+            # conversation so profile quotas use the current trusted peer.
             retry = await creation_retry(session, peer or "unknown", datetime.now(UTC))
             if retry:
                 raise APIError(
@@ -211,7 +217,14 @@ def portal_router(
     async def verify(
         body: dto.Verify, request: Request, response: Response
     ) -> PatientProfile | Response:
-        await limit(request, "verify", body.email)
+        has_provider_cookies = bool(
+            request.cookies.get(ACCESS) and request.cookies.get(REFRESH)
+        )
+        # Already verified profile completion has its own bounded retry budget.
+        # Invalid cookies must still consume the OTP verification budget below.
+        await limit(
+            request, "profile" if has_provider_cookies else "verify", body.email
+        )
         if body.email != body.registration.email:
             raise APIError(400, "VALIDATION_FAILED", "Registration email must match.")
         code = body.code.get_secret_value()
@@ -234,6 +247,8 @@ def portal_router(
                 if error.status != 401:
                     raise
         if data is None:
+            if has_provider_cookies:
+                await limit(request, "verify", body.email)
             data = await auth.request(
                 "verify", body={"email": body.email, "token": code, "type": "signup"}
             )
@@ -246,8 +261,12 @@ def portal_router(
                 error.status,
                 error.code,
                 error.message,
-                {"email_verified": True},
+                {**(error.details or {}), "email_verified": True},
             )
+            if error.status == 429 and error.details:
+                failure.headers["Retry-After"] = str(
+                    error.details.get("retry_after", 60)
+                )
             failure.headers["Cache-Control"] = "no-store"
             for header in response.raw_headers:
                 if header[0].lower() == b"set-cookie":

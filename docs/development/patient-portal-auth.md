@@ -86,3 +86,32 @@ Local PostgreSQL integration tests use an injected Auth provider. A live local
 GoTrue/Mailpit acceptance run remains pending: automatic approval review rejected
 the test-container startup command without a specific reason. This is separate
 from unit/integration evidence and does not affect the shared server.
+
+
+## Trusted reverse proxy and profile completion
+
+For a backend published only on loopback behind Caddy, deploy Uvicorn with
+`--proxy-headers --forwarded-allow-ips=<exact Docker host gateway IPs>` in place
+of `--no-proxy-headers`. Determine the actual host gateways from the running
+container networks. Never use `*`, trust arbitrary client headers, or expose the
+backend port publicly. Caddy supplies the real source address. Without this
+bounded trust, every public patient shares the proxy IP and can exhaust the
+three-per-IP daily registration limit. Direct/untrusted connections must not be
+able to spoof their source address with a header.
+
+OTP verification and already verified profile repair have separate bounded
+attempt counters. Invalid provider cookies still consume the OTP limit, so they
+cannot bypass verification throttling. Profile errors retain Retry-After details.
+Login redirects to the dashboard only after the backend has bound a clinic
+profile; Auth login alone does not create that profile. An interrupted registration
+may need its profile completed once after signing in. No patient data is invented
+or written by an administrator to bypass verification.
+
+Date of birth now uses a native calendar input, with typed ISO date validation,
+a calendar button and age bounds. Returning-patient login navigates directly to
+the dashboard after a successful server response. The dashboard data remains demo.
+
+When a trusted source address changes, the portal starts a fresh conversation
+while retaining the old conversation audit record. This also repairs cookies
+created before proxy trust was configured, so they cannot keep applying a stale
+proxy-wide registration quota. No rate-limit or patient rows are deleted.
