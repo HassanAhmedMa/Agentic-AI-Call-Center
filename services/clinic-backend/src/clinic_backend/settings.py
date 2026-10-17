@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     agent_service_token: SecretStr | None = None
     admin_api_token: SecretStr | None = None
     identity_enabled: bool = False
+    portal_google_enabled: bool = False
     portal_enabled: bool = False
     portal_origin: str = "http://localhost:8004"
     portal_cookie_secure: bool = True

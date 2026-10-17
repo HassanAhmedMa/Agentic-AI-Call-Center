@@ -57,7 +57,7 @@
         const minutes = Math.max(1, Math.ceil(error.details.retry_after/60));
         showToast(language === 'ar' ? `محاولات كتير. جرّب تاني بعد ${minutes} دقيقة.` : `Too many attempts. Try again in ${minutes} minute(s).`);
       } else showToast(messages[error.message] ? error.message : 'unavailable');
-      if (error.details?.email_verified) { verifiedIdentity = true; if (error.details.email) { pending = {email: error.details.email}; $('signupEmailInput').value = error.details.email; } $('signupPasswordInput').required = false; $('signupPasswordConfirm').required = false; navigateToView('view-signup'); }
+      if (error.details?.email_verified) { verifiedIdentity = true; if (error.details.email) { pending = {email: error.details.email}; $('signupEmailInput').value = error.details.email; } $('signupEmailInput').readOnly = true; ['signupPasswordInput','signupPasswordConfirm'].forEach(id => { $(id).required = false; $(id).closest('.form-field-group').hidden = true; }); navigateToView('view-signup'); }
     } finally {
       busy = false;
       document.querySelectorAll('button[type=submit]').forEach(button => { button.disabled = false; });
@@ -184,7 +184,7 @@
     });
   }
   async function handleContinueToDashboard() { return run(async () => { await api('session'); window.location.assign('index.html'); }); }
-  function handleGoogleLogin() { showToast(language === 'ar' ? 'تسجيل جوجل مش متاح دلوقتي. استخدم البريد وكلمة السر.' : 'Google sign-in is not configured. Use email and password.'); }
+  function handleGoogleLogin() { return run(async () => { const result = await api('google', {}); window.location.assign(result.url); }); }
   function handleHashRoute() {
     const view = window.location.hash.slice(1);
     navigateToView(['signup','verify','success','forgot','reset'].includes(view) ? 'view-' + view : 'view-login', false);
@@ -241,6 +241,16 @@
       input.addEventListener('keydown', event => { if(event.key==='Backspace' && !input.value) boxes[index-1]?.focus(); });
       input.addEventListener('paste', event => { event.preventDefault(); const text=digits(event.clipboardData.getData('text')).replace(/\D/g,'').slice(0,6); boxes.forEach((box,i)=>{box.value=text[i]||'';}); boxes[Math.min(text.length,5)].focus(); });
     });
+    const oauth = new URLSearchParams(window.location.search);
+    if (oauth.has('code') || oauth.has('oauth_state') || oauth.has('error')) {
+      history.replaceState(null, '', window.location.pathname);
+      await run(async () => {
+        if (!oauth.get('code') || !oauth.get('oauth_state') || oauth.has('error')) throw Error('VERIFICATION_REQUIRED');
+        success(await api('google/exchange', {code: oauth.get('code'), state: oauth.get('oauth_state')}));
+        window.location.assign('index.html');
+      });
+      return;
+    }
     const callback = new URLSearchParams(window.location.hash.slice(1));
     if (callback.has('access_token') || callback.has('error')) {
       history.replaceState(null, '', window.location.pathname);

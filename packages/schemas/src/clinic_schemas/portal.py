@@ -79,3 +79,8 @@ class Reset(Email):
 
 class Delivery(Input):
     delivery: str = "email"
+
+
+class GoogleExchange(Input):
+    code: SecretStr = Field(min_length=1, max_length=2048)
+    state: str = Field(min_length=43, max_length=43, pattern=r"^[A-Za-z0-9_-]+$")

@@ -115,3 +115,46 @@ When a trusted source address changes, the portal starts a fresh conversation
 while retaining the old conversation audit record. This also repairs cookies
 created before proxy trust was configured, so they cannot keep applying a stale
 proxy-wide registration quota. No rate-limit or patient rows are deleted.
+
+
+## Google OAuth setup
+
+Create a Google Cloud Web application OAuth client with basic openid/email/profile
+scopes. Configure External audience and controlled test users during testing.
+Google redirect URI is the **Supabase** origin plus `/auth/v1/callback`, not the
+clinic frontend. Client secret belongs only in protected server Auth configuration;
+it is unrelated to the Gmail SMTP app password. Do not commit either credential.
+
+Add these values to the existing self-hosted **auth service** environment while
+preserving SMTP, templates, database, SITE_URL and teammate settings:
+
+```dotenv
+GOTRUE_EXTERNAL_GOOGLE_ENABLED=true
+GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID=<web-client-id>
+GOTRUE_EXTERNAL_GOOGLE_SECRET=<protected-client-secret>
+GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=https://<supabase-host>/auth/v1/callback
+```
+
+Append `<PORTAL_ORIGIN>/portal/auth.html?oauth_state=*` to GOTRUE_URI_ALLOW_LIST;
+keep the original exact auth.html entry for password recovery. The wildcard is
+limited to the state query on one exact HTTPS host/path, never a wildcard host.
+Enable `PORTAL_GOOGLE_ENABLED=true` on the clinic backend. Add only the POST paths
+`/api/v1/portal/google` and `/api/v1/portal/google/exchange` to the existing Caddy
+patient matcher. Validate and back up the current file before a graceful reload;
+never replace teammates' route blocks. Auth configuration takes an auth-service
+recreation; coordinate the brief interruption and leave other services untouched.
+
+Test existing patient Google login, first-time profile completion, duplicate
+phone, canceled consent, invalid/missing callback state, replayed code and
+English/Egyptian Arabic. Verify regular password login, signup OTP and recovery
+still work. Use provider linking performed by Supabase; never merge clinic
+identities based on browser-supplied email. Google-only accounts can establish a
+password later with the existing Forgot password flow.
+
+References: https://supabase.com/docs/guides/auth/social-login/auth-google and
+https://supabase.com/docs/guides/auth/sessions/pkce-flow .
+
+Disable backend URL access logging (`uvicorn --no-access-log`) for OAuth callback
+queries; keep application error logs without credentials. The portal already
+serves Referrer-Policy: no-referrer. Do not enable proxy access logs containing
+full OAuth callback query strings.

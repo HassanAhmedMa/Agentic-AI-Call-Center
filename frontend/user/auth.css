@@ -981,3 +981,6 @@ body {
 
 .portal-date-trigger{pointer-events:auto;cursor:pointer;background:transparent;border:0;padding:0;font:inherit}
 input[type=date].form-input-text{min-width:0;direction:ltr}
+
+/* Verified Google/profile completion does not collect a password. */
+.form-field-group[hidden] { display: none; }

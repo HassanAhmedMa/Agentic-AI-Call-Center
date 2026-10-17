@@ -1,4 +1,7 @@
+import base64
+import hashlib
 from datetime import UTC, datetime
+from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 import httpx
@@ -30,7 +33,10 @@ class Provider:
             or path == "user"
         ):
             return {}
-        if path.startswith("token") and body.get("password") != PASSWORD:
+        if (
+            path.startswith("token?grant_type=password")
+            and body.get("password") != PASSWORD
+        ):
             raise APIError(401, "VERIFICATION_REQUIRED", "Invalid credentials")
         if path == "verify" and body.get("token") != "123456":
             raise APIError(401, "VERIFICATION_REQUIRED", "Invalid code")
@@ -61,6 +67,7 @@ async def portal(engine):
             identity_enabled=True,
             identity_provider="supabase",
             portal_enabled=True,
+            portal_google_enabled=True,
             portal_origin="http://test",
             portal_cookie_secure=False,
             environment="test",
@@ -365,3 +372,107 @@ async def test_profile_retry_replaces_conversation_from_old_proxy_address(
     )
     assert result.status_code == 200, result.text
     assert client.cookies.get("clinic_portal_conversation") != previous
+
+
+async def google_start(client):
+    result = await client.post("/api/v1/portal/google", json={})
+    assert result.status_code == 200, result.text
+    url = urlsplit(result.json()["url"])
+    assert url.scheme == "https" and url.netloc == "auth.example.test"
+    assert url.path == "/auth/v1/authorize"
+    query = parse_qs(url.query)
+    assert query["provider"] == ["google"]
+    assert query["code_challenge_method"] == ["s256"]
+    redirect = urlsplit(query["redirect_to"][0])
+    assert redirect.path == "/portal/auth.html"
+    state = parse_qs(redirect.query)["oauth_state"][0]
+    cookie = client.cookies.get("clinic_portal_google")
+    verifier, cookie_state = cookie.split(".")
+    assert cookie_state == state
+    challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+        .decode()
+        .rstrip("=")
+    )
+    assert query["code_challenge"] == [challenge]
+    assert "HttpOnly" in result.headers["set-cookie"]
+    assert "SameSite=lax" in result.headers["set-cookie"]
+    assert "Max-Age=600" in result.headers["set-cookie"]
+    return state
+
+
+async def test_google_pkce_first_login_and_existing_profile(portal):
+    client, provider = portal
+    state = await google_start(client)
+    result = await client.post(
+        "/api/v1/portal/google/exchange",
+        json={"code": "synthetic-code", "state": state},
+    )
+    assert result.status_code == 409, result.text
+    assert result.json()["error"]["details"]["email"] == FORM["email"]
+    assert result.json()["error"]["details"]["email_verified"] is True
+    assert client.cookies.get("clinic_portal_google") is None
+    assert "synthetic-access" not in result.text
+    assert any(
+        path == "token?grant_type=pkce" and body["auth_code"] == "synthetic-code"
+        for path, body, _ in provider.calls
+    )
+    completed = await client.post(
+        "/api/v1/portal/verify",
+        json={"email": FORM["email"], "code": "000000", "registration": FORM},
+    )
+    assert completed.status_code == 200, completed.text
+    number = completed.json()["customer_number"]
+    await client.post("/api/v1/portal/logout", json={})
+    state = await google_start(client)
+    result = await client.post(
+        "/api/v1/portal/google/exchange", json={"code": "another-code", "state": state}
+    )
+    assert result.status_code == 200, result.text
+    assert result.json()["customer_number"] == number
+    assert (await client.get("/api/v1/portal/session")).status_code == 200
+
+
+async def test_google_callback_requires_own_browser_state(portal):
+    client, provider = portal
+    result = await client.post(
+        "/api/v1/portal/google/exchange",
+        json={"code": "foreign-code", "state": "a" * 43},
+    )
+    assert result.status_code == 401
+    assert not provider.calls
+    state = await google_start(client)
+    result = await client.post(
+        "/api/v1/portal/google/exchange",
+        json={"code": "foreign-code", "state": "b" * 43},
+    )
+    assert result.status_code == 401
+    assert not provider.calls
+    assert client.cookies.get("clinic_portal_google") is None
+    assert (
+        await client.post(
+            "/api/v1/portal/google", json={}, headers={"Origin": "https://evil.example"}
+        )
+    ).status_code == 403
+    assert (
+        await client.post(
+            "/api/v1/portal/google/exchange", json={"code": "code", "state": state}
+        )
+    ).status_code == 401
+
+
+async def test_google_rejected_provider_code_clears_flow_without_session(portal):
+    client, provider = portal
+    state = await google_start(client)
+
+    async def reject(path, **kwargs):
+        raise APIError(401, "VERIFICATION_REQUIRED", "Invalid or expired code")
+
+    provider.request = reject
+    result = await client.post(
+        "/api/v1/portal/google/exchange", json={"code": "expired-code", "state": state}
+    )
+    assert result.status_code == 401
+    assert client.cookies.get("clinic_portal_google") is None
+    assert client.cookies.get("clinic_portal_access") is None
+    assert (await client.get("/api/v1/portal/session")).status_code == 401
