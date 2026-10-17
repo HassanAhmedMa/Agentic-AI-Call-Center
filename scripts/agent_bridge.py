@@ -111,34 +111,64 @@ class BridgeHandler(BaseHTTPRequestHandler):
 def show_desktop_notification(sender: str, request_type: str, body: str):
     import platform
     import subprocess
-    import threading
+    import sys
 
-    def _notify():
+    # Detached subprocess to guarantee GUI alert and chime never block or crash HTTP server
+    gui_code = """
+import sys
+import platform
+
+def run():
+    try:
+        import winsound
+        winsound.MessageBeep(winsound.MB_ICONASTERISK)
+    except Exception:
+        pass
+
+    if platform.system() == "Windows":
         try:
-            sys_name = platform.system()
-            title = f"Agent Relay [{request_type}] from {sender}"
-            clean_body = body.replace('"', "'").replace("\n", " ")[:140]
-            if sys_name == "Windows":
-                ps_code = f"""
-                [void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
-                $notify = New-Object System.Windows.Forms.NotifyIcon
-                $notify.Icon = [System.Drawing.SystemIcons]::Information
-                $notify.BalloonTipTitle = "{title}"
-                $notify.BalloonTipText = "{clean_body}"
-                $notify.Visible = $true
-                $notify.ShowBalloonTip(10000)
-                Start-Sleep -Seconds 2
-                $notify.Dispose()
-                """
-                subprocess.run(["powershell", "-NoProfile", "-Command", ps_code], capture_output=True)
-            elif sys_name == "Darwin":
-                subprocess.run(["osascript", "-e", f'display notification "{clean_body}" with title "{title}"'])
-            elif sys_name == "Linux":
-                subprocess.run(["notify-send", title, clean_body])
+            import ctypes
+            # MB_ICONINFORMATION (0x40) | MB_SYSTEMMODAL (0x1000) | MB_TOPMOST (0x40000) | MB_SETFOREGROUND (0x10000) = 0x51040
+            sender = sys.argv[1]
+            req_type = sys.argv[2]
+            msg_body = sys.argv[3][:350]
+            display_text = f"From: {sender}\\nType: {req_type}\\n\\nMessage:\\n{msg_body}"
+            title = f"Inter-Agent Relay [{req_type}] from {sender}"
+            ctypes.windll.user32.MessageBoxTimeoutW(
+                0,
+                display_text,
+                title,
+                0x51040,
+                0,
+                4500,
+            )
         except Exception:
             pass
+    elif platform.system() == "Darwin":
+        clean = sys.argv[3][:200].replace('"', "'").replace("\\n", " ")
+        subprocess.Popen(["osascript", "-e", f'display notification "{clean}" with title "Agent Relay [{sys.argv[2]}] from {sys.argv[1]}"'])
+    elif platform.system() == "Linux":
+        subprocess.Popen(["notify-send", f"Agent Relay [{sys.argv[2]}] from {sys.argv[1]}", sys.argv[3][:200]])
 
-    threading.Thread(target=_notify, daemon=True).start()
+if __name__ == "__main__":
+    run()
+"""
+    try:
+        if platform.system() == "Windows":
+            subprocess.Popen(
+                [sys.executable, "-c", gui_code, sender, request_type, body],
+                cwd=REPO_ROOT,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        elif platform.system() == "Darwin":
+            clean = body[:200].replace('"', "'").replace("\n", " ")
+            subprocess.Popen(["osascript", "-e", f'display notification "{clean}" with title "Agent Relay [{request_type}] from {sender}"'])
+        elif platform.system() == "Linux":
+            subprocess.Popen(["notify-send", f"Agent Relay [{request_type}] from {sender}", body[:200]])
+    except Exception:
+        pass
+
 
 
 def find_executable(name: str) -> str | None:

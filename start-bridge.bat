@@ -44,7 +44,7 @@ if not exist %SSH_KEY% (
 )
 
 echo [*] Starting Python Agent Bridge listener in background...
-start "Agent Bridge - %AGENT_NAME%" python scripts\agent_bridge.py --name %AGENT_NAME% --port %BRIDGE_PORT%
+start "Agent Bridge - %AGENT_NAME%" python -u scripts\agent_bridge.py --name %AGENT_NAME% --port %BRIDGE_PORT%
 
 echo [*] Establishing reverse SSH tunnel to Oracle Server (193.122.68.159)...
 echo     Tunnel: Server port %BRIDGE_PORT% -^> Localhost %BRIDGE_PORT%
