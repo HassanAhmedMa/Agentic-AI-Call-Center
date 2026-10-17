@@ -250,13 +250,53 @@ function renderScheduleSkeletons() {
   container.innerHTML = `<table class="doctor-schedule-table">${skeletonHeader}${skeletonBody}</table>`;
 }
 
+function renderMetricsSkeletons() {
+  const totalEl = document.getElementById('metricTodayTotal') || document.getElementById('metricTodayCount');
+  const confEl = document.getElementById('metricConfirmedCount');
+  const pendEl = document.getElementById('metricPendingCount');
+  const cancEl = document.getElementById('metricCancelledCount');
+
+  const skeletonPill = `<span class="skeleton-shimmer skeleton-pill" style="display:inline-block; width:45px; height:24px; vertical-align:middle; border-radius:6px;"></span>`;
+  if (totalEl) totalEl.innerHTML = skeletonPill;
+  if (confEl) confEl.innerHTML = skeletonPill;
+  if (pendEl) pendEl.innerHTML = skeletonPill;
+  if (cancEl) cancEl.innerHTML = skeletonPill;
+}
+
+function renderUpcomingListSkeletons() {
+  const container = document.querySelector('.upcoming-items-list');
+  const countEl = document.querySelector('.upcoming-title');
+  if (countEl) countEl.innerHTML = `Upcoming <span class="skeleton-shimmer skeleton-pill" style="display:inline-block; width:28px; height:16px; vertical-align:middle; border-radius:4px;"></span>`;
+  if (!container) return;
+
+  const skeletonItem = `
+    <div style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-light); margin-bottom: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="skeleton-shimmer skeleton-avatar" style="width: 34px; height: 34px; border-radius: 50%;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div class="skeleton-shimmer skeleton-text" style="width: 90px; height: 13px;"></div>
+          <div class="skeleton-shimmer skeleton-text" style="width: 120px; height: 10px;"></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+        <div class="skeleton-shimmer skeleton-text" style="width: 45px; height: 12px;"></div>
+        <div class="skeleton-shimmer skeleton-text" style="width: 55px; height: 10px;"></div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = skeletonItem.repeat(3);
+}
+
 function initAppointmentsStore() {
   selectedDate = new Date();
   miniCalYear = selectedDate.getFullYear();
   miniCalMonth = selectedDate.getMonth();
   updateDateHeading();
+  renderMetricsSkeletons();
   renderMiniCalendar();
   renderScheduleSkeletons();
+  renderUpcomingListSkeletons();
 }
 
 /* =============================================================================
@@ -1416,7 +1456,7 @@ let metricsState = {
 };
 
 function updateMetricsDisplay() {
-  const totalEl = document.getElementById('metricTodayCount');
+  const totalEl = document.getElementById('metricTodayTotal') || document.getElementById('metricTodayCount');
   const confEl = document.getElementById('metricConfirmedCount');
   const pendEl = document.getElementById('metricPendingCount');
   const cancEl = document.getElementById('metricCancelledCount');
