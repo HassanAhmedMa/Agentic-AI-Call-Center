@@ -95,9 +95,94 @@ class BridgeHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"status": "received", "record": record}).encode("utf-8"))
 
+        # Auto-invoke the active session for this agent
+        invoke_active_agent(self.name, record)
+
     def log_message(self, format, *args):
         # Suppress routine HTTP access logs
         return
+
+
+def find_executable(name: str) -> str | None:
+    import shutil
+    if name in {"Hassan", "Ali"}:
+        candidates = [
+            shutil.which("agy"),
+            os.path.expandvars(r"%LOCALAPPDATA%\agy\bin\agy.exe"),
+            os.path.expandvars(r"%LOCALAPPDATA%\antigravity\staging\agy.exe"),
+            os.path.expanduser(r"~/.local/bin/agy"),
+            "/usr/local/bin/agy",
+        ]
+        for c in candidates:
+            if c and os.path.exists(c):
+                return c
+    elif name == "Ziad":
+        candidates = [
+            shutil.which("codex"),
+            os.path.expandvars(r"%LOCALAPPDATA%\OpenAI\Codex\bin\codex.exe"),
+            os.path.expandvars(r"%LOCALAPPDATA%\OpenAI\Codex\bin\2e5e00daee91c61d\codex.exe"),
+            os.path.expanduser(r"~/.local/bin/codex"),
+            "/usr/local/bin/codex",
+        ]
+        for c in candidates:
+            if c and os.path.exists(c):
+                return c
+    return None
+
+
+def invoke_active_agent(name: str, record: dict):
+    import subprocess
+    import threading
+
+    exe = find_executable(name)
+    if not exe:
+        print(f"[*] Note: Executable for {name} not found in standard paths. Message recorded in {INBOX_FILE}.")
+        return
+
+    sender = record.get("sender", "Unknown")
+    req_type = record.get("request_type", "Inquiry")
+    body = record.get("body", "")
+
+    prompt = (
+        f"[INTER-AGENT INCOMING MESSAGE via n8n]\n"
+        f"Sender: {sender}\n"
+        f"Destination: {name}\n"
+        f"Type: {req_type}\n\n"
+        f"Message:\n{body}\n\n"
+        f"Instructions:\n"
+        f"Adhere strictly to Section 11 of AGENTS.md:\n"
+        f"- If this is an 'Inquiry', produce exactly ONE direct factual Response to {sender} and dispatch it via:\n"
+        f"  python scripts/agent_bridge.py --name {name} --send --dest {sender} --type Response --body \"<Answer>\"\n"
+        f"- If this is a 'Response', ingest the information into your task and STOP. Do not send any follow-up pleasantries."
+    )
+
+    if name in {"Hassan", "Ali"}:
+        cmd = [exe, "--continue", "-p", prompt]
+    else:
+        cmd = [exe, "exec", "resume", "--last", prompt]
+
+    print(f"[*] Auto-invoking active session for {name} using: {os.path.basename(exe)}...")
+
+    def _runner():
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=REPO_ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            stdout, stderr = proc.communicate(timeout=120)
+            if stdout:
+                print(f"\n--- [{name}'s Agent Response] ---\n{stdout.strip()}\n---------------------------------")
+            if proc.returncode != 0 and stderr:
+                print(f"[!] Agent invocation stderr: {stderr.strip()}")
+        except Exception as e:
+            print(f"[!] Error during agent invocation: {e}")
+
+    threading.Thread(target=_runner, daemon=True).start()
 
 
 def send_message(sender: str, destination: str, request_type: str, body: str, n8n_url: str = DEFAULT_N8N_URL):
