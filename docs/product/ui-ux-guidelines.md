@@ -113,3 +113,7 @@ The visual language of **Agentic Clinic** conveys trust, calm precision, and pro
    - Split view featuring live conversation transcript (with Arabic/English bidirectional rendering), active voice waveform, real-time tool execution breadcrumbs, and human handoff button.
 8. **System Health & Observability Monitor:**
    - Service uptime, STT/TTS latency metrics, and API error rates.
+
+## Early browser forms
+
+Phase 1 includes a minimal mobile-friendly text page with direct registration/consent and email-code forms, delivery acknowledgements and status messages. The full staff dashboard remains later; authenticated queue access is required alongside Phase 2 escalation. Forms use backend errors, never expose service credentials, and preserve the five-minute resume window.

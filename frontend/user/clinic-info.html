@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nile Clinics - Clinic Information</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css?v=2.5">
+</head>
+<body>
+
+  <div class="app-layout" id="appLayout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="mainSidebar" data-ctrl="sidebar">
+      
+      <a href="index.html" class="logo-container" style="text-decoration:none;">
+        <div class="logo-icon-box">
+          <svg height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <div class="brand-name" data-i18n="brand_name">Nile Clinics</div>
+          <div class="brand-tagline" data-i18n="brand_tagline">Your Health, Our Care</div>
+        </div>
+      </a>
+
+      <!-- Navigation Menu -->
+      <nav class="nav-menu" id="desktopNavMenu">
+        <a href="index.html" class="nav-item" id="nav-home" data-ctrl="nav-home">
+          <svg height="19" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="nav-label" data-i18n="nav_home">Home</span>
+        </a>
+
+        <a href="appointments.html" class="nav-item" id="nav-appointments" data-ctrl="nav-appointments">
+          <svg height="19" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="nav-label" data-i18n="nav_appointments">Appointments</span>
+          <span class="nav-badge-pill" id="navApptBadge">0</span>
+        </a>
+
+        <a href="chat.html" class="nav-item" id="nav-ai-chat" data-ctrl="nav-ai-chat">
+          <svg height="19" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <circle cx="9" cy="10" r="1"/>
+            <circle cx="15" cy="10" r="1"/>
+          </svg>
+          <span class="nav-label" data-i18n="nav_ai_chat">AI Chat</span>
+        </a>
+
+        <a href="support.html" class="nav-item" id="nav-support" data-ctrl="nav-support">
+          <svg height="19" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>
+          </svg>
+          <span class="nav-label" data-i18n="nav_support">Support & Inquiries</span>
+        </a>
+
+        <!-- Clinic Info (Active) -->
+        <a href="clinic-info.html" class="nav-item active" id="nav-clinic-info" data-ctrl="nav-clinic-info">
+          <svg height="19" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span class="nav-label" data-i18n="nav_clinic_info">Clinic Information</span>
+        </a>
+
+        <a href="profile.html" class="nav-item" id="nav-profile" data-ctrl="nav-profile">
+          <svg height="19" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="nav-label" data-i18n="nav_profile">My Profile</span>
+        </a>
+      </nav>
+
+      <!-- Bottom Human Support Card -->
+      <div class="help-card" id="sidebarHelpCard" data-ctrl="sidebar-help">
+        <div class="help-header">
+          <div class="help-icon-circle">
+            <svg height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2">
+              <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>
+            </svg>
+          </div>
+          <div class="help-text">
+            <div class="help-title" data-i18n="help_title">Need Help?</div>
+            <div class="help-subtitle" data-i18n="help_subtitle">Prefer speaking to a human?</div>
+          </div>
+        </div>
+        <a href="tel:19000" class="help-btn" style="text-decoration:none;" data-ctrl="sidebar-help-btn">
+          <span data-i18n="contact_support_btn">Contact Support</span>
+          <svg height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14"/>
+            <path d="m12 5 7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+    </aside>
+
+    <!-- MAIN STAGE -->
+    <main class="main-stage" id="mainStage">
+
+      <!-- TOP APP HEADER -->
+      <header class="top-app-header" id="topHeader" data-ctrl="top-header">
+        <div class="mobile-brand-box" onclick="window.location.href='index.html'">
+          <div class="mobile-brand-logo">
+            <svg height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+            </svg>
+          </div>
+          <div class="mobile-brand-titles">
+            <div class="mobile-brand-name" data-i18n="brand_name">Nile Clinics</div>
+            <div class="mobile-brand-tagline" data-i18n="brand_tagline">Your Health, Our Care</div>
+          </div>
+        </div>
+
+        <div class="header-search-box" id="headerSearchBox" data-ctrl="header-search">
+          <svg height="16" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="globalSearchInput" placeholder="Search doctors, specialties, or services..." data-i18n-placeholder="search_placeholder" oninput="handleGlobalSearch(this.value)">
+          <kbd class="search-kbd">Ctrl K</kbd>
+        </div>
+
+        <div class="header-actions-group">
+          <button class="lang-pill-btn" id="headerLangBtn" onclick="toggleLanguage()" title="Change Language / تغيير اللغة" data-ctrl="header-lang-btn">
+            <span class="lang-flag" id="langFlagIcon">🇪🇬</span>
+            <span class="lang-label" id="langLabelText">العامية المصرية</span>
+          </button>
+          <div class="user-profile-badge" id="headerUserBadge" onclick="window.location.href='profile.html'" title="View My Profile" data-ctrl="header-user-badge">
+            <div class="user-avatar-circle" id="userBadgeAvatar">MA</div>
+            <div class="user-name-text" id="userBadgeName">Mona Ahmed</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- CLINIC INFO VIEWPORT -->
+      <section class="view-panel active" id="view-clinic-info">
+        <div class="page-top-heading" data-ctrl="clinic-info-header">
+          <div>
+            <h1 class="page-main-title" data-i18n="clinic_info_title">Clinic Information & Branches</h1>
+            <p class="page-main-sub" data-i18n="clinic_info_sub">Branch locations, working hours, specialized medical services, and insurance coverage.</p>
+          </div>
+        </div>
+
+        <!-- Branches Grid -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:28px;" data-ctrl="clinic-branches">
+          
+          <!-- Heliopolis Branch -->
+          <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:18px; padding:24px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <span class="status-badge-chip confirmed" style="font-size:11px;">Main Hospital & ER</span>
+                <span style="font-size:12px; color:#64748B; font-weight:600;">Code: HEL-01</span>
+              </div>
+              <h2 style="font-size:18px; font-weight:800; color:#0F172A; margin-bottom:8px;" data-i18n="branch_heliopolis_title">Heliopolis Branch (Main Clinic)</h2>
+              <p style="font-size:13px; color:#475569; display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563EB" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                14 El-Merghany St., Heliopolis, Cairo
+              </p>
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:12px; font-size:12px; color:#334155; margin-bottom:16px;">
+                <div style="font-weight:700; color:#0F172A; margin-bottom:4px;" data-i18n="branch_hours_title">Operating Hours:</div>
+                <div data-i18n="branch_hours_desc">Saturday - Thursday: 8:00 AM - 11:00 PM | Friday: 1:00 PM - 10:00 PM (Emergency 24/7)</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <a href="appointments.html" class="btn-primary-action" style="flex:1; text-align:center; text-decoration:none;">Book at Branch</a>
+              <a href="tel:0224158800" class="btn-filter-reset" style="padding:10px 14px; text-decoration:none; display:flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Nasr City Branch -->
+          <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:18px; padding:24px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <span class="status-badge-chip completed" style="font-size:11px;">Outpatient & Specialty</span>
+                <span style="font-size:12px; color:#64748B; font-weight:600;">Code: NAS-02</span>
+              </div>
+              <h2 style="font-size:18px; font-weight:800; color:#0F172A; margin-bottom:8px;" data-i18n="branch_nasr_title">Nasr City Branch</h2>
+              <p style="font-size:13px; color:#475569; display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563EB" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                22 Abbas El-Akkad St., Nasr City, Cairo
+              </p>
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:12px; font-size:12px; color:#334155; margin-bottom:16px;">
+                <div style="font-weight:700; color:#0F172A; margin-bottom:4px;" data-i18n="branch_hours_title">Operating Hours:</div>
+                <div>Saturday - Thursday: 9:00 AM - 10:00 PM | Friday: 2:00 PM - 9:00 PM</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <a href="appointments.html" class="btn-primary-action" style="flex:1; text-align:center; text-decoration:none;">Book at Branch</a>
+              <a href="tel:0222749911" class="btn-filter-reset" style="padding:10px 14px; text-decoration:none; display:flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Specialties Showcase -->
+        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:18px; padding:24px; margin-bottom:28px; box-shadow:var(--shadow-card);" data-ctrl="clinic-specialties">
+          <h3 style="font-size:16px; font-weight:800; color:#0F172A; margin-bottom:16px;" data-i18n="facilities_heading">Specialized Medical Departments</h3>
+          <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:12px;">
+            <div style="padding:14px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; text-align:center;">
+              <div style="font-size:24px; margin-bottom:6px;">❤️</div>
+              <div style="font-size:13px; font-weight:700; color:#0F172A;">Cardiology</div>
+            </div>
+            <div style="padding:14px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; text-align:center;">
+              <div style="font-size:24px; margin-bottom:6px;">🦴</div>
+              <div style="font-size:13px; font-weight:700; color:#0F172A;">Orthopedics</div>
+            </div>
+            <div style="padding:14px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; text-align:center;">
+              <div style="font-size:24px; margin-bottom:6px;">👶</div>
+              <div style="font-size:13px; font-weight:700; color:#0F172A;">Pediatrics</div>
+            </div>
+            <div style="padding:14px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; text-align:center;">
+              <div style="font-size:24px; margin-bottom:6px;">✨</div>
+              <div style="font-size:13px; font-weight:700; color:#0F172A;">Dermatology</div>
+            </div>
+            <div style="padding:14px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; text-align:center;">
+              <div style="font-size:24px; margin-bottom:6px;">🧠</div>
+              <div style="font-size:13px; font-weight:700; color:#0F172A;">Neurology</div>
+            </div>
+            <div style="padding:14px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; text-align:center;">
+              <div style="font-size:24px; margin-bottom:6px;">👁️</div>
+              <div style="font-size:13px; font-weight:700; color:#0F172A;">Ophthalmology</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insurance Providers -->
+        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:18px; padding:24px; box-shadow:var(--shadow-card);" data-ctrl="clinic-insurance">
+          <h3 style="font-size:16px; font-weight:800; color:#0F172A; margin-bottom:16px;" data-i18n="insurance_heading">Accepted Insurance Networks</h3>
+          <div style="display:flex; flex-wrap:wrap; gap:12px;">
+            <span class="status-badge-chip confirmed" style="font-size:13px; padding:8px 16px;">AXA Egypt</span>
+            <span class="status-badge-chip confirmed" style="font-size:13px; padding:8px 16px;">MetLife Alico</span>
+            <span class="status-badge-chip confirmed" style="font-size:13px; padding:8px 16px;">Bupa Global</span>
+            <span class="status-badge-chip confirmed" style="font-size:13px; padding:8px 16px;">Allianz Egypt</span>
+            <span class="status-badge-chip confirmed" style="font-size:13px; padding:8px 16px;">Misr Healthcare Network</span>
+            <span class="status-badge-chip confirmed" style="font-size:13px; padding:8px 16px;">Nextcare</span>
+            <span class="status-badge-chip confirmed" style="font-size:13px; padding:8px 16px;">MedNet</span>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" data-ctrl="mobile-bottom-nav">
+      <a href="index.html" class="mob-nav-btn" id="mob-nav-home" data-ctrl="mob-nav-home" style="text-decoration:none;">
+        <svg height="19" class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="mob-nav-label" data-i18n="nav_home">Home</span>
+      </a>
+      <a href="appointments.html" class="mob-nav-btn" id="mob-nav-appointments" data-ctrl="mob-nav-appointments" style="text-decoration:none;">
+        <svg height="19" class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="mob-nav-label" data-i18n="nav_appointments">Appointments</span>
+      </a>
+      <a href="chat.html" class="mob-nav-btn" id="mob-nav-ai-chat" data-ctrl="mob-nav-ai-chat" style="text-decoration:none;">
+        <svg height="19" class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/></svg>
+        <span class="mob-nav-label" data-i18n="nav_ai_chat">AI Chat</span>
+      </a>
+      <a href="profile.html" class="mob-nav-btn" id="mob-nav-profile" data-ctrl="mob-nav-profile" style="text-decoration:none;">
+        <svg height="19" class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="mob-nav-label" data-i18n="nav_profile">Profile</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <div class="interactive-modal-backdrop" id="modalBackdrop" onclick="handleBackdropClick(event)">
+    <div class="interactive-modal-container" id="modalContainer">
+      <div class="sheet-handle-bar"><div class="sheet-handle"></div></div>
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Modal</h3>
+        <button class="modal-close-btn" onclick="closeActiveModal()"><svg height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastContainer"></div>
+
+  <script src="portal-api.js"></script>
+  <script src="portal-session.js"></script>
+  <script src="api.js"></script>
+  <script src="common.js"></script>
+</body>
+</html>

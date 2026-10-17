@@ -2,11 +2,18 @@
 .env
 .env.local
 .env.*.local
+.env.cutover-base
+.env.supabase
+.env.n8n
+*.dump
 *.pem
 *.key
 *.cert
 *.crt
 secrets/
+# SSH Keys
+/KEY2.pub
+/KEY2.key
 
 # Operating System Files
 .DS_Store
@@ -14,6 +21,7 @@ Thumbs.db
 desktop.ini
 
 # IDE & Editors
+.agents/
 .idea/
 .vscode/
 *.swp
@@ -50,6 +58,7 @@ venv/
 ENV/
 env/
 .pytest_cache/
+pytest-cache-files-*/
 .coverage
 htmlcov/
 .mypy_cache/
