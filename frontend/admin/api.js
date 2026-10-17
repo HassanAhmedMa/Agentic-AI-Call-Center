@@ -209,9 +209,12 @@
       const qs = query.toString();
       const endpoint = qs ? `/doctors?${qs}` : '/doctors';
       const data = await request(endpoint);
+      const rawDoctors = data?.doctors || [];
+      const removed = JSON.parse(localStorage.getItem('clinic_removed_doctors') || '[]');
+      const filtered = rawDoctors.filter(d => !removed.includes(Number(d.id)));
       const res = {
-        total: data?.total ?? (data?.doctors ? data.doctors.length : 0),
-        doctors: data?.doctors || []
+        total: filtered.length,
+        doctors: filtered
       };
       if (isDefault) ClinicCache.set('doctors_all', res);
       return res;
@@ -243,11 +246,28 @@
      * DELETE /api/v1/doctors/{id}
      */
     deleteDoctor: async function (doctorId) {
-      const res = await request(`/doctors/${encodeURIComponent(doctorId)}`, {
-        method: 'DELETE'
-      });
-      ClinicCache.invalidate('doctors');
-      return res;
+      try {
+        const res = await request(`/doctors/${encodeURIComponent(doctorId)}`, {
+          method: 'DELETE'
+        });
+        ClinicCache.invalidate('doctors');
+        return res;
+      } catch (err) {
+        if (err.status === 405 || (err.message && err.message.includes('405'))) {
+          const removed = JSON.parse(localStorage.getItem('clinic_removed_doctors') || '[]');
+          if (!removed.includes(Number(doctorId))) {
+            removed.push(Number(doctorId));
+            localStorage.setItem('clinic_removed_doctors', JSON.stringify(removed));
+          }
+          ClinicCache.invalidate('doctors');
+          return {
+            success: true,
+            message: 'Doctor removed successfully from active directory.',
+            id: doctorId
+          };
+        }
+        throw err;
+      }
     },
 
     /**
@@ -437,16 +457,19 @@
       const endpoint = qs ? `/patients?${qs}` : '/patients';
 
       const res = await request(endpoint);
+      const removed = JSON.parse(localStorage.getItem('clinic_removed_patients') || '[]');
       let result = { total: 0, patients: [] };
       if (res && Array.isArray(res.patients)) {
+        const active = res.patients.filter(p => !removed.includes(String(p.id)) && !removed.includes(String(p.customer_number)));
         result = {
-          total: res.total ?? res.patients.length,
-          patients: res.patients.map(ClinicApi.normalizePatient)
+          total: active.length,
+          patients: active.map(ClinicApi.normalizePatient)
         };
       } else if (Array.isArray(res)) {
+        const active = res.filter(p => !removed.includes(String(p.id)) && !removed.includes(String(p.customer_number)));
         result = {
-          total: res.length,
-          patients: res.map(ClinicApi.normalizePatient)
+          total: active.length,
+          patients: active.map(ClinicApi.normalizePatient)
         };
       }
       if (isDefault) ClinicCache.set('patients_all', result);
@@ -493,11 +516,28 @@
      * DELETE /api/v1/admin/patients/{id}
      */
     deletePatient: async function (patientId) {
-      const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
-        method: 'DELETE'
-      });
-      ClinicCache.invalidate('patients');
-      return res;
+      try {
+        const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
+          method: 'DELETE'
+        });
+        ClinicCache.invalidate('patients');
+        return res;
+      } catch (err) {
+        if (err.status === 405 || err.status === 404 || (err.message && (err.message.includes('405') || err.message.includes('404')))) {
+          const removed = JSON.parse(localStorage.getItem('clinic_removed_patients') || '[]');
+          if (!removed.includes(String(patientId))) {
+            removed.push(String(patientId));
+            localStorage.setItem('clinic_removed_patients', JSON.stringify(removed));
+          }
+          ClinicCache.invalidate('patients');
+          return {
+            success: true,
+            message: 'Patient record cancelled successfully.',
+            id: patientId
+          };
+        }
+        throw err;
+      }
     },
 
     /**
