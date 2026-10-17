@@ -149,18 +149,105 @@ function formatDateIso(d) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+const SCHEDULE_TIME_SLOTS = [
+  '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM',
+  '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM',
+  '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
+  '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+  '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM',
+  '08:00 PM'
+];
+
+function parseSlotTo24h(slotTime) {
+  if (!slotTime) return '00:00';
+  const parts = slotTime.trim().split(/\s+/);
+  const timeParts = parts[0].split(':');
+  let h = parseInt(timeParts[0], 10);
+  const m = timeParts[1] || '00';
+  const ampm = (parts[1] || '').toUpperCase();
+  if (ampm === 'PM' && h < 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${m}`;
+}
+
 function matchTimeSlot(appt, slotTime) {
   if (!appt) return false;
-  if (appt.timeShort && (appt.timeShort === slotTime || appt.timeShort.startsWith(slotTime.slice(0, 5)))) return true;
-  if (appt.time && appt.time.startsWith(slotTime)) return true;
-
-  const tHour = parseInt(slotTime.slice(0, 2), 10) + (slotTime.includes('PM') && !slotTime.startsWith('12') ? 12 : 0);
-  const aStart = appt.start_time || (appt.time ? appt.time.slice(0, 5) : '');
-  if (aStart) {
-    const aHour = parseInt(aStart.slice(0, 2), 10);
-    if (aHour === tHour) return true;
-  }
+  const slot24 = parseSlotTo24h(slotTime);
+  const aStart = (appt.start_time || appt.time || appt.timeShort || '').slice(0, 5);
+  if (aStart === slot24) return true;
+  if (appt.timeShort && appt.timeShort.toUpperCase() === slotTime.toUpperCase()) return true;
   return false;
+}
+
+function getIsoWeekday(date) {
+  const day = date.getDay();
+  return day === 0 ? 7 : day; // 1=Mon ... 6=Sat, 7=Sun
+}
+
+function isDoctorWorkingOnDate(doc, date) {
+  if (!doc) return true;
+  const isoDay = getIsoWeekday(date);
+  if (isoDay === 5) return false; // Friday is clinic-wide off in Egyptian healthcare & database constraint ck_appointment_weekday!
+  if (Array.isArray(doc.working_days) && doc.working_days.length > 0) {
+    return doc.working_days.includes(isoDay);
+  }
+  return true;
+}
+
+function isSlotWithinDoctorShift(doc, slotTime) {
+  if (!doc) return true;
+  const slot24 = parseSlotTo24h(slotTime);
+  const start = (doc.shift_start || doc.working_hours?.start || '08:00').slice(0, 5);
+  const end = (doc.shift_end || doc.working_hours?.end || '17:00').slice(0, 5);
+  return slot24 >= start && slot24 < end;
+}
+
+function renderScheduleSkeletons() {
+  const container = document.getElementById('calendarGridContainer');
+  if (!container) return;
+
+  const skeletonHeader = `
+    <thead>
+      <tr>
+        <th class="time-col-header" style="width: 100px;">Time</th>
+        ${[1, 2, 3, 4, 5].map(() => `
+          <th>
+            <div class="doctor-header-cell" style="display:flex; align-items:center; gap:8px;">
+              <div class="skeleton-shimmer skeleton-avatar" style="width:32px; height:32px; border-radius:50%;"></div>
+              <div style="flex:1;">
+                <div class="skeleton-shimmer skeleton-text" style="width:70%; height:13px;"></div>
+                <div class="skeleton-shimmer skeleton-text" style="width:45%; height:10px; margin-top:3px;"></div>
+              </div>
+            </div>
+          </th>
+        `).join('')}
+      </tr>
+    </thead>
+  `;
+
+  const dummyTimes = ['09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM'];
+  const skeletonBody = `
+    <tbody>
+      ${dummyTimes.map((t, idx) => `
+        <tr>
+          <td class="time-slot-cell">${t}</td>
+          ${[1, 2, 3, 4, 5].map((col) => {
+            if ((idx + col) % 3 === 0) {
+              return `
+                <td style="padding: 4px; vertical-align: top;">
+                  <div class="skeleton-shimmer" style="height: 52px; border-radius: 8px;"></div>
+                </td>
+              `;
+            }
+            return `<td style="padding: 4px;"></td>`;
+          }).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+
+  container.innerHTML = `<table class="doctor-schedule-table">${skeletonHeader}${skeletonBody}</table>`;
 }
 
 function initAppointmentsStore() {
@@ -169,7 +256,7 @@ function initAppointmentsStore() {
   miniCalMonth = selectedDate.getMonth();
   updateDateHeading();
   renderMiniCalendar();
-  renderSchedule();
+  renderScheduleSkeletons();
 }
 
 /* =============================================================================
@@ -204,17 +291,14 @@ function renderScheduleGrid() {
   renderSchedule();
 }
 
-/* 1. Day Schedule: Doctor Multi-Column Grid */
+/* 1. Day Schedule: Doctor Multi-Column Grid (30-Minute Dynamic Slots) */
 function renderDaySchedule() {
   const container = document.getElementById('calendarGridContainer');
   if (!container) return;
 
-  const times = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'
-  ];
+  const times = SCHEDULE_TIME_SLOTS;
 
-  // Active appointments on selectedDate (excluding cancelled unless filtered)
+  // Active appointments on selectedDate
   const filteredAppointments = getFilteredAppointments();
   const dayAppointments = filteredAppointments.filter(a => {
     const aDate = parseApptDate(a.date);
@@ -230,45 +314,48 @@ function renderDaySchedule() {
     if (foundDoc) {
       doctors = [foundDoc];
     } else {
-      doctors = [{ name_en: doctorFilterVal, specialty_id: 1 }];
+      doctors = [{ name_en: doctorFilterVal, specialty_id: 1, shift_start: '09:00', shift_end: '17:00' }];
     }
   } else {
-    // Collect all doctors who actually have appointments on this date
-    const dayDocNames = new Set(dayAppointments.map(a => a.doctor).filter(Boolean));
-    const activeDocObjects = liveDoctorsCache.filter(d => dayDocNames.has(d.name_en));
-
-    // Pad with first standard doctors if fewer than 5
-    const remainingDocs = liveDoctorsCache.filter(d => !dayDocNames.has(d.name_en));
-    doctors = [...activeDocObjects, ...remainingDocs].slice(0, 6);
-
-    if (doctors.length === 0) {
+    // Collect all doctors from live cache
+    if (liveDoctorsCache.length > 0) {
+      doctors = liveDoctorsCache;
+    } else {
       doctors = [
-        { name_en: 'Dr. Amal Nour', specialty_id: 1 },
-        { name_en: 'Dr. Karim Salem', specialty_id: 1 },
-        { name_en: 'Dr. Salma Hany', specialty_id: 2 },
-        { name_en: 'Dr. Tarek Ali', specialty_id: 2 },
-        { name_en: 'Dr. Mariam Adel', specialty_id: 3 }
+        { name_en: 'Dr. Amal Nour', specialty_id: 1, shift_start: '09:00', shift_end: '14:00', working_days: [6, 7, 1, 2, 3] },
+        { name_en: 'Dr. Karim Salem', specialty_id: 1, shift_start: '14:00', shift_end: '20:00', working_days: [6, 7, 1, 2, 4] },
+        { name_en: 'Dr. Salma Hany', specialty_id: 2, shift_start: '09:00', shift_end: '15:00', working_days: [7, 1, 2, 3, 4] },
+        { name_en: 'Dr. Tarek Ali', specialty_id: 2, shift_start: '13:00', shift_end: '19:00', working_days: [6, 1, 2, 3, 4] },
+        { name_en: 'Dr. Mariam Adel', specialty_id: 3, shift_start: '10:00', shift_end: '16:00', working_days: [6, 7, 1, 2, 3] }
       ];
     }
   }
+
+  const isFriday = getIsoWeekday(selectedDate) === 5;
 
   // Build the Table HTML
   let theadHtml = `
     <thead>
       <tr>
-        <th class="time-col-header">Time</th>
+        <th class="time-col-header" style="min-width: 90px; width: 90px;">Time</th>
         ${doctors.map(doc => {
           const spec = liveSpecialtiesCache.find(s => s.id === doc.specialty_id);
           const deptName = doc.specialty?.name_en || (spec ? spec.name_en : doc.title_en || 'Consultant');
           const cleanName = (doc.name_en || 'Doctor').replace(/Dr\.\s*/i, '');
           const initials = cleanName.split(' ').map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase() || 'DR';
+          const onDutyToday = isDoctorWorkingOnDate(doc, selectedDate);
+          const shiftText = doc.shift_start && doc.shift_end ? `${doc.shift_start.slice(0, 5)} - ${doc.shift_end.slice(0, 5)}` : '09:00 - 17:00';
+
           return `
-            <th>
+            <th style="min-width: 170px;">
               <div class="doctor-header-cell">
                 <div class="doctor-header-avatar">${initials}</div>
                 <div class="doctor-header-info">
-                  <span class="doctor-header-name">${escapeHtml(doc.name_en)}</span>
-                  <span class="doctor-header-dept">${escapeHtml(deptName)}</span>
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <span class="doctor-header-name">${escapeHtml(doc.name_en)}</span>
+                    ${!onDutyToday ? '<span class="doctor-off-badge">Off-Duty</span>' : ''}
+                  </div>
+                  <span class="doctor-header-dept">${escapeHtml(deptName)} • <small style="color:var(--text-muted); font-size:10px;">${shiftText}</small></span>
                 </div>
               </div>
             </th>
@@ -284,6 +371,19 @@ function renderDaySchedule() {
         let cellsHtml = `<td class="time-slot-cell">${t}</td>`;
 
         doctors.forEach(doc => {
+          const onDutyToday = isDoctorWorkingOnDate(doc, selectedDate);
+
+          if (!onDutyToday || isFriday) {
+            cellsHtml += `<td class="off-duty-cell"></td>`;
+            return;
+          }
+
+          const withinShift = isSlotWithinDoctorShift(doc, t);
+          if (!withinShift) {
+            cellsHtml += `<td class="off-shift-cell"></td>`;
+            return;
+          }
+
           const matches = dayAppointments.filter(a => {
             const docIdMatch = a.doctorId && doc.id && Number(a.doctorId) === Number(doc.id);
             const docNameMatch = a.doctor && (
@@ -311,13 +411,17 @@ function renderDaySchedule() {
                     <span class="status-pill status-${match.status.toLowerCase().replace(/\s+/g, '')}">${match.status}</span>
                   </div>
                   <span class="slot-patient-name">${escapeHtml(match.patientName)}</span>
-                  <span class="slot-sub-type">${escapeHtml(match.type)} • ${escapeHtml(match.patientCode)}</span>
+                  <span class="slot-sub-type">${escapeHtml(match.type || 'Consultation')} • ${escapeHtml(match.patientCode || '')}</span>
                 </div>
               `;
             });
             cellsHtml += `</td>`;
           } else {
-            cellsHtml += `<td style="padding: 4px; text-align: center; vertical-align: middle;"></td>`;
+            // Available slot within shift
+            cellsHtml += `
+              <td class="available-shift-slot" style="padding: 4px; text-align: center; vertical-align: middle; cursor: pointer;" onclick="openNewAppointmentForSlot('${escapeHtml(doc.name_en)}', '${t}')" title="Available Slot: Click to book with ${escapeHtml(doc.name_en)} at ${t}">
+              </td>
+            `;
           }
         });
 
@@ -329,15 +433,40 @@ function renderDaySchedule() {
   container.innerHTML = `<table class="doctor-schedule-table">${theadHtml}${tbodyHtml}</table>`;
 }
 
-/* 2. Week Schedule: 7-Day Matrix */
+window.openNewAppointmentForSlot = function(doctorName, slotTime) {
+  openNewAppointmentModal();
+  setTimeout(() => {
+    const docSelect = document.getElementById('newApptDoctor');
+    const timeSelect = document.getElementById('newApptTime');
+    const dateInput = document.getElementById('newApptDate');
+
+    if (dateInput) dateInput.value = formatDateIso(selectedDate);
+    if (docSelect && doctorName) {
+      for (let i = 0; i < docSelect.options.length; i++) {
+        if (docSelect.options[i].value.includes(doctorName) || docSelect.options[i].text.includes(doctorName)) {
+          docSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    if (timeSelect && slotTime) {
+      const time24 = parseSlotTo24h(slotTime);
+      for (let i = 0; i < timeSelect.options.length; i++) {
+        if (timeSelect.options[i].value === time24 || timeSelect.options[i].text.startsWith(slotTime.slice(0, 5))) {
+          timeSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+  }, 100);
+};
+
+/* 2. Week Schedule: 7-Day Matrix with Friday Off-Duty Handling */
 function renderWeekSchedule() {
   const container = document.getElementById('calendarGridContainer');
   if (!container) return;
 
-  const times = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'
-  ];
+  const times = SCHEDULE_TIME_SLOTS;
 
   // Calculate 7 days of the week containing selectedDate (Sunday to Saturday)
   const startOfWeek = new Date(selectedDate);
@@ -353,19 +482,25 @@ function renderWeekSchedule() {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const today = new Date();
 
+  const doctorFilterVal = document.getElementById('doctorSelectFilter') ? document.getElementById('doctorSelectFilter').value : 'All Doctors';
+  const filteredDoc = doctorFilterVal !== 'All Doctors' ? liveDoctorsCache.find(d => d.name_en === doctorFilterVal) : null;
+
   let theadHtml = `
     <thead>
       <tr>
-        <th class="time-col-header">Time</th>
+        <th class="time-col-header" style="min-width: 90px; width: 90px;">Time</th>
         ${weekDays.map((d, idx) => {
           const isActive = isSameDay(d, selectedDate);
           const isToday = isSameDay(d, today);
+          const isFriday = getIsoWeekday(d) === 5;
           const activeClass = isActive ? 'active-week-col' : '';
           const dayNumStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+          const isDocOff = filteredDoc ? !isDoctorWorkingOnDate(filteredDoc, d) : false;
+
           return `
-            <th class="${activeClass}" style="cursor: pointer;" onclick="selectCalendarDate(${d.getFullYear()}, ${d.getMonth()}, ${d.getDate()})">
+            <th class="${activeClass}" style="cursor: pointer; min-width: 140px;" onclick="selectCalendarDate(${d.getFullYear()}, ${d.getMonth()}, ${d.getDate()})">
               <div class="week-day-header">
-                <span class="week-day-name">${dayNames[idx]}${isToday ? ' (Today)' : ''}</span>
+                <span class="week-day-name">${dayNames[idx]}${isToday ? ' (Today)' : ''}${isFriday ? ' (Closed)' : isDocOff ? ' (Off)' : ''}</span>
                 <span class="week-day-num">${dayNumStr}</span>
               </div>
             </th>
@@ -383,6 +518,23 @@ function renderWeekSchedule() {
         weekDays.forEach(d => {
           const isSelectedDay = isSameDay(d, selectedDate);
           const cellClass = isSelectedDay ? 'active-week-col-td' : '';
+          const isFriday = getIsoWeekday(d) === 5;
+
+          if (isFriday) {
+            cellsHtml += `<td class="off-duty-cell ${cellClass}"></td>`;
+            return;
+          }
+
+          if (filteredDoc) {
+            if (!isDoctorWorkingOnDate(filteredDoc, d)) {
+              cellsHtml += `<td class="off-duty-cell ${cellClass}"></td>`;
+              return;
+            }
+            if (!isSlotWithinDoctorShift(filteredDoc, t)) {
+              cellsHtml += `<td class="off-shift-cell ${cellClass}"></td>`;
+              return;
+            }
+          }
 
           const matches = filteredAppointments.filter(a => {
             const aDate = parseApptDate(a.date);

@@ -4535,3 +4535,162 @@ html, body {
 .upcoming-btn-action.btn-primary-action:hover {
   background: #1D4ED8;
 }
+
+/* ==========================================================================
+   SKELETON SHIMMER LOADERS & CALENDAR SHIFT STYLES
+   ========================================================================== */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-box {
+  display: block;
+}
+
+.skeleton-text {
+  height: 14px;
+  border-radius: var(--radius-xs);
+  margin-bottom: 6px;
+}
+
+.skeleton-pill {
+  height: 22px;
+  width: 70px;
+  border-radius: var(--radius-full);
+}
+
+.skeleton-avatar {
+  border-radius: var(--radius-full);
+}
+
+/* Off-duty and off-shift cell styling for schedule grid */
+.off-duty-cell {
+  background: repeating-linear-gradient(
+    45deg,
+    #F8FAFC,
+    #F8FAFC 8px,
+    #F1F5F9 8px,
+    #F1F5F9 16px
+  ) !important;
+  color: var(--text-faint) !important;
+  cursor: not-allowed !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.off-duty-cell::after {
+  content: 'Off Duty';
+  font-size: 10px;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.off-shift-cell {
+  background-color: #FAFAFA !important;
+  color: #CBD5E1 !important;
+  cursor: not-allowed !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.off-shift-cell::after {
+  content: 'Closed';
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #CBD5E1;
+  opacity: 0.7;
+}
+
+.doctor-off-badge {
+  background-color: #F1F5F9;
+  color: #64748B;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  margin-left: 4px;
+}
+
+.working-days-badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.day-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.day-badge.active-today {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+/* Day selector checkboxes in Add Doctor Modal */
+.working-days-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.day-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-body);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.day-checkbox-label:hover {
+  background: #EFF6FF;
+  border-color: var(--primary-blue-border);
+}
+
+.day-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--primary-blue);
+}
+
+.day-checkbox-label input[type="checkbox"]:checked + span {
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+.day-checkbox-label:has(input[type="checkbox"]:checked) {
+  background: #EFF6FF;
+  border-color: var(--primary-blue);
+}
+

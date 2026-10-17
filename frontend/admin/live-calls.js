@@ -7,9 +7,109 @@ document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initGlobalShortcuts();
   initLiveCallTimers();
+  renderLiveCallsSkeletons();
+  checkUrlParamsForDirectCall();
   if (liveCallsDatabase.length > 0) selectLiveCallRow(liveCallsDatabase[0].id);
   initRealtimeLiveCallsSync();
 });
+
+function renderLiveCallsSkeletons() {
+  const tableBody = document.getElementById('liveCallsTableBody');
+  if (!tableBody) return;
+  tableBody.innerHTML = `
+    <tr>
+      <td><div class="skeleton-shimmer" style="width:16px; height:16px; border-radius:4px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-text" style="width:110px; height:14px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-text" style="width:90px; height:14px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-text" style="width:70px; height:14px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-text" style="width:50px; height:14px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-pill" style="width:70px; height:20px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-text" style="width:120px; height:14px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-text" style="width:150px; height:14px;"></div></td>
+      <td><div class="skeleton-shimmer skeleton-pill" style="width:75px; height:24px;"></div></td>
+    </tr>
+  `;
+}
+
+function checkUrlParamsForDirectCall() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const caller = urlParams.get('caller');
+  const phone = urlParams.get('phone');
+  if (caller) {
+    const newCall = {
+      id: 1,
+      caller: caller,
+      phone: phone || '+20 100 000 0000',
+      avatar: caller.charAt(0).toUpperCase(),
+      avatarBg: '#EFF6FF',
+      avatarColor: '#2563EB',
+      patientStatus: 'Known Patient',
+      callerMeta: 'Booked Appointment • Consultation',
+      dept: 'Cardiology',
+      durationSeconds: 14,
+      status: 'Live',
+      confidence: '98%',
+      intent: 'Appointment Confirmation & Directions',
+      entityDept: 'Cardiology',
+      entityDate: 'Today',
+      entityTime: '10:30 AM',
+      dialogue: [
+        { sender: 'agent', text: 'أهلاً بحضرتك في عيادات النيل، بخصوص موعدك المسجل اليوم، هل تحب تأكيد الحجز أو الاستفسار عن شيء؟', time: '10:30 AM' },
+        { sender: 'caller', text: 'أهلاً يا دكتور، أنا جاي في الطريق وعايز اتأكد من رقم العيادة والدور', time: '10:30 AM' },
+        { sender: 'agent', text: 'تمام يا فندم! العيادة في الدور الثالث، مبنى أ، والعيادة جاهزة لاستقبالك.', time: '10:31 AM' }
+      ]
+    };
+    liveCallsDatabase.unshift(newCall);
+    renderCallsTable();
+    selectLiveCallRow(1);
+    const ongoingMetric = document.getElementById('metricOngoingCalls');
+    if (ongoingMetric) ongoingMetric.textContent = '1';
+    const pill = document.getElementById('ongoingPillCount');
+    if (pill) pill.textContent = '1 ongoing call';
+  } else {
+    setTimeout(() => {
+      const tableBody = document.getElementById('liveCallsTableBody');
+      if (tableBody && liveCallsDatabase.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align:center; padding:60px 20px; color:#64748B;">
+              <div style="font-size:15px; font-weight:700; color:#334155; margin-bottom:6px;">No Active Live Calls</div>
+              <div style="font-size:13px; max-width:400px; margin:0 auto;">All voice channels are currently in standby. Live caller streams will appear here dynamically.</div>
+            </td>
+          </tr>
+        `;
+      }
+    }, 350);
+  }
+}
+
+function renderCallsTable() {
+  const tableBody = document.getElementById('liveCallsTableBody');
+  if (!tableBody) return;
+  tableBody.innerHTML = liveCallsDatabase.map(call => `
+    <tr onclick="selectLiveCallRow(${call.id}, this)" style="cursor:pointer;">
+      <td class="td-checkbox" onclick="event.stopPropagation()"><input type="checkbox" class="custom-checkbox"></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:34px; height:34px; border-radius:50%; background:${call.avatarBg}; color:${call.avatarColor}; display:flex; align-items:center; justify-content:center; font-weight:700;">${call.avatar}</div>
+          <div>
+            <div style="font-weight:700; color:#0F172A;">${call.caller}</div>
+            <div style="font-size:11px; color:#64748B;">${call.phone}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge-known-patient">${call.patientStatus}</span></td>
+      <td><strong>${call.dept}</strong></td>
+      <td><span id="timerRow${call.id}">00:${String(call.durationSeconds).padStart(2, '0')}</span></td>
+      <td><span class="badge-status-ai">• ${call.status}</span></td>
+      <td>${call.intent}</td>
+      <td style="font-size:12px; color:#475569; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${call.dialogue[call.dialogue.length - 1]?.text || ''}</td>
+      <td class="table-actions-cell" style="text-align:right;">
+        <button class="btn-take-over-row" onclick="event.stopPropagation(); handleTakeOver(${call.id})">Take Over</button>
+      </td>
+    </tr>
+  `).join('');
+}
 
 function initRealtimeLiveCallsSync() {
   if (!window.ClinicRealtime) return;

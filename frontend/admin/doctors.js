@@ -11,6 +11,52 @@
   let allSpecialties = [];
   let selectedDoctorId = null;
 
+  const ISO_DAYS_MAP = {
+    6: 'Sat',
+    7: 'Sun',
+    1: 'Mon',
+    2: 'Tue',
+    3: 'Wed',
+    4: 'Thu'
+  };
+
+  function formatWorkingDays(days) {
+    if (!Array.isArray(days) || days.length === 0) return 'Sat – Wed';
+    return days.map(d => ISO_DAYS_MAP[d] || d).join(', ');
+  }
+
+  function renderDoctorSkeletons() {
+    const container = document.getElementById('doctorsGridContainer');
+    if (!container) return;
+    const single = `
+      <div class="doctor-card-panel" style="pointer-events:none; border-color:#F1F5F9; background:#FFFFFF;">
+        <div class="doctor-card-top" style="display:flex; align-items:center; gap:12px;">
+          <div class="skeleton-shimmer skeleton-avatar" style="width:46px; height:46px; border-radius:50%; flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div class="skeleton-shimmer skeleton-text" style="width:65%; height:16px;"></div>
+            <div class="skeleton-shimmer skeleton-text" style="width:40%; height:12px; margin-top:4px;"></div>
+            <div class="skeleton-shimmer skeleton-text" style="width:50%; height:11px; margin-top:3px;"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-pill" style="width:58px; height:22px;"></div>
+        </div>
+        <div class="doctor-card-body" style="margin-top:14px;">
+          <div class="skeleton-shimmer" style="height:24px; border-radius:6px; margin-bottom:12px;"></div>
+          <div class="doctor-info-grid">
+            <div class="info-item"><div class="skeleton-shimmer skeleton-text" style="width:50%; height:10px;"></div><div class="skeleton-shimmer skeleton-text" style="width:80%; height:14px;"></div></div>
+            <div class="info-item"><div class="skeleton-shimmer skeleton-text" style="width:50%; height:10px;"></div><div class="skeleton-shimmer skeleton-text" style="width:80%; height:14px;"></div></div>
+            <div class="info-item"><div class="skeleton-shimmer skeleton-text" style="width:50%; height:10px;"></div><div class="skeleton-shimmer skeleton-text" style="width:80%; height:14px;"></div></div>
+            <div class="info-item"><div class="skeleton-shimmer skeleton-text" style="width:50%; height:10px;"></div><div class="skeleton-shimmer skeleton-text" style="width:80%; height:14px;"></div></div>
+          </div>
+        </div>
+        <div class="doctor-card-footer" style="margin-top:12px;">
+          <div class="skeleton-shimmer skeleton-text" style="width:45%; height:12px;"></div>
+          <div class="skeleton-shimmer skeleton-pill" style="width:80px; height:26px;"></div>
+        </div>
+      </div>
+    `;
+    container.innerHTML = single.repeat(6);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initClock();
     initGlobalShortcuts();
@@ -127,8 +173,9 @@
       renderDoctorsGrid(allDoctors);
       if (loadingState) loadingState.style.display = 'none';
     } else {
-      // Only display loading state if cache is empty
-      if (loadingState) loadingState.style.display = 'flex';
+      // Instant Skeleton Loader - zero blank flash!
+      renderDoctorSkeletons();
+      if (loadingState) loadingState.style.display = 'none';
     }
 
     if (errorState) errorState.style.display = 'none';
@@ -265,6 +312,7 @@
         : '09:00 - 14:00';
 
       const langs = Array.isArray(doc.languages) ? doc.languages.join(', ').toUpperCase() : 'AR, EN';
+      const workingDaysStr = formatWorkingDays(doc.working_days);
 
       const palette = getDeptPalette(docSpecId);
 
@@ -303,12 +351,12 @@
                 <span class="info-val">${shift}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Languages</span>
-                <span class="info-val">${langs}</span>
+                <span class="info-label">Working Days</span>
+                <span class="info-val" style="font-weight:600; color:#2563EB;">${workingDaysStr}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Database ID</span>
-                <span class="info-val">#${doc.id}</span>
+                <span class="info-label">Languages</span>
+                <span class="info-val">${langs}</span>
               </div>
             </div>
           </div>
@@ -372,7 +420,7 @@
 
       const shiftStart = doc.working_hours?.start || doc.shift_start || '09:00';
       const shiftEnd = doc.working_hours?.end || doc.shift_end || '14:00';
-      const days = Array.isArray(doc.working_days) ? doc.working_days.join(', ') : 'Sat, Sun, Mon, Tue, Wed';
+      const days = formatWorkingDays(doc.working_days);
       const langs = Array.isArray(doc.languages) ? doc.languages.join(', ').toUpperCase() : 'AR, EN';
 
       bodyEl.innerHTML = `
@@ -401,7 +449,7 @@
             </div>
             <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
               <span style="display:block; color:#64748B; font-size:11px; text-transform:uppercase; font-weight:600;">Working Days</span>
-              <span style="color:#0F172A; text-transform:capitalize;">${days}</span>
+              <strong style="color:#2563EB; font-size:13px;">${days}</strong>
             </div>
             <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
               <span style="display:block; color:#64748B; font-size:11px; text-transform:uppercase; font-weight:600;">Languages</span>
@@ -576,6 +624,18 @@
         </div>
 
         <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">Working Days * (Closed Friday)</label>
+          <div class="working-days-selector">
+            <label class="day-checkbox-label"><input type="checkbox" name="workDay" value="6" checked> <span>Sat</span></label>
+            <label class="day-checkbox-label"><input type="checkbox" name="workDay" value="7" checked> <span>Sun</span></label>
+            <label class="day-checkbox-label"><input type="checkbox" name="workDay" value="1" checked> <span>Mon</span></label>
+            <label class="day-checkbox-label"><input type="checkbox" name="workDay" value="2" checked> <span>Tue</span></label>
+            <label class="day-checkbox-label"><input type="checkbox" name="workDay" value="3" checked> <span>Wed</span></label>
+            <label class="day-checkbox-label"><input type="checkbox" name="workDay" value="4"> <span>Thu</span></label>
+          </div>
+        </div>
+
+        <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Professional Bio (English)</label>
           <textarea id="newDocBioEn" rows="2" placeholder="Brief professional background, qualifications and experience..." style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:8px 12px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
         </div>
@@ -610,9 +670,20 @@
     const shiftEnd = document.getElementById('newDocShiftEnd')?.value || '17:00';
     const bioEn = document.getElementById('newDocBioEn')?.value.trim() || `Experienced ${titleEn} at Nile Clinics.`;
 
+    const checkedDays = Array.from(document.querySelectorAll('input[name="workDay"]:checked'))
+      .map(el => parseInt(el.value, 10));
+
     if (!nameEn || !nameAr || !specialtyId) {
       if (errBox) {
         errBox.textContent = 'Please fill out all required fields marked with *.';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    if (checkedDays.length === 0) {
+      if (errBox) {
+        errBox.textContent = 'Please select at least one working day for the doctor.';
         errBox.style.display = 'block';
       }
       return;
@@ -633,6 +704,7 @@
         consultation_fee: fee,
         shift_start: shiftStart,
         shift_end: shiftEnd,
+        working_days: checkedDays,
         bio_en: bioEn,
         bio_ar: 'استشاري متميز في عيادات النيل.'
       });

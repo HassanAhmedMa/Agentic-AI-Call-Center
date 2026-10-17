@@ -183,17 +183,95 @@ function simulateNewIncomingCall() {
 /* =============================================================================
    3. CALENDAR STRIP & APPOINTMENTS SELECTION
    ============================================================================= */
-const dailyAppointmentsData = {
-  10: [],
-  11: [],
-  12: [],
-  13: [],
-  14: [],
-  15: [],
-  16: []
-};
+let dailyAppointmentsData = {};
+let currentDashboardWeekOffset = 0;
+let selectedStripIsoDate = '';
 
-function selectCalendarDay(dayNum, cellEl) {
+function formatDateIso(d) {
+  if (!d) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function renderDashboardSkeletons() {
+  const metricTotal = document.getElementById('metricTotalPatients');
+  const metricToday = document.getElementById('metricTodayAppts');
+  const metricCalls = document.getElementById('metricActiveCalls');
+  const metricPending = document.getElementById('metricPendingFollowups');
+
+  const skeletonPill = `<span class="skeleton-shimmer skeleton-pill" style="display:inline-block; width:45px; height:24px; vertical-align:middle;"></span>`;
+  if (metricTotal) metricTotal.innerHTML = skeletonPill;
+  if (metricToday) metricToday.innerHTML = skeletonPill;
+  if (metricCalls) metricCalls.innerHTML = skeletonPill;
+  if (metricPending) metricPending.innerHTML = skeletonPill;
+
+  const apptContainer = document.getElementById('appointmentsListContainer');
+  const apptEmpty = document.getElementById('appointmentsEmptyState');
+  if (apptContainer) {
+    apptContainer.style.display = 'flex';
+    if (apptEmpty) apptEmpty.style.display = 'none';
+    apptContainer.innerHTML = `
+      <div class="appointment-row-item" style="border:none; padding:8px 12px; display:flex; align-items:center; justify-content:space-between;">
+        <span class="skeleton-shimmer skeleton-text" style="width:60px; height:14px;"></span>
+        <span class="skeleton-shimmer skeleton-text" style="width:130px; height:14px;"></span>
+        <span class="skeleton-shimmer skeleton-text" style="width:90px; height:14px;"></span>
+        <span class="skeleton-shimmer skeleton-pill" style="width:65px; height:20px;"></span>
+      </div>
+      <div class="appointment-row-item" style="border:none; padding:8px 12px; display:flex; align-items:center; justify-content:space-between;">
+        <span class="skeleton-shimmer skeleton-text" style="width:60px; height:14px;"></span>
+        <span class="skeleton-shimmer skeleton-text" style="width:130px; height:14px;"></span>
+        <span class="skeleton-shimmer skeleton-text" style="width:90px; height:14px;"></span>
+        <span class="skeleton-shimmer skeleton-pill" style="width:65px; height:20px;"></span>
+      </div>
+    `;
+  }
+}
+
+function renderDashboardWeekStrip() {
+  const container = document.getElementById('calDaysGrid');
+  const titleEl = document.querySelector('.cal-month-title');
+  if (!container) return;
+
+  const today = new Date();
+  const baseDate = new Date(today);
+  baseDate.setDate(today.getDate() + (currentDashboardWeekOffset * 7));
+
+  // Start from Sunday
+  const startOfWeek = new Date(baseDate);
+  startOfWeek.setDate(baseDate.getDate() - baseDate.getDay());
+
+  const monthName = startOfWeek.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  if (titleEl) titleEl.textContent = monthName;
+
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let html = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const iso = formatDateIso(d);
+    const dayNum = d.getDate();
+    const isToday = d.toDateString() === today.toDateString();
+    const isActive = selectedStripIsoDate ? (selectedStripIsoDate === iso) : isToday;
+
+    if (isActive && !selectedStripIsoDate) {
+      selectedStripIsoDate = iso;
+    }
+
+    html += `
+      <div class="cal-day-cell ${isActive ? 'active' : ''}" onclick="selectCalendarDayByDate('${iso}', this)">
+        <span class="day-name">${dayNames[i]}</span>
+        <span class="${isActive ? 'day-num-active' : 'day-num'}">${dayNum}</span>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+window.selectCalendarDayByDate = function(isoDate, cellEl) {
+  selectedStripIsoDate = isoDate;
   const allCells = document.querySelectorAll('.cal-day-cell');
   allCells.forEach(c => {
     c.classList.remove('active');
@@ -201,13 +279,15 @@ function selectCalendarDay(dayNum, cellEl) {
     if (numSpan) numSpan.className = 'day-num';
   });
 
-  cellEl.classList.add('active');
-  const targetNum = cellEl.querySelector('.day-num');
-  if (targetNum) targetNum.className = 'day-num-active';
+  if (cellEl) {
+    cellEl.classList.add('active');
+    const targetNum = cellEl.querySelector('.day-num');
+    if (targetNum) targetNum.className = 'day-num-active';
+  }
 
   const container = document.getElementById('appointmentsListContainer');
   const emptyState = document.getElementById('appointmentsEmptyState');
-  const items = dailyAppointmentsData[dayNum] || [];
+  const items = dailyAppointmentsData[isoDate] || [];
 
   if (items.length === 0) {
     if (container) container.style.display = 'none';
@@ -219,7 +299,7 @@ function selectCalendarDay(dayNum, cellEl) {
       renderAppointmentsList(items);
     }
   }
-}
+};
 
 function renderAppointmentsList(items) {
   const container = document.getElementById('appointmentsListContainer');
@@ -228,19 +308,23 @@ function renderAppointmentsList(items) {
   container.innerHTML = items.map(item => {
     let statusClass = 'status-confirmed';
     let statusLabel = '• Confirmed';
-    if (item.status === 'inclinic') {
+    const st = (item.status || '').toLowerCase();
+    if (st === 'in clinic') {
       statusClass = 'status-inclinic';
       statusLabel = '• In Clinic';
-    } else if (item.status === 'pending') {
+    } else if (st === 'pending') {
       statusClass = 'status-pending';
       statusLabel = '• Pending';
+    } else if (st === 'cancelled') {
+      statusClass = 'status-cancelled';
+      statusLabel = '• Cancelled';
     }
 
     return `
       <div class="appointment-row-item">
-        <span class="appt-time-cell">${item.time}</span>
-        <span class="appt-doctor-cell">${item.doctor}</span>
-        <span class="appt-dept-cell">${item.dept}</span>
+        <span class="appt-time-cell">${item.timeShort || item.time}</span>
+        <span class="appt-doctor-cell">${item.doctor || item.patientName}</span>
+        <span class="appt-dept-cell">${item.doctorDept || item.dept || 'General'}</span>
         <span class="status-pill ${statusClass}">${statusLabel}</span>
       </div>
     `;
@@ -248,23 +332,32 @@ function renderAppointmentsList(items) {
 }
 
 function shiftWeek(dir) {
-  showToast(dir > 0 ? 'Viewing next week: Nov 17 - Nov 23' : 'Viewing previous week: Nov 03 - Nov 09', 'info');
+  currentDashboardWeekOffset += dir;
+  renderDashboardWeekStrip();
+  if (selectedStripIsoDate) {
+    selectCalendarDayByDate(selectedStripIsoDate, null);
+  }
 }
 
 /* =============================================================================
    3.5 LIVE FASTAPI CATALOG SYNC
    ============================================================================= */
 async function loadLiveOverviewCatalog() {
+  renderDashboardSkeletons();
+  renderDashboardWeekStrip();
+
   if (!window.ClinicApi) return;
   try {
-    const [specData, docData, patientData] = await Promise.all([
+    const [specData, docData, patientData, apptData] = await Promise.all([
       ClinicApi.getSpecialties().catch(() => []),
       ClinicApi.getDoctors({ limit: 50 }).catch(() => ({ total: 0, doctors: [] })),
-      ClinicApi.getPatients({ limit: 1 }).catch(() => ({ total: 0, patients: [] }))
+      ClinicApi.getPatients({ limit: 1 }).catch(() => ({ total: 0, patients: [] })),
+      ClinicApi.getAppointments().catch(() => ({ total: 0, appointments: [] }))
     ]);
 
     const specialties = Array.isArray(specData) ? specData : [];
     const liveDoctors = Array.isArray(docData?.doctors) ? docData.doctors : [];
+    const appts = Array.isArray(apptData?.appointments) ? apptData.appointments : [];
 
     const badgeEl = document.getElementById('doctorsCountBadge');
     if (badgeEl && liveDoctors.length > 0) badgeEl.textContent = liveDoctors.length;
@@ -277,17 +370,26 @@ async function loadLiveOverviewCatalog() {
     const metricActiveCalls = document.getElementById('metricActiveCalls');
     if (metricActiveCalls) metricActiveCalls.textContent = '0';
 
+    const todayIso = formatDateIso(new Date());
+    const todayAppts = appts.filter(a => a.date === todayIso && (a.status || '').toLowerCase() !== 'cancelled');
     const metricTodayAppts = document.getElementById('metricTodayAppts');
-    if (metricTodayAppts) metricTodayAppts.textContent = '0';
+    if (metricTodayAppts) metricTodayAppts.textContent = String(todayAppts.length);
 
+    const pendingCount = appts.filter(a => (a.status || '').toLowerCase() === 'pending').length;
     const metricPendingFollowups = document.getElementById('metricPendingFollowups');
-    if (metricPendingFollowups) metricPendingFollowups.textContent = '0';
+    if (metricPendingFollowups) metricPendingFollowups.textContent = String(pendingCount);
 
-    // Render active day (clean empty state)
-    const activeCell = document.querySelector('.cal-day-cell.active');
-    if (activeCell) {
-      const dayNum = parseInt(activeCell.textContent.trim(), 10);
-      if (dayNum) selectCalendarDay(dayNum, activeCell);
+    // Group real appointments by date
+    dailyAppointmentsData = {};
+    appts.forEach(a => {
+      const dIso = a.date;
+      if (!dailyAppointmentsData[dIso]) dailyAppointmentsData[dIso] = [];
+      dailyAppointmentsData[dIso].push(a);
+    });
+
+    // Render active day on strip
+    if (selectedStripIsoDate) {
+      selectCalendarDayByDate(selectedStripIsoDate, null);
     }
   } catch (err) {
     console.debug('[ClinicApi] Overview catalog load warning:', err.message);
