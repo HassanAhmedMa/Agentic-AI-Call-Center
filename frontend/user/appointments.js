@@ -1,10 +1,10 @@
 /**
  * Nile Clinics - Appointments Page Controller
  * Connected Live to Supabase DB via FastAPI endpoints:
- *   GET /api/v1/appointments
- *   POST /api/v1/appointments
- *   PATCH /api/v1/appointments/{id}/reschedule
- *   PATCH /api/v1/appointments/{id}/cancel
+ *   GET /api/v1/portal/appointments
+ *   POST /api/v1/portal/appointments
+ *   PATCH /api/v1/portal/appointments/{id}/reschedule
+ *   PATCH /api/v1/portal/appointments/{id}/cancel
  */
 
 (function () {
@@ -25,6 +25,22 @@
       dayNum: String(dt.getDate()).padStart(2, '0'),
       month: monthNames[dt.getMonth()]
     };
+  }
+
+  function getDoctorDisplayName(d, isAr) {
+    if (!d) return isAr ? 'طبيب' : 'Doctor';
+    if (isAr) {
+      return d.name_ar || d.full_name_ar || d.name_en || d.full_name_en || 'د. استشاري';
+    }
+    return d.name_en || d.full_name_en || d.name_ar || d.full_name_ar || 'Doctor';
+  }
+
+  function getSpecialtyDisplayName(s, isAr) {
+    if (!s) return '';
+    if (isAr) {
+      return s.name_ar || s.name_en || '';
+    }
+    return s.name_en || s.name_ar || '';
   }
 
   async function loadInitialData() {
@@ -49,8 +65,8 @@
     sel.innerHTML = `<option value="">${isAr ? 'كل التخصصات' : 'All Departments'}</option>`;
     specialties.forEach(s => {
       const opt = document.createElement('option');
-      opt.value = s.id || s.name_en;
-      opt.textContent = isAr ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+      opt.value = s.id;
+      opt.textContent = getSpecialtyDisplayName(s, isAr);
       sel.appendChild(opt);
     });
     sel.value = cur;
@@ -65,7 +81,7 @@
     doctors.forEach(d => {
       const opt = document.createElement('option');
       opt.value = d.id;
-      opt.textContent = isAr ? (d.full_name_ar || d.full_name_en) : (d.full_name_en || d.full_name_ar);
+      opt.textContent = getDoctorDisplayName(d, isAr);
       sel.appendChild(opt);
     });
     sel.value = cur;
@@ -92,10 +108,15 @@
     const bPast = document.getElementById('tabCountPast');
     const bCanc = document.getElementById('tabCountCanceled');
 
-    if (bAppt) bAppt.textContent = upcoming;
-    if (bUp) bUp.textContent = upcoming;
-    if (bPast) bPast.textContent = past;
-    if (bCanc) bCanc.textContent = canceled;
+    if (bAppt) bAppt.textContent = String(upcoming);
+    if (bUp) bUp.textContent = String(upcoming);
+    if (bPast) bPast.textContent = String(past);
+    if (bCanc) bCanc.textContent = String(canceled);
+
+    try { localStorage.setItem('clinic_upcoming_count', String(upcoming)); } catch (_) {}
+    if (window.ClinicPortalAuth && typeof window.ClinicPortalAuth.setAppointmentBadgeCount === 'function') {
+      window.ClinicPortalAuth.setAppointmentBadgeCount(upcoming);
+    }
   }
 
   function renderAppointmentsList() {
@@ -103,7 +124,7 @@
     if (!container) return;
 
     let filtered = allAppointments.filter((a) => {
-      const st = (a.status || 'confirmed').toLowerCase();
+      const st = (a.status || 'scheduled').toLowerCase();
       if (currentTab === 'upcoming') return st !== 'cancelled' && st !== 'canceled' && st !== 'completed';
       if (currentTab === 'past') return st === 'completed';
       if (currentTab === 'canceled') return st === 'cancelled' || st === 'canceled';
@@ -113,15 +134,15 @@
     // Specialty filter
     const specSel = document.getElementById('apptSpecialtyFilter');
     if (specSel && specSel.value) {
-      const val = specSel.value.toLowerCase();
-      filtered = filtered.filter(a => (a.specialty_name || '').toLowerCase().includes(val) || (a.specialty_id == val));
+      const val = specSel.value;
+      filtered = filtered.filter(a => a.specialty_id == val || String(a.specialty_id) === val);
     }
 
     // Doctor filter
     const docSel = document.getElementById('apptDoctorFilter');
     if (docSel && docSel.value) {
       const val = docSel.value;
-      filtered = filtered.filter(a => a.doctor_id == val || (a.doctor_name || '').toLowerCase().includes(val));
+      filtered = filtered.filter(a => a.doctor_id == val || String(a.doctor_id) === val);
     }
 
     // Date filter
@@ -148,13 +169,13 @@
 
     container.innerHTML = filtered.map((a) => {
       const dParts = parseApptDate(a.appointment_date);
-      const docName = a.doctor_name || 'Dr. Ahmed Mohamed';
-      const specName = isAr ? (a.specialty_name_ar || a.specialty_name || 'أمراض القلب') : (a.specialty_name || 'Cardiology');
+      const docName = isAr ? (a.doctor_name_ar || a.doctor_name || 'طبيب استشاري') : (a.doctor_name || 'Consultant Doctor');
+      const specName = isAr ? (a.specialty_name_ar || a.specialty_name || 'العيادة التخصصية') : (a.specialty_name || 'Specialty Clinic');
       const branch = isAr ? (a.branch_name_ar || a.branch_name || 'الفرع الرئيسي - مصر الجديدة') : (a.branch_name || 'Main Branch - Heliopolis');
-      const timeStr = a.time_short || (a.start_time ? a.start_time.substring(0, 5) : '02:00 PM');
-      const avatar = a.avatar || (docName.includes('Sara') ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=120&h=120&fit=crop&crop=faces' : (docName.includes('Mohamed') ? 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=120&h=120&fit=crop&crop=faces' : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=120&h=120&fit=crop&crop=faces'));
+      const timeStr = a.time_short || (a.start_time ? a.start_time.substring(0, 5) : '10:00 AM');
+      const avatar = a.avatar || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=120&h=120&fit=crop&crop=faces';
 
-      const st = (a.status || 'confirmed').toLowerCase();
+      const st = (a.status || 'scheduled').toLowerCase();
       const isCancelled = st === 'cancelled' || st === 'canceled';
       const badgeClass = isCancelled ? 'status-badge-red' : (st === 'pending' ? 'status-badge-amber' : 'status-badge-green');
       const badgeText = isCancelled ? (isAr ? 'ملغي' : 'Canceled') : (st === 'pending' ? (isAr ? 'قيد التأكيد' : 'Pending') : (isAr ? 'مؤكد' : 'Confirmed'));
@@ -226,121 +247,6 @@
     renderAppointmentsList();
   };
 
-  // BOOK APPOINTMENT MODAL
-  window.openBookAppointmentModal = function () {
-    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-    const title = isAr ? 'حجز ميعاد كشف جديد' : 'Book New Appointment';
-
-    const body = `
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'اختر التخصص الطبي' : 'Select Specialty'}
-          </label>
-          <select id="modalBookSpecialty" class="filter-select" onchange="updateDoctorsForBooking(this.value)">
-            <option value="">${isAr ? 'اختر التخصص...' : 'Choose a department...'}</option>
-            ${allSpecialties.map(s => `<option value="${s.id}">${isAr ? (s.name_ar || s.name_en) : s.name_en}</option>`).join('')}
-          </select>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'اختر الطبيب المعالج' : 'Select Doctor'}
-          </label>
-          <select id="modalBookDoctor" class="filter-select">
-            <option value="">${isAr ? 'اختر الدكتور...' : 'Choose a doctor...'}</option>
-            ${allDoctors.map(d => `<option value="${d.id}">${isAr ? (d.full_name_ar || d.full_name_en) : d.full_name_en}</option>`).join('')}
-          </select>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'تاريخ الكشف' : 'Appointment Date'}
-          </label>
-          <input type="date" id="modalBookDate" class="filter-date-input" value="${new Date().toISOString().split('T')[0]}">
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'الميعاد المتاح' : 'Available Time Slot'}
-          </label>
-          <select id="modalBookTime" class="filter-select">
-            <option value="11:00:00">11:00 AM</option>
-            <option value="11:30:00">11:30 AM</option>
-            <option value="14:00:00" selected>02:00 PM</option>
-            <option value="14:30:00">02:30 PM</option>
-            <option value="16:00:00">04:00 PM</option>
-            <option value="16:30:00">04:30 PM</option>
-          </select>
-        </div>
-      </div>
-    `;
-
-    const footer = `
-      <button class="btn-secondary-action" onclick="closeActiveModal()">
-        ${isAr ? 'إلغاء' : 'Cancel'}
-      </button>
-      <button class="btn-primary-action" onclick="submitBookingModal()">
-        ${isAr ? 'تأكيد الحجز' : 'Confirm Booking'}
-      </button>
-    `;
-
-    openModal(title, body, footer);
-  };
-
-  window.updateDoctorsForBooking = function (specId) {
-    const docSel = document.getElementById('modalBookDoctor');
-    if (!docSel) return;
-    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-    const filtered = specId ? allDoctors.filter(d => d.specialty_id == specId) : allDoctors;
-    docSel.innerHTML = `<option value="">${isAr ? 'اختر الدكتور...' : 'Choose a doctor...'}</option>` +
-      filtered.map(d => `<option value="${d.id}">${isAr ? (d.full_name_ar || d.full_name_en) : d.full_name_en}</option>`).join('');
-  };
-
-  window.submitBookingModal = async function () {
-    const docId = document.getElementById('modalBookDoctor')?.value;
-    const dateVal = document.getElementById('modalBookDate')?.value;
-    const timeVal = document.getElementById('modalBookTime')?.value;
-    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-
-    if (!docId || !dateVal || !timeVal) {
-      showToast(isAr ? 'من فضلك اختاري الدكتور والتاريخ والميعاد' : 'Please select doctor, date, and time slot', 'error');
-      return;
-    }
-
-    try {
-      await UserApi.bookAppointment({
-        doctor_id: parseInt(docId, 10),
-        patient_id: (window.ClinicSession && window.ClinicSession.id) || 1,
-        appointment_date: dateVal,
-        start_time: timeVal,
-        channel: 'patient_portal',
-        notes: 'Booked via patient portal'
-      });
-      closeActiveModal();
-      showToast(isAr ? 'تم تأكيد حجز الميعاد في قاعدة البيانات بنجاح' : 'Appointment booked and saved to database successfully', 'success');
-      await fetchAndRenderAppointments();
-    } catch (_) {
-      const doc = allDoctors.find(d => d.id == docId);
-      const newEntry = {
-        id: Date.now(),
-        appointment_date: dateVal,
-        start_time: timeVal,
-        time_short: timeVal.substring(0, 5),
-        doctor_name: doc ? (isAr ? doc.full_name_ar : doc.full_name_en) : 'Dr. Ahmed Mohamed',
-        specialty_name: 'Cardiology',
-        branch_name: 'Main Branch - Heliopolis',
-        status: 'confirmed',
-        avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=120&h=120&fit=crop&crop=faces'
-      };
-      allAppointments.unshift(newEntry);
-      closeActiveModal();
-      showToast(isAr ? 'تم تأكيد حجز الميعاد بنجاح' : 'Appointment booked successfully', 'success');
-      renderAppointmentsList();
-      updateTabCounts();
-    }
-  };
-
   // RESCHEDULE MODAL
   window.openRescheduleModal = function (apptId, doctorName, currentDate, currentTime) {
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
@@ -362,11 +268,12 @@
             ${isAr ? 'اختر الوقت الجديد' : 'New Time Slot'}
           </label>
           <select id="modalReschedTime" class="filter-select">
-            <option value="11:00:00">11:00 AM</option>
+            <option value="10:00:00">10:00 AM</option>
             <option value="11:30:00">11:30 AM</option>
             <option value="14:00:00">02:00 PM</option>
             <option value="15:30:00">03:30 PM</option>
-            <option value="16:00:00">04:00 PM</option>
+            <option value="17:00:00">05:00 PM</option>
+            <option value="18:30:00">06:30 PM</option>
           </select>
         </div>
       </div>
@@ -392,18 +299,11 @@
     try {
       await UserApi.rescheduleAppointment(apptId, newDate, newTime);
       closeActiveModal();
-      showToast(isAr ? 'تم تعديل الميعاد بنجاح' : 'Appointment rescheduled successfully', 'success');
+      showToast(isAr ? 'تم تعديل الميعاد في قاعدة البيانات بنجاح' : 'Appointment rescheduled in clinic database', 'success');
       await fetchAndRenderAppointments();
-    } catch (_) {
-      const item = allAppointments.find(a => a.id === apptId);
-      if (item) {
-        item.appointment_date = newDate;
-        item.start_time = newTime;
-        item.time_short = newTime.substring(0, 5);
-      }
+    } catch (err) {
       closeActiveModal();
-      showToast(isAr ? 'تم تعديل الميعاد بنجاح' : 'Appointment rescheduled successfully', 'success');
-      renderAppointmentsList();
+      showToast(err.message || (isAr ? 'تعذر تعديل الميعاد' : 'Reschedule failed'), 'error');
     }
   };
 
@@ -418,7 +318,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </div>
         <h4 style="font-size:16px; font-weight:700; color:#1E293B; margin-bottom:8px;">
-          ${isAr ? `متأكدة من إلغاء ميعادك مع ${doctorName}؟` : `Cancel appointment with ${doctorName}?`}
+          ${isAr ? `متأكد من إلغاء ميعادك مع ${doctorName}؟` : `Cancel appointment with ${doctorName}?`}
         </h4>
         <p style="font-size:13px; color:#64748B; line-height:1.5;">
           ${isAr ? 'هذا الإجراء سيقوم بإلغاء الحجز في قاعدة بيانات العيادة وإتاحة الميعاد لمرضى آخرين.' : 'This will cancel the booking in the clinic database and make the slot available for other patients.'}
@@ -445,27 +345,32 @@
       closeActiveModal();
       showToast(isAr ? 'تم إلغاء الميعاد بنجاح' : 'Appointment cancelled successfully', 'info');
       await fetchAndRenderAppointments();
-    } catch (_) {
-      const item = allAppointments.find(a => a.id === apptId);
-      if (item) item.status = 'cancelled';
+    } catch (err) {
       closeActiveModal();
-      showToast(isAr ? 'تم إلغاء الميعاد بنجاح' : 'Appointment cancelled successfully', 'info');
-      renderAppointmentsList();
-      updateTabCounts();
+      showToast(err.message || (isAr ? 'تعذر إلغاء الميعاد' : 'Cancellation failed'), 'error');
     }
   };
 
-  // BOOK NEW APPOINTMENT MODAL
+  // BOOK NEW APPOINTMENT MODAL (Connected Live to Supabase DB)
   window.openBookAppointmentModal = function () {
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
     const title = isAr ? 'حجز ميعاد كشف جديد' : 'Book New Appointment';
 
-    const docOptions = (allDoctors || []).map(d => {
-      const name = isAr ? (d.full_name_ar || d.name_ar || d.name_en) : (d.full_name_en || d.name_en || d.name_ar);
-      const spec = isAr ? (d.specialty?.name_ar || '') : (d.specialty?.name_en || '');
-      return `<option value="${d.id}">${name} ${spec ? `(${spec})` : ''}</option>`;
+    // Build department options
+    const specOptions = (allSpecialties || []).map(s => {
+      const sName = getSpecialtyDisplayName(s, isAr);
+      return `<option value="${s.id}">${sName}</option>`;
     }).join('');
 
+    // Build doctor options
+    const docOptions = (allDoctors || []).map(d => {
+      const dName = getDoctorDisplayName(d, isAr);
+      const spec = isAr ? (d.specialty?.name_ar || d.specialty_name_ar || '') : (d.specialty?.name_en || d.specialty_name_en || '');
+      return `<option value="${d.id}" data-spec-id="${d.specialty_id || d.specialty?.id || ''}">${dName} ${spec ? `(${spec})` : ''}</option>`;
+    }).join('');
+
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const defDate = tomorrow.toISOString().split('T')[0];
@@ -474,35 +379,51 @@
       <div style="display:flex; flex-direction:column; gap:14px;">
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'اختر الطبيب المعالج' : 'Select Doctor'}
+            ${isAr ? 'التخصص الطبي (اختياري للتصفية)' : 'Medical Department (Filter)'}
+          </label>
+          <select id="modalBookSpecialty" class="filter-select" onchange="window.filterBookingDoctorsBySpecialty(this.value)">
+            <option value="">${isAr ? 'جميع التخصصات المتاحة' : 'All Departments'}</option>
+            ${specOptions}
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
+            ${isAr ? 'اختر الطبيب المعالج من قاعدة البيانات *' : 'Select Doctor from Live Database *'}
           </label>
           <select id="modalBookDoctor" class="filter-select">
             ${docOptions || `<option value="1">${isAr ? 'د. أمل نور (أمراض القلب)' : 'Dr. Amal Nour (Cardiology)'}</option>`}
           </select>
         </div>
+
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'تاريخ الكشف' : 'Appointment Date'}
+            ${isAr ? 'تاريخ الكشف *' : 'Appointment Date *'}
           </label>
-          <input type="date" id="modalBookDate" class="filter-date-input" value="${defDate}">
+          <input type="date" id="modalBookDate" class="filter-date-input" min="${todayStr}" value="${defDate}">
         </div>
+
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'الوقت المناسب' : 'Preferred Time'}
+            ${isAr ? 'الميعاد المناسب *' : 'Preferred Time Slot *'}
           </label>
           <select id="modalBookTime" class="filter-select">
-            <option value="10:00:00">10:00 AM</option>
+            <option value="09:00:00">09:00 AM</option>
+            <option value="10:00:00" selected>10:00 AM</option>
             <option value="11:30:00">11:30 AM</option>
+            <option value="13:00:00">01:00 PM</option>
             <option value="14:00:00">02:00 PM</option>
-            <option value="16:00:00">04:00 PM</option>
+            <option value="15:30:00">03:30 PM</option>
+            <option value="17:00:00">05:00 PM</option>
             <option value="18:30:00">06:30 PM</option>
           </select>
         </div>
+
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'سبب الزيارة أو الأعراض' : 'Reason for Visit'}
+            ${isAr ? 'سبب الكشف أو الاستشارة' : 'Reason for Consultation'}
           </label>
-          <input type="text" id="modalBookReason" class="filter-select" placeholder="${isAr ? 'مثال: فحص دوري، متابعة علاج، استشارة...' : 'e.g. Routine checkup, consultation...'}">
+          <input type="text" id="modalBookReason" class="filter-select" placeholder="${isAr ? 'مثال: فحص دوري، متابعة علاج، فحص ضغط...' : 'e.g. Regular checkup, follow-up, consultation...'}">
         </div>
       </div>
     `;
@@ -511,12 +432,30 @@
       <button class="btn-secondary-action" onclick="closeActiveModal()">
         ${isAr ? 'إلغاء' : 'Cancel'}
       </button>
-      <button class="btn-primary-action" onclick="submitBookAppointmentModal()">
-        ${isAr ? 'تأكيد الحجز في قاعدة البيانات' : 'Confirm Booking'}
+      <button class="btn-primary-action" id="btnConfirmBookingSubmit" onclick="submitBookAppointmentModal()">
+        ${isAr ? 'تأكيد الحجز وحفظه بالـ DB' : 'Confirm & Save Booking'}
       </button>
     `;
 
     openModal(title, body, footer);
+  };
+
+  window.filterBookingDoctorsBySpecialty = function (specId) {
+    const docSel = document.getElementById('modalBookDoctor');
+    if (!docSel) return;
+    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
+    const filtered = specId ? (allDoctors || []).filter(d => (d.specialty_id == specId || d.specialty?.id == specId)) : allDoctors;
+    
+    if (!filtered || filtered.length === 0) {
+      docSel.innerHTML = `<option value="">${isAr ? 'لا يوجد أطباء في هذا التخصص حالياً' : 'No doctors in this specialty'}</option>`;
+      return;
+    }
+
+    docSel.innerHTML = filtered.map(d => {
+      const dName = getDoctorDisplayName(d, isAr);
+      const spec = isAr ? (d.specialty?.name_ar || d.specialty_name_ar || '') : (d.specialty?.name_en || d.specialty_name_en || '');
+      return `<option value="${d.id}">${dName} ${spec ? `(${spec})` : ''}</option>`;
+    }).join('');
   };
 
   window.submitBookAppointmentModal = async function () {
@@ -525,10 +464,16 @@
     const timeVal = document.getElementById('modalBookTime')?.value;
     const reasonVal = document.getElementById('modalBookReason')?.value || 'Consultation via patient portal';
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
+    const submitBtn = document.getElementById('btnConfirmBookingSubmit');
 
     if (!docId || !dateVal || !timeVal) {
       showToast(isAr ? 'يرجى استكمال جميع بيانات الحجز' : 'Please fill all appointment details', 'error');
       return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = isAr ? 'جاري الحفظ...' : 'Saving booking...';
     }
 
     try {
@@ -538,13 +483,16 @@
         start_time: timeVal,
         visit_reason: reasonVal
       });
+
       closeActiveModal();
-      showToast(isAr ? 'تم تأكيد حجزك بنجاح في قاعدة البيانات!' : 'Appointment booked successfully in the clinic database!', 'success');
+      showToast(isAr ? 'تم تأكيد حجزك بنجاح وحفظه في قاعدة البيانات!' : 'Appointment booked and saved in clinic database successfully!', 'success');
       await fetchAndRenderAppointments();
     } catch (err) {
-      closeActiveModal();
-      showToast(err.message || (isAr ? 'حدث خطأ أثناء الحجز' : 'Booking failed'), 'error');
-      await fetchAndRenderAppointments();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isAr ? 'تأكيد الحجز وحفظه بالـ DB' : 'Confirm & Save Booking';
+      }
+      showToast(err.message || (isAr ? 'فشل إتمام الحجز في قاعدة البيانات' : 'Failed to save appointment in database'), 'error');
     }
   };
 
