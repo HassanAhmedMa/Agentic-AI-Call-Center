@@ -978,3 +978,6 @@ body {
 
 [dir=rtl] .form-input-wrapper input[type=password],[dir=rtl] .form-input-wrapper input[type=text]{padding-inline-end:42px}
 [dir=rtl] .phone-prefix{direction:ltr}
+
+.portal-date-trigger{pointer-events:auto;cursor:pointer;background:transparent;border:0;padding:0;font:inherit}
+input[type=date].form-input-text{min-width:0;direction:ltr}

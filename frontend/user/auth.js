@@ -53,7 +53,10 @@
     busy = true;
     document.querySelectorAll('button[type=submit]').forEach(button => { button.disabled = true; });
     try { await action(); } catch (error) {
-      showToast(messages[error.message] ? error.message : 'unavailable');
+      if (error.message === 'RATE_LIMITED' && error.details?.retry_after) {
+        const minutes = Math.max(1, Math.ceil(error.details.retry_after/60));
+        showToast(language === 'ar' ? `محاولات كتير. جرّب تاني بعد ${minutes} دقيقة.` : `Too many attempts. Try again in ${minutes} minute(s).`);
+      } else showToast(messages[error.message] ? error.message : 'unavailable');
       if (error.details?.email_verified) { verifiedIdentity = true; if (error.details.email) { pending = {email: error.details.email}; $('signupEmailInput').value = error.details.email; } $('signupPasswordInput').required = false; $('signupPasswordConfirm').required = false; navigateToView('view-signup'); }
     } finally {
       busy = false;
@@ -69,12 +72,22 @@
     return value;
   }
   function parseDOB(value) {
-    const match = digits(value).match(/^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/);
+    let text = digits(value);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) text = text.split('-').reverse().join(' / ');
+    const match = text.match(/^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/);
     if (!match) throw Error('VALIDATION_FAILED');
     const [, day, month, year] = match;
     const date = new Date(Date.UTC(+year, +month - 1, +day));
-    if (date.getUTCFullYear() !== +year || date.getUTCMonth() !== +month - 1 || date.getUTCDate() !== +day || date >= new Date() || +year < new Date().getFullYear() - 120) throw Error('VALIDATION_FAILED');
+    const today = new Date();
+    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const age = today.getFullYear() - +year - ((today.getMonth()+1 < +month || (today.getMonth()+1 === +month && today.getDate() < +day)) ? 1 : 0);
+    if (date.getUTCFullYear() !== +year || date.getUTCMonth() !== +month - 1 || date.getUTCDate() !== +day || date.getTime() >= todayUTC || age > 120) throw Error('VALIDATION_FAILED');
     return `${year}-${month}-${day}`;
+  }
+  function openDobPicker() {
+    const input = $('signupDobInput');
+    try { if (typeof input.showPicker === 'function') { input.showPicker(); return; } } catch (_) {}
+    input.focus();
   }
   function navigateToView(id, updateHash = true) {
     if (id === 'view-verify' && !pending) id = 'view-signup';
@@ -131,7 +144,7 @@
     event.preventDefault();
     return run(async () => {
       const identifier = mode === 'phone' ? normalizePhone($('loginPhoneInput').value) : $('loginEmailInput').value.trim().toLowerCase();
-      try { success(await api('login', {identifier, password: $('loginPasswordInput').value})); }
+      try { success(await api('login', {identifier, password: $('loginPasswordInput').value})); window.location.assign('index.html'); }
       finally { $('loginPasswordInput').value = ''; }
     });
   }
@@ -209,7 +222,7 @@
     $('authLanguage').textContent = language === 'ar' ? 'English' : 'العربية';
     document.querySelectorAll('[data-en]').forEach(node => { node.textContent = language === 'ar' ? node.dataset.ar : node.dataset.en; });
   }
-  Object.assign(window, {navigateToView,switchLoginChannel,togglePasswordVisibility,handleLoginSubmit,handleSignupSubmit,handleOtpSubmit,handleResendCode,handleContinueToDashboard,handleGoogleLogin,handleForgotPassword,handleRecoverySubmit,handleResetSubmit});
+  Object.assign(window, {openDobPicker,navigateToView,switchLoginChannel,togglePasswordVisibility,handleLoginSubmit,handleSignupSubmit,handleOtpSubmit,handleResendCode,handleContinueToDashboard,handleGoogleLogin,handleForgotPassword,handleRecoverySubmit,handleResetSubmit});
   window.PortalAuthUtils = {normalizePhone,parseDOB};
   document.addEventListener('DOMContentLoaded', async () => {
     try { localStorage.removeItem('clinic_patient_session'); } catch (_) {}
@@ -218,10 +231,10 @@
       const text = node.textContent.trim();
       if (translations[text] && node.children.length === 0) { node.dataset.en = text; node.dataset.ar = translations[text]; }
     });
-    $('signupDobInput').addEventListener('input', event => {
-      const value = digits(event.target.value).replace(/\D/g, '').slice(0,8);
-      event.target.value = [value.slice(0,2),value.slice(2,4),value.slice(4)].filter(Boolean).join(' / ');
-    });
+    const today = new Date();
+    const isoDate = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    $('signupDobInput').max = isoDate(new Date(today.getFullYear(), today.getMonth(), today.getDate()-1));
+    $('signupDobInput').min = isoDate(new Date(today.getFullYear()-121, today.getMonth(), today.getDate()+1));
     const boxes = [...$('otpContainer').querySelectorAll('input')];
     boxes.forEach((input,index) => {
       input.addEventListener('input', () => { input.value = digits(input.value).replace(/\D/g,'').slice(0,1); if(input.value) boxes[index+1]?.focus(); });

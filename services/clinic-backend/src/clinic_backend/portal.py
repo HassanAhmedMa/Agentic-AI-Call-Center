@@ -211,7 +211,14 @@ def portal_router(
     async def verify(
         body: dto.Verify, request: Request, response: Response
     ) -> PatientProfile | Response:
-        await limit(request, "verify", body.email)
+        has_provider_cookies = bool(
+            request.cookies.get(ACCESS) and request.cookies.get(REFRESH)
+        )
+        # Already verified profile completion has its own bounded retry budget.
+        # Invalid cookies must still consume the OTP verification budget below.
+        await limit(
+            request, "profile" if has_provider_cookies else "verify", body.email
+        )
         if body.email != body.registration.email:
             raise APIError(400, "VALIDATION_FAILED", "Registration email must match.")
         code = body.code.get_secret_value()
@@ -234,6 +241,8 @@ def portal_router(
                 if error.status != 401:
                     raise
         if data is None:
+            if has_provider_cookies:
+                await limit(request, "verify", body.email)
             data = await auth.request(
                 "verify", body={"email": body.email, "token": code, "type": "signup"}
             )
@@ -246,8 +255,12 @@ def portal_router(
                 error.status,
                 error.code,
                 error.message,
-                {"email_verified": True},
+                {**(error.details or {}), "email_verified": True},
             )
+            if error.status == 429 and error.details:
+                failure.headers["Retry-After"] = str(
+                    error.details.get("retry_after", 60)
+                )
             failure.headers["Cache-Control"] = "no-store"
             for header in response.raw_headers:
                 if header[0].lower() == b"set-cookie":

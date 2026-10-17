@@ -31,15 +31,23 @@ test('Egyptian numbers and Arabic digits share canonical identity',()=>{
   assert.equal(window.PortalAuthUtils.parseDOB('١٥ / ٠٦ / ١٩٩٠'),'1990-06-15');
 });
 test('phone/password login uses backend and clears password field',async()=>{
-  const {window,node,calls}=fixture(); window.switchLoginChannel('phone');
+  const {window,node,calls,routes}=fixture(); window.switchLoginChannel('phone');
   node('loginPhoneInput').value='01012345678';node('loginPasswordInput').value='Synthetic-Password-123';
   await window.handleLoginSubmit({preventDefault(){}});
   assert.equal(calls[0].url,'/api/v1/portal/login');
   assert.equal(JSON.parse(calls[0].options.body).identifier,'+201012345678');
   assert.equal(calls[0].options.credentials,'same-origin');
   assert.equal(node('loginPasswordInput').value,'');
+  assert.deepEqual(routes,['index.html']);
 });
 test('dashboard navigation verifies backend session first',async()=>{
   const {window,calls,routes}=fixture();await window.handleContinueToDashboard();
   assert.equal(calls[0].url,'/api/v1/portal/session');assert.deepEqual(routes,['index.html']);
+});
+
+test('native date value is accepted and calendar button opens its picker',()=>{
+  const {window,node}=fixture();
+  assert.equal(window.PortalAuthUtils.parseDOB('1990-06-15'),'1990-06-15');
+  let opened=false;node('signupDobInput').showPicker=()=>{opened=true;};
+  window.openDobPicker();assert.equal(opened,true);
 });

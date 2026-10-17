@@ -273,3 +273,73 @@ async def test_portal_assets_and_origin_protection(portal):
             headers={"Origin": "null"},
         )
     ).status_code == 403
+
+
+async def test_verified_profile_retry_is_not_blocked_by_used_otp_attempts(
+    portal, engine
+):
+    import hashlib
+    import hmac
+
+    client, _ = portal
+    response = await client.post(
+        "/api/v1/portal/login", json={"identifier": FORM["email"], "password": PASSWORD}
+    )
+    assert response.status_code == 409
+    subject = hmac.new(
+        SECRET.encode(), FORM["email"].encode(), hashlib.sha256
+    ).hexdigest()
+    async with engine.begin() as connection:
+        await connection.execute(
+            text("""INSERT INTO rate_limit_events(bucket,subject)
+            SELECT 'portal_verify:identity', :subject FROM generate_series(1,5)"""),
+            {"subject": subject},
+        )
+    response = await client.post(
+        "/api/v1/portal/verify",
+        json={"email": FORM["email"], "code": "000000", "registration": FORM},
+    )
+    assert response.status_code == 200, response.text
+    assert (await client.get("/api/v1/portal/session")).status_code == 200
+
+
+async def test_unverified_cookie_cannot_bypass_otp_rate_limit(portal, engine):
+    import hashlib
+    import hmac
+
+    client, _ = portal
+    client.cookies.set("clinic_portal_access", "invalid-access")
+    client.cookies.set("clinic_portal_refresh", "invalid-refresh")
+    subject = hmac.new(
+        SECRET.encode(), FORM["email"].encode(), hashlib.sha256
+    ).hexdigest()
+    async with engine.begin() as connection:
+        await connection.execute(
+            text("""INSERT INTO rate_limit_events(bucket,subject)
+            SELECT 'portal_verify:identity', :subject FROM generate_series(1,5)"""),
+            {"subject": subject},
+        )
+    response = await client.post(
+        "/api/v1/portal/verify",
+        json={"email": FORM["email"], "code": "123456", "registration": FORM},
+    )
+    assert response.status_code == 429
+    assert (await client.get("/api/v1/portal/session")).status_code == 401
+
+
+async def test_profile_throttle_preserves_retry_information(portal, engine):
+    client, _ = portal
+    await client.post(
+        "/api/v1/portal/login", json={"identifier": FORM["email"], "password": PASSWORD}
+    )
+    async with engine.begin() as connection:
+        await connection.execute(text("""INSERT INTO rate_limit_events(bucket,subject)
+            SELECT 'registration:ip','127.0.0.1' FROM generate_series(1,3)"""))
+    result = await client.post(
+        "/api/v1/portal/verify",
+        json={"email": FORM["email"], "code": "000000", "registration": FORM},
+    )
+    assert result.status_code == 429
+    assert result.json()["error"]["details"]["email_verified"] is True
+    assert result.json()["error"]["details"]["retry_after"] > 0
+    assert int(result.headers["retry-after"]) > 0
