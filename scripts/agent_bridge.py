@@ -233,12 +233,23 @@ def invoke_active_agent(name: str, record: dict):
     req_type = record.get("request_type", "Inquiry")
     body = record.get("body", "")
 
+    state_file = os.path.join(INBOX_DIR, "state.json")
+    state_context = ""
+    if os.path.exists(state_file):
+        try:
+            with open(state_file, "r", encoding="utf-8") as sf:
+                state_data = json.load(sf)
+                state_context = f"\n[Active Workspace State from .agents/state.json]:\n{json.dumps(state_data, indent=2)}\n"
+        except Exception:
+            pass
+
     prompt = (
         f"[INTER-AGENT INCOMING MESSAGE via n8n]\n"
         f"Sender: {sender}\n"
         f"Destination: {name}\n"
         f"Type: {req_type}\n\n"
-        f"Message:\n{body}\n\n"
+        f"Message:\n{body}\n"
+        f"{state_context}\n"
         f"Instructions:\n"
         f"Adhere strictly to Section 11 of AGENTS.md:\n"
         f"- If this is an 'Inquiry', produce exactly ONE direct factual Response to {sender} and dispatch it via:\n"
@@ -247,7 +258,7 @@ def invoke_active_agent(name: str, record: dict):
     )
 
     if name in {"Hassan", "Ali"}:
-        cmd = [exe, "--continue", "-p", prompt]
+        cmd = [exe, "-p", prompt, "--dangerously-skip-permissions"]
     else:
         session_id, model = get_latest_codex_session_info()
         if session_id:
