@@ -823,12 +823,351 @@ body {
   overflow: visible;
 }
 
+/* Header Action Area */
+.header-action-area {
+  display: flex;
+  align-items: center;
+}
+
+.header-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-blue);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.header-back-link:hover {
+  background: var(--primary-blue-subtle);
+}
+
+/* Forgot Password Card Elements */
+.auth-card-icon-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+
+.lock-circle-bubble {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.card-back-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: background 0.15s ease, color 0.15s ease;
+  margin-bottom: 8px;
+}
+
+.card-back-btn:hover {
+  background: #F1F5F9;
+  color: var(--text-main);
+}
+
+.back-to-login-link {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  text-decoration: none;
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.back-to-login-link:hover {
+  background: var(--primary-blue-subtle);
+  text-decoration: underline;
+}
+
+.desktop-only-title {
+  display: block;
+}
+
+.mobile-only-title {
+  display: none;
+}
+
+.mobile-only-back {
+  display: none;
+}
+
+/* Magic Link Confirmation Styles */
+.magic-confirm-card-box {
+  max-width: 460px;
+}
+
+.magic-instructions-card {
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0 24px;
+  text-align: left;
+}
+
+.magic-instruction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-body);
+}
+
+.magic-instruction-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--primary-blue-subtle);
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.open-email-app-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-input);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.open-email-app-btn:hover {
+  background: var(--primary-blue-subtle);
+  border-color: var(--border-focus);
+}
+
+.magic-resend-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.resend-link-inline-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary-blue);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+
+.resend-link-inline-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.resend-link-inline-btn:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* Security Info Card (Success Screen) */
+.security-info-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #F0FDF4;
+  border: 1px solid #DCFCE7;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.security-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #DCFCE7;
+  color: #10B981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.security-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.security-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #065F46;
+}
+
+.security-card-desc {
+  font-size: 12px;
+  color: #047857;
+  line-height: 1.45;
+}
+
+/* Password Strength Meter & Checklist */
+.password-strength-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px 0 10px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.strength-bar-segments {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  height: 4px;
+  width: 100%;
+}
+
+.strength-bar-seg {
+  background: #E2E8F0;
+  border-radius: 999px;
+  transition: background-color 0.25s ease;
+}
+
+.strength-bar-seg.active-weak {
+  background-color: #EF4444;
+}
+
+.strength-bar-seg.active-medium {
+  background-color: #F59E0B;
+}
+
+.strength-bar-seg.active-good {
+  background-color: #3B82F6;
+}
+
+.strength-bar-seg.active-strong {
+  background-color: #10B981;
+}
+
+.strength-header-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.strength-checklist {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.check-circle-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.6px solid #CBD5E1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.checklist-item.met {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.checklist-item.met .check-circle-icon {
+  border-color: var(--green-main);
+  background-color: var(--green-main);
+}
+
+.checklist-item.met .check-circle-icon::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid #FFFFFF;
+  border-width: 0 1.8px 1.8px 0;
+  transform: rotate(45deg) translate(-0.5px, -1px);
+  position: absolute;
+}
+
 /* --------------------------------------------------------------------------
    7. RESPONSIVE MOBILE VIEW (Exact Match to iPhone Showcase)
    -------------------------------------------------------------------------- */
 @media (max-width: 900px) {
   body {
     background-color: #FFFFFF;
+  }
+
+  .desktop-only-title {
+    display: none !important;
+  }
+
+  .mobile-only-title {
+    display: block !important;
+  }
+
+  .mobile-only-back {
+    display: flex !important;
   }
 
   .auth-header {

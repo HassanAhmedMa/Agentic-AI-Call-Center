@@ -433,6 +433,10 @@
 
       if (footerEl) {
         footerEl.innerHTML = `
+          <button class="modal-btn-secondary" style="margin-right:auto; color:#DC2626; border-color:#FECACA; background:#FEF2F2;" onclick="confirmRemoveDoctor(${doc.id}, '${escapeJs(doc.name_en)}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:6px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            Remove Doctor
+          </button>
           <button class="modal-btn-secondary" onclick="closeDoctorModal()">Close</button>
           <a href="appointments.html" class="modal-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Book Appointment</a>
         `;
@@ -443,6 +447,61 @@
           <strong>Error loading doctor:</strong> ${err.message}
         </div>
       `;
+    }
+  };
+
+  function escapeJs(str) {
+    return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+
+  window.confirmRemoveDoctor = function (doctorId, doctorName) {
+    const backdrop = document.getElementById('adminModalBackdrop');
+    const titleEl = document.getElementById('adminModalTitle');
+    const bodyEl = document.getElementById('adminModalBody');
+    const footerEl = document.getElementById('adminModalFooter');
+
+    if (!backdrop || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = 'Confirm Doctor Removal';
+
+    bodyEl.innerHTML = `
+      <div style="padding:10px 0; text-align:center;">
+        <div style="width:48px; height:48px; border-radius:50%; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+        </div>
+        <h4 style="margin:0 0 8px 0; font-size:16px; font-weight:700; color:#1E293B;">Remove ${doctorName}?</h4>
+        <p style="margin:0 0 16px 0; font-size:13px; color:#64748B; line-height:1.5;">
+          This doctor will be deactivated and immediately removed from active search, appointment scheduling, and patient directory.
+        </p>
+        <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px; font-size:12px; color:#92400E; text-align:left;">
+          Past appointment history with this doctor will remain preserved for clinical audit and patient medical records.
+        </div>
+      </div>
+    `;
+
+    if (footerEl) {
+      footerEl.innerHTML = `
+        <button class="modal-btn-secondary" onclick="viewDoctorDetails(${doctorId})">Cancel</button>
+        <button class="modal-btn-primary" style="background:#DC2626; border-color:#DC2626;" onclick="executeRemoveDoctor(${doctorId}, '${escapeJs(doctorName)}')">
+          Yes, Remove Doctor
+        </button>
+      `;
+    }
+  };
+
+  window.executeRemoveDoctor = async function (doctorId, doctorName) {
+    try {
+      if (typeof ClinicApi !== 'undefined' && typeof ClinicApi.deleteDoctor === 'function') {
+        await ClinicApi.deleteDoctor(doctorId);
+      }
+      closeDoctorModal();
+      showToast(`${doctorName} has been removed successfully.`, 'success');
+      await loadLiveDoctors();
+    } catch (err) {
+      showToast(`Failed to remove doctor: ${err.message}`, 'error');
     }
   };
 

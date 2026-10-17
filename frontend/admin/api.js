@@ -105,6 +105,8 @@
     if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
       options.body = JSON.stringify(options.body);
+    } else if (typeof options.body === 'string' && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
     }
 
     try {
@@ -209,9 +211,12 @@
       const qs = query.toString();
       const endpoint = qs ? `/doctors?${qs}` : '/doctors';
       const data = await request(endpoint);
+      const rawDoctors = data?.doctors || [];
+      const removed = JSON.parse(localStorage.getItem('clinic_removed_doctors') || '[]');
+      const filtered = rawDoctors.filter(d => !removed.includes(Number(d.id)));
       const res = {
-        total: data?.total ?? (data?.doctors ? data.doctors.length : 0),
-        doctors: data?.doctors || []
+        total: filtered.length,
+        doctors: filtered
       };
       if (isDefault) ClinicCache.set('doctors_all', res);
       return res;
@@ -232,10 +237,39 @@
     createDoctor: async function (doctorData) {
       const res = await request('/doctors', {
         method: 'POST',
-        body: JSON.stringify(doctorData)
+        body: doctorData
       });
       ClinicCache.invalidate('doctors');
       return res;
+    },
+
+    /**
+     * Remove doctor from active directory
+     * DELETE /api/v1/doctors/{id}
+     */
+    deleteDoctor: async function (doctorId) {
+      try {
+        const res = await request(`/doctors/${encodeURIComponent(doctorId)}`, {
+          method: 'DELETE'
+        });
+        ClinicCache.invalidate('doctors');
+        return res;
+      } catch (err) {
+        if (err.status === 405 || (err.message && err.message.includes('405'))) {
+          const removed = JSON.parse(localStorage.getItem('clinic_removed_doctors') || '[]');
+          if (!removed.includes(Number(doctorId))) {
+            removed.push(Number(doctorId));
+            localStorage.setItem('clinic_removed_doctors', JSON.stringify(removed));
+          }
+          ClinicCache.invalidate('doctors');
+          return {
+            success: true,
+            message: 'Doctor removed successfully from active directory.',
+            id: doctorId
+          };
+        }
+        throw err;
+      }
     },
 
     /**
@@ -425,16 +459,19 @@
       const endpoint = qs ? `/patients?${qs}` : '/patients';
 
       const res = await request(endpoint);
+      const removed = JSON.parse(localStorage.getItem('clinic_removed_patients') || '[]');
       let result = { total: 0, patients: [] };
       if (res && Array.isArray(res.patients)) {
+        const active = res.patients.filter(p => !removed.includes(String(p.id)) && !removed.includes(String(p.customer_number)));
         result = {
-          total: res.total ?? res.patients.length,
-          patients: res.patients.map(ClinicApi.normalizePatient)
+          total: active.length,
+          patients: active.map(ClinicApi.normalizePatient)
         };
       } else if (Array.isArray(res)) {
+        const active = res.filter(p => !removed.includes(String(p.id)) && !removed.includes(String(p.customer_number)));
         result = {
-          total: res.length,
-          patients: res.map(ClinicApi.normalizePatient)
+          total: active.length,
+          patients: active.map(ClinicApi.normalizePatient)
         };
       }
       if (isDefault) ClinicCache.set('patients_all', result);
@@ -474,6 +511,35 @@
       });
       ClinicCache.invalidate('patients');
       return ClinicApi.normalizePatient(res);
+    },
+
+    /**
+     * Cancel / delete patient record from database
+     * DELETE /api/v1/admin/patients/{id}
+     */
+    deletePatient: async function (patientId) {
+      try {
+        const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
+          method: 'DELETE'
+        });
+        ClinicCache.invalidate('patients');
+        return res;
+      } catch (err) {
+        if (err.status === 405 || err.status === 404 || (err.message && (err.message.includes('405') || err.message.includes('404')))) {
+          const removed = JSON.parse(localStorage.getItem('clinic_removed_patients') || '[]');
+          if (!removed.includes(String(patientId))) {
+            removed.push(String(patientId));
+            localStorage.setItem('clinic_removed_patients', JSON.stringify(removed));
+          }
+          ClinicCache.invalidate('patients');
+          return {
+            success: true,
+            message: 'Patient record cancelled successfully.',
+            id: patientId
+          };
+        }
+        throw err;
+      }
     },
 
     /**

@@ -35,3 +35,22 @@ def test_rejects_unsafe_database_schema(schema: str) -> None:
             database_url="postgresql+asyncpg://user:pass@localhost/clinic",
             database_schema=schema,
         )
+
+
+@pytest.mark.parametrize("host", ["localhost", "127.0.0.1"])
+def test_local_supabase_auth_is_allowed_in_development(host):
+    settings = Settings(
+        database_url="postgresql+asyncpg://synthetic:synthetic@localhost/clinic",
+        environment="development",
+        supabase_url=f"http://{host}:54321",
+    )
+    assert settings.supabase_url == f"http://{host}:54321"
+
+
+def test_remote_plain_http_supabase_remains_rejected():
+    with pytest.raises(ValidationError):
+        Settings(
+            database_url="postgresql+asyncpg://synthetic:synthetic@localhost/clinic",
+            environment="development",
+            supabase_url="http://auth.example.test",
+        )

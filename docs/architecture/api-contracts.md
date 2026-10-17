@@ -758,3 +758,12 @@ No staff API changes, new database migrations, Gmail API access or provider-toke
 storage in JavaScript are introduced. OAuth cancellation returns to login with a
 localized verification error. Overlapping Google attempts in one browser require
 restarting the latest flow.
+
+
+Local-first compatibility: POST Origin may also be HTTP localhost or 127.0.0.1
+with an explicit local port. Loopback HTTP cookies omit Secure; HTTPS cookies
+remain Secure. POST /google accepts optional return_path; /recover extends its
+email input with the same optional field. Only /auth.html, /portal/auth.html and
+/frontend/user/auth.html are allowed, and callback origin is selected only from
+the validated request Origin. Both auth and dashboard use the same configurable
+API transport; static development frontends include cookies across local ports.

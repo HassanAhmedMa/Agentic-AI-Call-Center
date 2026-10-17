@@ -158,3 +158,40 @@ Disable backend URL access logging (`uvicorn --no-access-log`) for OAuth callbac
 queries; keep application error logs without credentials. The portal already
 serves Referrer-Policy: no-referrer. Do not enable proxy access logs containing
 full OAuth callback query strings.
+
+
+## Local-first portal development (team constitution)
+
+Use a local backend on a free port (8000 or 8002) and a local Supabase instance;
+no shared server restart or SSH tunnel is required for development. Development
+accepts HTTP Supabase URLs only on localhost/127.0.0.1; remote Auth endpoints still
+require HTTPS. Provider-injected integration tests run every clinic auth flow
+against local PostgreSQL without remote services or real inboxes.
+
+The shared `portal-api.js` transport serves both auth.html and the dashboard.
+Backend-served `/portal/` assets use relative same-origin API paths. Static UI at
+http://localhost:5500/auth.html or :5501 defaults to the backend at the **same
+hostname**, port 8002. Select a local backend at 8000 with
+`?api=http://localhost:8000`; only this endpoint preference is stored, never tokens.
+Use the equivalent 127.0.0.1 addresses when testing that hostname. Keep the UI/API
+hostname consistent: localhost and 127.0.0.1 are different cookie sites. Both can
+be used independently. Port selection is configurable and never reserves or
+terminates an occupied service.
+
+Loopback HTTP gets HttpOnly cookies without Secure, including the temporary
+Google PKCE cookie. HTTPS keeps Secure cookies even if someone supplies a
+loopback Origin header. CORS accepts explicit configured origins and HTTP
+loopback origins with credentials; unrelated origins remain rejected.
+
+Google start/recovery accept an optional `return_path`, limited to /auth.html,
+/portal/auth.html or /frontend/user/auth.html. The callback host comes from the
+validated request Origin. Add each exact local callback path (plus the limited
+`?oauth_state=*` variant for Google) to **your local Supabase** redirect allowlist.
+Configure your local Google OAuth client with its Supabase /auth/v1/callback.
+The external Google consent step still requires Google credentials/internet;
+it is not simulated by claiming live OAuth passed. Do not edit the shared
+Supabase allowlist without teammate agreement.
+
+After changing backend/auth/Docker code, commit bodies must list files/endpoints,
+container impact, and port/origin implications for Hassan, Ziad, Ali and Omar.
+This integration changes no shared containers, server environments or Caddy rules.

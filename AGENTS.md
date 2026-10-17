@@ -131,11 +131,16 @@ All AI coding agents operate as **pair-programming assistants**, not autonomous 
 - **Run Checks:** Verify that tests, linters, and repository validators pass before finalizing work.
 - **Explain Trade-offs:** Document rationale for significant decisions in PR descriptions.
 - **Synthetic Data Only:** Use exclusively synthetic demonstration data. Never handle real patient data.
+- **Localhost-First Compatibility:** Every feature, authentication flow, and API endpoint MUST be runnable and testable locally on `localhost` and `127.0.0.1` (on ports such as 5500, 5501, 8000, 8002, 3000) without requiring a remote cloud deployment.
+- **Detailed Backend & Container Commit Logs:** Any commit that modifies backend business logic, authentication origins, environment variables, or Docker container configurations MUST include a detailed body in the commit message explaining: (1) exact files and endpoints modified, (2) container runtime impact, and (3) port, origin, or tunnel implications for teammates (Hassan, Ziad, Ali, Omar).
+- **Shared Server Non-Interference:** Never break shared server ports, reverse proxy rules (Caddy/Envoy), or container settings. Production security constraints (e.g., Caddy SSL, `Secure` cookies) must always coexist gracefully with local loopback testing.
 
 ### What AI Agents MUST NOT Do:
 - ❌ **NEVER commit secrets, tokens, private keys, or credentials.**
 - ❌ **NEVER allow the LLM to directly query the database or execute arbitrary code.**
 - ❌ **NEVER bypass backend validation, authentication, or authorization.**
+- ❌ **NEVER hardcode production-only origins or cookie restrictions that break local testing on `localhost` or `127.0.0.1`.**
+- ❌ **NEVER make uncoordinated changes to shared server ports, container runtime environments, or reverse proxy configs that disrupt teammates' workflows.**
 - ❌ **NEVER rewrite unrelated modules or refactor working code outside the task scope.**
 - ❌ **NEVER delete working functionality without explicit human approval.**
 - ❌ **NEVER introduce new heavy dependencies or architectural patterns without an ADR.**
@@ -211,5 +216,7 @@ Before declaring any task complete, ask:
 - [ ] Are all schemas and contracts preserved and respected?
 - [ ] Are all new paths covered by automated tests?
 - [ ] Are there zero secrets, keys, or real personal data in my changes?
+- [ ] Is this feature fully runnable and testable locally on `localhost` without depending on a remote cloud deployment?
+- [ ] If I touched backend logic or server settings, does my commit message clearly describe the container and port impact for teammates?
 - [ ] Is my commit message formatted using Conventional Commits?
 - [ ] Have I explained the changes clearly to my human pair-programming partner?
