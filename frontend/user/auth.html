@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2563EB">
+  <title>Nile Clinics - Patient Portal Login & Sign Up</title>
+
+  <!-- Typography: Inter for UI, Cairo for Arabic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+
+  <!-- Top Global Header -->
+  <header class="auth-header">
+    <div class="brand-badge-group">
+      <div class="brand-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+          <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+        </svg>
+      </div>
+      <div class="brand-text-block">
+        <span class="brand-title">Nile Clinics</span>
+        <span class="brand-subtitle">Your Health, Our Care</span>
+      </div>
+    </div>
+
+    <a href="#" class="header-help-link" id="headerHelpBtn">
+      <span>Need help?</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </a>
+  </header>
+
+  <!-- Main Showcase Container -->
+  <main class="auth-page-container">
+
+    <!-- =========================================================================
+         SCREEN 1: LOGIN (Desktop Left Hero + Right Card / Mobile Top Hero + Card)
+         ========================================================================= -->
+    <section class="auth-card-view active" id="view-login">
+      <div class="auth-split-wrapper">
+        
+        <!-- Left Hero Panel (Desktop) / Top Banner (Mobile) -->
+        <div class="auth-hero-panel">
+          <div class="hero-top-tag">
+            <span class="hero-pill-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+              <span>Welcome Back</span>
+            </span>
+          </div>
+
+          <h1 class="hero-main-title">Access your healthcare, anytime</h1>
+          <p class="hero-subtext">Log in to book appointments, manage your medical records, and chat with our AI assistant.</p>
+
+          <ul class="hero-features-list">
+            <li class="hero-feature-item">
+              <div class="feature-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="16" height="16">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+              </div>
+              <span>Book & manage appointments</span>
+            </li>
+            <li class="hero-feature-item">
+              <div class="feature-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="16" height="16">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+              <span>Access your medical records</span>
+            </li>
+            <li class="hero-feature-item">
+              <div class="feature-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="16" height="16">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  <path d="M8 10h.01M12 10h.01M16 10h.01"/>
+                </svg>
+              </div>
+              <span>Get instant help from our AI assistant</span>
+            </li>
+          </ul>
+
+          <!-- Premium Vector SVG Illustration (Modern Clinic Reception) -->
+          <div class="hero-illustration-container">
+            <svg class="clinic-svg-hero" viewBox="0 0 600 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="wallGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#F1F5F9"/>
+                  <stop offset="100%" stop-color="#E2E8F0"/>
+                </linearGradient>
+                <linearGradient id="deskGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#FFFFFF"/>
+                  <stop offset="50%" stop-color="#EFF6FF"/>
+                  <stop offset="100%" stop-color="#DBEAFE"/>
+                </linearGradient>
+                <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#2563EB"/>
+                  <stop offset="100%" stop-color="#3B82F6"/>
+                </linearGradient>
+                <linearGradient id="windowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#E0F2FE"/>
+                  <stop offset="100%" stop-color="#BAE6FD"/>
+                </linearGradient>
+              </defs>
+              <!-- Background Architecture Room -->
+              <rect x="0" y="0" width="600" height="320" rx="16" fill="url(#wallGrad)"/>
+              
+              <!-- Ceiling Beams & Ambient Lights -->
+              <path d="M 40 0 L 160 80 L 440 80 L 560 0 Z" fill="#FFFFFF" opacity="0.6"/>
+              <line x1="160" y1="80" x2="440" y2="80" stroke="#93C5FD" stroke-width="3"/>
+              
+              <!-- Back Wall Clinic Logo & Digital Pulse -->
+              <rect x="220" y="110" width="160" height="42" rx="8" fill="#FFFFFF" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.04))"/>
+              <circle cx="240" cy="131" r="10" fill="#2563EB"/>
+              <path d="M 235 131 L 238 131 L 240 127 L 242 135 L 244 131 L 247 131" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="256" y="136" font-family="'Inter', sans-serif" font-weight="700" font-size="13" fill="#1E3A8A">Nile Clinics</text>
+
+              <!-- Heart Pulse Display on Glass -->
+              <path d="M 400 131 Q 430 131 440 120 T 450 145 T 465 131 L 520 131" stroke="#60A5FA" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+              <!-- Large Scenic Glass Window with Palm / Sky -->
+              <rect x="20" y="60" width="140" height="180" rx="8" fill="url(#windowGrad)" stroke="#CBD5E1" stroke-width="3"/>
+              <line x1="90" y1="60" x2="90" y2="240" stroke="#CBD5E1" stroke-width="2"/>
+              <line x1="20" y1="150" x2="160" y2="150" stroke="#CBD5E1" stroke-width="2"/>
+              <!-- Abstract Palm tree silhouettes outside -->
+              <path d="M 50 160 Q 40 130 25 125 M 50 160 Q 60 125 75 120 M 50 160 Q 45 120 50 110" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+
+              <!-- Indoor Potted Plant -->
+              <path d="M 40 280 L 60 280 L 56 310 L 44 310 Z" fill="#94A3B8"/>
+              <path d="M 50 280 Q 30 250 15 260 M 50 280 Q 70 245 80 255 M 50 280 Q 50 230 45 235" stroke="#059669" stroke-width="4" stroke-linecap="round"/>
+
+              <!-- Curved Modern Reception Desk -->
+              <path d="M 120 220 Q 300 210 480 220 L 460 320 L 140 320 Z" fill="url(#deskGrad)" stroke="#BFDBFE" stroke-width="2"/>
+              <!-- Desk Accent Strip with Logo -->
+              <path d="M 170 240 Q 300 232 430 240 L 420 285 Q 300 277 180 285 Z" fill="#FFFFFF"/>
+              <circle cx="275" cy="262" r="7" fill="#2563EB"/>
+              <text x="288" y="266" font-family="'Inter', sans-serif" font-weight="700" font-size="12" fill="#1E3A8A">Nile Clinics</text>
+
+              <!-- Waiting Lounge Sofas (Right side) -->
+              <rect x="490" y="240" width="85" height="45" rx="8" fill="#3B82F6" opacity="0.9"/>
+              <rect x="500" y="225" width="65" height="20" rx="4" fill="#1D4ED8"/>
+              <circle cx="532" cy="295" r="14" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2"/>
+
+              <!-- Clean Reflection Floor -->
+              <rect x="0" y="315" width="600" height="5" fill="#E2E8F0"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Right Form Panel -->
+        <div class="auth-form-panel">
+          <div class="form-card-box">
+
+            <!-- Mobile-only Top Banner (Hospital Clinic Illustration) -->
+            <div class="mobile-hero-banner">
+              <div class="mobile-hero-illustration">
+                <svg viewBox="0 0 340 180" fill="none" class="mobile-svg-banner" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="skyGradMob" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#E0F2FE"/>
+                      <stop offset="100%" stop-color="#EFF6FF"/>
+                    </linearGradient>
+                    <linearGradient id="bldgGradMob" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#FFFFFF"/>
+                      <stop offset="100%" stop-color="#F1F5F9"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Sky Canvas -->
+                  <rect width="340" height="180" rx="14" fill="url(#skyGradMob)"/>
+                  
+                  <!-- Soft Clouds -->
+                  <path d="M 40 40 Q 50 25 65 30 Q 80 20 95 32 Q 105 32 108 42 Z" fill="#FFFFFF" opacity="0.8"/>
+                  <path d="M 230 35 Q 240 20 255 25 Q 270 15 285 27 Q 295 27 298 37 Z" fill="#FFFFFF" opacity="0.8"/>
+
+                  <!-- Ground / Lawn -->
+                  <rect x="0" y="150" width="340" height="30" rx="0" fill="#E2E8F0"/>
+                  <path d="M 0 155 Q 170 150 340 155 L 340 180 L 0 180 Z" fill="#CBD5E1"/>
+
+                  <!-- Palm Trees Left -->
+                  <path d="M 45 155 Q 40 115 32 85" stroke="#78350F" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M 32 85 Q 15 75 8 90" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M 32 85 Q 25 60 15 65" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M 32 85 Q 45 60 55 68" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M 32 85 Q 50 80 58 95" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+
+                  <!-- Palm Trees Right -->
+                  <path d="M 295 155 Q 300 115 308 85" stroke="#78350F" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M 308 85 Q 290 75 282 90" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M 308 85 Q 300 60 290 65" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M 308 85 Q 320 60 330 68" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M 308 85 Q 325 80 332 95" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+
+                  <!-- Hospital Main Building -->
+                  <!-- Shadow -->
+                  <rect x="68" y="60" width="204" height="96" rx="6" fill="#94A3B8" opacity="0.25"/>
+                  <!-- Main Body -->
+                  <rect x="70" y="58" width="200" height="96" rx="6" fill="url(#bldgGradMob)" stroke="#CBD5E1" stroke-width="1.5"/>
+                  
+                  <!-- Blue Roof Facade Accent -->
+                  <path d="M 70 58 L 270 58 L 270 70 L 70 70 Z" fill="#2563EB"/>
+                  
+                  <!-- Clinic Billboard on Top -->
+                  <rect x="130" y="42" width="80" height="18" rx="4" fill="#FFFFFF" stroke="#DBEAFE" stroke-width="1.2"/>
+                  <circle cx="140" cy="51" r="5" fill="#2563EB"/>
+                  <path d="M 137.5 51 L 142.5 51 M 140 48.5 L 140 53.5" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+                  <text x="149" y="55" font-family="'Inter', sans-serif" font-weight="700" font-size="7.5" fill="#1E3A8A">Nile Clinics</text>
+
+                  <!-- 2nd Floor Windows -->
+                  <rect x="85" y="80" width="22" height="18" rx="2" fill="#93C5FD"/>
+                  <rect x="115" y="80" width="22" height="18" rx="2" fill="#93C5FD"/>
+                  <rect x="203" y="80" width="22" height="18" rx="2" fill="#93C5FD"/>
+                  <rect x="233" y="80" width="22" height="18" rx="2" fill="#93C5FD"/>
+                  <!-- Window Glare Lines -->
+                  <line x1="88" y1="82" x2="104" y2="96" stroke="#FFFFFF" stroke-width="1" opacity="0.6"/>
+                  <line x1="118" y1="82" x2="134" y2="96" stroke="#FFFFFF" stroke-width="1" opacity="0.6"/>
+                  <line x1="206" y1="82" x2="222" y2="96" stroke="#FFFFFF" stroke-width="1" opacity="0.6"/>
+                  <line x1="236" y1="82" x2="252" y2="96" stroke="#FFFFFF" stroke-width="1" opacity="0.6"/>
+
+                  <!-- Center Entrance Column / Glass Canopy -->
+                  <rect x="145" y="74" width="50" height="80" rx="3" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+                  <rect x="150" y="78" width="40" height="30" rx="2" fill="#60A5FA" opacity="0.85"/>
+                  <rect x="150" y="116" width="40" height="38" rx="2" fill="#DBEAFE"/>
+                  <!-- Automatic Glass Doors -->
+                  <line x1="170" y1="116" x2="170" y2="154" stroke="#2563EB" stroke-width="1.5"/>
+                  <rect x="153" y="122" width="14" height="28" rx="1" fill="#FFFFFF" opacity="0.6"/>
+                  <rect x="173" y="122" width="14" height="28" rx="1" fill="#FFFFFF" opacity="0.6"/>
+
+                  <!-- Ground Floor Windows Left & Right -->
+                  <rect x="85" y="112" width="45" height="26" rx="2" fill="#BFDBFE"/>
+                  <rect x="210" y="112" width="45" height="26" rx="2" fill="#BFDBFE"/>
+                  <line x1="107" y1="112" x2="107" y2="138" stroke="#93C5FD" stroke-width="1"/>
+                  <line x1="232" y1="112" x2="232" y2="138" stroke="#93C5FD" stroke-width="1"/>
+
+                  <!-- Entrance Pavement walkway -->
+                  <polygon points="146,154 194,154 205,180 135,180" fill="#E2E8F0"/>
+                </svg>
+              </div>
+              
+              <div class="hero-top-tag mobile-tag">
+                <span class="hero-pill-badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                  <span>Welcome Back</span>
+                </span>
+              </div>
+            </div>
+
+            <h2 class="form-title">Log in to your account</h2>
+            <p class="form-desc desktop-desc">Enter your email to continue to Nile Clinics.</p>
+            <p class="form-desc mobile-desc">Access your appointments, medical records, and 24/7 AI support.</p>
+
+            <!-- Toggle Switch (Email / Phone) -->
+            <div class="channel-toggle-container">
+              <button type="button" class="channel-toggle-btn active" id="loginTabEmail" onclick="switchLoginChannel('email')">Email</button>
+              <button type="button" class="channel-toggle-btn" id="loginTabPhone" onclick="switchLoginChannel('phone')">Phone</button>
+            </div>
+
+            <form class="auth-interactive-form" id="loginForm" onsubmit="handleLoginSubmit(event)">
+              <!-- Email Input Group -->
+              <div class="form-field-group" id="loginEmailGroup">
+                <label class="form-field-label" for="loginEmailInput">Email address</label>
+                <div class="input-with-icon-wrapper">
+                  <span class="input-leading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2"/>
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                  </span>
+                  <input type="email" id="loginEmailInput" class="form-input-text" placeholder="you@example.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <!-- Phone Input Group (Hidden by default, activated via Phone toggle) -->
+              <div class="form-field-group" id="loginPhoneGroup" style="display: none;">
+                <label class="form-field-label" for="loginPhoneInput">Phone number</label>
+                <div class="phone-input-composite-wrapper">
+                  <div class="phone-country-code-pill">
+                    <!-- Egypt Flag Vector -->
+                    <svg class="country-flag-icon" viewBox="0 0 24 16" width="20" height="14">
+                      <rect width="24" height="16" fill="#C8102E"/>
+                      <rect y="5.33" width="24" height="5.33" fill="#FFFFFF"/>
+                      <rect y="10.66" width="24" height="5.33" fill="#000000"/>
+                      <circle cx="12" cy="8" r="1.5" fill="#C69214"/>
+                    </svg>
+                    <span class="country-dial-code">+20</span>
+                  </div>
+                  <input type="tel" id="loginPhoneInput" class="form-input-text" placeholder="101 234 5678" autocomplete="tel">
+                </div>
+              </div>
+
+              <!-- Password Input Group -->
+              <div class="form-field-group">
+                <div class="field-label-split">
+                  <label class="form-field-label" for="loginPasswordInput">Password</label>
+                  <a href="#" class="forgot-password-link" onclick="handleForgotPassword(event)">Forgot password?</a>
+                </div>
+                <div class="input-with-icon-wrapper">
+                  <span class="input-leading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </span>
+                  <input type="password" id="loginPasswordInput" class="form-input-text" placeholder="Enter your password" required autocomplete="current-password">
+                  <button type="button" class="input-trailing-action-btn" onclick="togglePasswordVisibility('loginPasswordInput', this)" title="Toggle visibility">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit" class="auth-submit-btn" id="loginSubmitBtn">
+                <span>Log In</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
+            </form>
+
+            <div class="auth-divider-line">
+              <span>or continue with</span>
+            </div>
+
+            <!-- Google OAuth Social Button -->
+            <button type="button" class="auth-social-btn" onclick="handleGoogleLogin()">
+              <svg class="google-logo-svg" viewBox="0 0 24 24" width="18" height="18">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <!-- Bottom Navigation Link -->
+            <div class="auth-bottom-switch">
+              <span>Don't have an account?</span>
+              <a href="#signup" class="switch-link-highlight" onclick="navigateToView('view-signup')">Sign up</a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SCREEN 2: SIGN UP (Desktop Left Hero + Right Card / Mobile Top Hero + Card)
+         ========================================================================= -->
+    <section class="auth-card-view" id="view-signup">
+      <div class="auth-split-wrapper">
+
+        <!-- Left Hero Panel -->
+        <div class="auth-hero-panel">
+          <div class="hero-top-tag">
+            <span class="hero-pill-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              <span>Create Account</span>
+            </span>
+          </div>
+
+          <h1 class="hero-main-title">Join Nile Clinics</h1>
+          <p class="hero-subtext">Create your account to start booking appointments, access your records, and get 24/7 support.</p>
+
+          <ul class="hero-features-list">
+            <li class="hero-feature-item">
+              <div class="feature-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="16" height="16">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+              </div>
+              <span>Easy appointment booking</span>
+            </li>
+            <li class="hero-feature-item">
+              <div class="feature-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="16" height="16">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <span>Secure access to your medical records</span>
+            </li>
+            <li class="hero-feature-item">
+              <div class="feature-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="16" height="16">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  <path d="M8 10h.01M12 10h.01M16 10h.01"/>
+                </svg>
+              </div>
+              <span>AI assistant for instant help</span>
+            </li>
+          </ul>
+
+          <!-- Premium Vector SVG Illustration (Doctor / Patient Digital Interaction) -->
+          <div class="hero-illustration-container signup-hero-illustration">
+            <svg class="clinic-svg-hero" viewBox="0 0 600 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="bgGradSignup" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#EFF6FF"/>
+                  <stop offset="100%" stop-color="#DBEAFE"/>
+                </linearGradient>
+                <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FFFFFF"/>
+                  <stop offset="100%" stop-color="#F8FAFC"/>
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" width="600" height="320" rx="16" fill="url(#bgGradSignup)"/>
+              
+              <!-- Soft Medical Blue Waves in Background -->
+              <path d="M 0 180 Q 150 120 300 190 T 600 160 L 600 320 L 0 320 Z" fill="#BFDBFE" opacity="0.4"/>
+              
+              <!-- Floating Card: "Your health in your hands" -->
+              <g transform="translate(40, 110)">
+                <rect width="180" height="90" rx="14" fill="#FFFFFF" filter="drop-shadow(0px 8px 16px rgba(37,99,235,0.08))"/>
+                <rect x="14" y="14" width="28" height="28" rx="7" fill="#EFF6FF"/>
+                <!-- Calendar Icon inside badge -->
+                <rect x="20" y="20" width="16" height="16" rx="2" fill="none" stroke="#2563EB" stroke-width="1.8"/>
+                <line x1="24" y1="18" x2="24" y2="21" stroke="#2563EB" stroke-width="1.8"/>
+                <line x1="32" y1="18" x2="32" y2="21" stroke="#2563EB" stroke-width="1.8"/>
+                <text x="50" y="27" font-family="'Inter', sans-serif" font-weight="700" font-size="12" fill="#0F172A">Your health</text>
+                <text x="50" y="40" font-family="'Inter', sans-serif" font-weight="700" font-size="12" fill="#0F172A">in your hands</text>
+                <text x="14" y="65" font-family="'Inter', sans-serif" font-weight="400" font-size="10" fill="#64748B">Book, manage and</text>
+                <text x="14" y="77" font-family="'Inter', sans-serif" font-weight="400" font-size="10" fill="#64748B">your care — all in one place.</text>
+              </g>
+
+              <!-- Happy Patient with Mobile Phone Illustration -->
+              <g transform="translate(360, 60)">
+                <!-- Modern Stylized Patient Vector Avatar -->
+                <circle cx="110" cy="80" r="45" fill="#F87171" opacity="0.15"/>
+                <!-- Head & Hair -->
+                <path d="M 75 80 Q 70 30 110 30 Q 150 30 145 80 Q 145 130 110 130 Q 75 130 75 80 Z" fill="#334155"/>
+                <!-- Face -->
+                <circle cx="110" cy="85" r="32" fill="#FCD34D"/>
+                <path d="M 85 65 Q 110 50 135 65 Q 110 75 85 65 Z" fill="#1E293B"/> <!-- Bangs -->
+                <circle cx="100" cy="82" r="3" fill="#1E293B"/> <!-- Eyes -->
+                <circle cx="120" cy="82" r="3" fill="#1E293B"/>
+                <path d="M 103 98 Q 110 106 117 98" stroke="#1E293B" stroke-width="2" stroke-linecap="round" fill="none"/> <!-- Smile -->
+                <!-- Body / Sweater -->
+                <path d="M 60 145 Q 110 120 160 145 L 180 260 L 40 260 Z" fill="#D97706" opacity="0.85"/>
+                <!-- Smartphone in hand -->
+                <rect x="75" y="160" width="45" height="75" rx="8" fill="#0F172A" transform="rotate(-8 97 197)"/>
+                <rect x="78" y="164" width="39" height="67" rx="6" fill="#2563EB" transform="rotate(-8 97 197)"/>
+                <circle cx="97" cy="195" r="8" fill="#FFFFFF" opacity="0.9"/>
+                <!-- Hand holding phone -->
+                <path d="M 65 190 Q 75 180 82 195 L 85 220 Q 70 230 65 210 Z" fill="#FCD34D"/>
+              </g>
+
+              <!-- Floating Verified Badge -->
+              <g transform="translate(260, 40)">
+                <circle cx="20" cy="20" r="16" fill="#10B981"/>
+                <path d="M 14 20 L 18 24 L 26 16" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Right Form Panel -->
+        <div class="auth-form-panel">
+          <div class="form-card-box">
+
+            <!-- Mobile-only Top Banner (Patient with Phone & Floating Records) -->
+            <div class="mobile-hero-banner">
+              <div class="mobile-hero-illustration">
+                <svg viewBox="0 0 340 160" fill="none" class="mobile-svg-banner" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="skyGradMob2" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#EFF6FF"/>
+                      <stop offset="100%" stop-color="#DBEAFE"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="340" height="160" rx="14" fill="url(#skyGradMob2)"/>
+
+                  <!-- Decorative Background Circles -->
+                  <circle cx="170" cy="160" r="110" fill="#BFDBFE" opacity="0.3"/>
+                  <circle cx="50" cy="40" r="28" fill="#FFFFFF" opacity="0.4"/>
+                  <circle cx="290" cy="30" r="35" fill="#FFFFFF" opacity="0.4"/>
+
+                  <!-- Left Floating Card: Appointment Calendar -->
+                  <g transform="translate(24, 38)">
+                    <rect width="82" height="64" rx="8" fill="#FFFFFF" filter="drop-shadow(0px 4px 8px rgba(37,99,235,0.08))"/>
+                    <rect x="8" y="8" width="18" height="18" rx="4" fill="#EFF6FF"/>
+                    <rect x="11" y="11" width="12" height="12" rx="1.5" stroke="#2563EB" stroke-width="1.2" fill="none"/>
+                    <text x="32" y="18" font-family="'Inter', sans-serif" font-weight="700" font-size="8" fill="#1E3A8A">Appt. Booked</text>
+                    <text x="32" y="27" font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#64748B">Tomorrow, 10 AM</text>
+                    <line x1="8" y1="36" x2="74" y2="36" stroke="#F1F5F9" stroke-width="1"/>
+                    <text x="8" y="48" font-family="'Inter', sans-serif" font-weight="600" font-size="7" fill="#10B981">Dr. Sarah (Cardio)</text>
+                    <rect x="8" y="52" width="38" height="4" rx="2" fill="#DCFCE7"/>
+                  </g>
+
+                  <!-- Right Floating Card: Health Record -->
+                  <g transform="translate(232, 42)">
+                    <rect width="84" height="60" rx="8" fill="#FFFFFF" filter="drop-shadow(0px 4px 8px rgba(37,99,235,0.08))"/>
+                    <circle cx="18" cy="18" r="8" fill="#EFF6FF"/>
+                    <path d="M 14 18 H 17 L 18 15 L 20 21 L 21 18 H 23" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <text x="30" y="16" font-family="'Inter', sans-serif" font-weight="700" font-size="8" fill="#1E3A8A">Lab Results</text>
+                    <text x="30" y="25" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#10B981">Normal</text>
+                    <line x1="10" y1="34" x2="74" y2="34" stroke="#F1F5F9" stroke-width="1"/>
+                    <rect x="10" y="40" width="55" height="4" rx="2" fill="#E2E8F0"/>
+                    <rect x="10" y="48" width="35" height="4" rx="2" fill="#E2E8F0"/>
+                  </g>
+
+                  <!-- Center Patient Vector -->
+                  <g transform="translate(130, 20)">
+                    <!-- Head & Hair -->
+                    <circle cx="40" cy="40" r="22" fill="#1E293B"/>
+                    <circle cx="40" cy="44" r="16" fill="#FCD34D"/>
+                    <path d="M 28 34 Q 40 26 52 34 Q 40 40 28 34 Z" fill="#1E293B"/>
+                    <!-- Smile & Eyes -->
+                    <circle cx="35" cy="42" r="1.5" fill="#1E293B"/>
+                    <circle cx="45" cy="42" r="1.5" fill="#1E293B"/>
+                    <path d="M 37 49 Q 40 53 43 49" stroke="#1E293B" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+                    
+                    <!-- Torso / Blue Scrub or Cardigan -->
+                    <path d="M 15 72 Q 40 60 65 72 L 72 140 L 8 140 Z" fill="#2563EB"/>
+                    <!-- White Inner Tee -->
+                    <path d="M 32 68 L 40 82 L 48 68 Z" fill="#FFFFFF"/>
+
+                    <!-- Smartphone held in hands -->
+                    <rect x="26" y="82" width="28" height="48" rx="5" fill="#0F172A"/>
+                    <rect x="28" y="85" width="24" height="42" rx="4" fill="#EFF6FF"/>
+                    <circle cx="40" cy="98" r="6" fill="#2563EB"/>
+                    <path d="M 37 98 L 39 100 L 43 96" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="32" y="110" width="16" height="3" rx="1" fill="#93C5FD"/>
+                    <rect x="34" y="116" width="12" height="3" rx="1" fill="#CBD5E1"/>
+
+                    <!-- Hands -->
+                    <circle cx="24" cy="102" r="5" fill="#FCD34D"/>
+                    <circle cx="56" cy="102" r="5" fill="#FCD34D"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <h2 class="form-title">Create your account</h2>
+            <p class="form-desc desktop-desc">Fill in your details to get started.</p>
+            <p class="form-desc mobile-desc">Join Nile Clinics to book appointments, access your records, and get 24/7 support.</p>
+
+            <form class="auth-interactive-form" id="signupForm" onsubmit="handleSignupSubmit(event)">
+              
+              <!-- Full Name -->
+              <div class="form-field-group">
+                <label class="form-field-label" for="signupNameInput">Full name</label>
+                <div class="input-with-icon-wrapper">
+                  <span class="input-leading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </span>
+                  <input type="text" id="signupNameInput" class="form-input-text" placeholder="Your full name" required autocomplete="name">
+                </div>
+              </div>
+
+              <!-- Email Address -->
+              <div class="form-field-group">
+                <label class="form-field-label" for="signupEmailInput">Email address</label>
+                <div class="input-with-icon-wrapper">
+                  <span class="input-leading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2"/>
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                  </span>
+                  <input type="email" id="signupEmailInput" class="form-input-text" placeholder="you@example.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <!-- Phone Number (Optional) -->
+              <div class="form-field-group">
+                <label class="form-field-label" for="signupPhoneInput">Phone number (optional)</label>
+                <div class="phone-input-composite-wrapper">
+                  <div class="phone-country-code-pill">
+                    <!-- Egypt Flag Vector -->
+                    <svg class="country-flag-icon" viewBox="0 0 24 16" width="20" height="14">
+                      <rect width="24" height="16" fill="#C8102E"/>
+                      <rect y="5.33" width="24" height="5.33" fill="#FFFFFF"/>
+                      <rect y="10.66" width="24" height="5.33" fill="#000000"/>
+                      <circle cx="12" cy="8" r="1.5" fill="#C69214"/>
+                    </svg>
+                    <span class="country-dial-code">+20</span>
+                  </div>
+                  <input type="tel" id="signupPhoneInput" class="form-input-text" placeholder="101 234 5678" autocomplete="tel">
+                </div>
+              </div>
+
+              <!-- Date of Birth -->
+              <div class="form-field-group">
+                <label class="form-field-label" for="signupDobInput">Date of birth</label>
+                <div class="input-with-icon-wrapper">
+                  <span class="input-leading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </span>
+                  <input type="text" id="signupDobInput" class="form-input-text" placeholder="DD / MM / YYYY" pattern="[0-9]{2}\s*/\s*[0-9]{2}\s*/\s*[0-9]{4}" required>
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="form-field-group">
+                <label class="form-field-label" for="signupPasswordInput">Password</label>
+                <div class="input-with-icon-wrapper">
+                  <span class="input-leading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </span>
+                  <input type="password" id="signupPasswordInput" class="form-input-text" placeholder="Create a strong password" required autocomplete="new-password">
+                  <button type="button" class="input-trailing-action-btn" onclick="togglePasswordVisibility('signupPasswordInput', this)" title="Toggle visibility">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit" class="auth-submit-btn" id="signupSubmitBtn">
+                <span>Create Account</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
+
+              <p class="auth-terms-note">
+                By creating an account, you agree to our 
+                <a href="#" class="terms-link">Terms of Service</a> and 
+                <a href="#" class="terms-link">Privacy Policy</a>.
+              </p>
+            </form>
+
+            <!-- Bottom Navigation Link -->
+            <div class="auth-bottom-switch">
+              <span>Already have an account?</span>
+              <a href="#login" class="switch-link-highlight" onclick="navigateToView('view-login')">Log in</a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SCREEN 3: VERIFY EMAIL (OTP 6-Digit Flow)
+         ========================================================================= -->
+    <section class="auth-card-view" id="view-verify">
+      <div class="auth-centered-wrapper">
+        
+        <div class="verify-card-box">
+          
+          <!-- Back button -->
+          <button type="button" class="verify-back-btn" onclick="navigateToView('view-signup')" title="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+          </button>
+
+          <!-- Top Brand Sub-badge -->
+          <div class="verify-top-brand">
+            <div class="brand-logo-icon small">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+              </svg>
+            </div>
+            <div class="brand-text-block">
+              <span class="brand-title">Nile Clinics</span>
+              <span class="brand-subtitle">Your Health, Our Care</span>
+            </div>
+          </div>
+
+          <!-- Big Blue Mail Envelope Icon Bubble -->
+          <div class="verify-mail-bubble">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="32" height="32">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+          </div>
+
+          <h2 class="verify-title">Verify your email</h2>
+          <p class="verify-desc">
+            We've sent a 6-digit code to<br>
+            <strong id="verifyTargetEmail" class="verify-target-email">you@example.com</strong>
+          </p>
+
+          <!-- 6-Digit OTP Boxes -->
+          <form id="otpForm" onsubmit="handleOtpSubmit(event)">
+            <div class="otp-inputs-row" id="otpContainer">
+              <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" required autofocus>
+              <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" required>
+              <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" required>
+              <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" required>
+              <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" required>
+              <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-box" required>
+            </div>
+
+            <!-- Resend Code Timer Area -->
+            <div class="otp-resend-area">
+              <span class="resend-faint-label">Didn't receive the code?</span>
+              <button type="button" class="resend-action-btn" id="resendCodeBtn" onclick="handleResendCode()" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                  <path d="M3 21v-5h5"/>
+                </svg>
+                <span id="resendCodeLabel">Resend code in 00:45</span>
+              </button>
+            </div>
+
+            <button type="submit" class="auth-submit-btn verify-submit-btn" id="verifySubmitBtn">
+              <span>Verify</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
+          </form>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SCREEN 4: SUCCESS CONFIRMATION
+         ========================================================================= -->
+    <section class="auth-card-view" id="view-success">
+      <div class="auth-centered-wrapper">
+
+        <div class="success-card-box">
+          
+          <!-- Top Brand Sub-badge -->
+          <div class="verify-top-brand">
+            <div class="brand-logo-icon small">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+              </svg>
+            </div>
+            <div class="brand-text-block">
+              <span class="brand-title">Nile Clinics</span>
+              <span class="brand-subtitle">Your Health, Our Care</span>
+            </div>
+          </div>
+
+          <!-- Concentric Green Success Checkmark Badge with Radiating Ticks -->
+          <div class="success-radial-ring-container">
+            <svg class="success-badge-svg" width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Radiating Ticks (16 ticks) -->
+              <g stroke="#10B981" stroke-width="2.5" stroke-linecap="round" opacity="0.75">
+                <line x1="64" y1="8" x2="64" y2="15"/>
+                <line x1="64" y1="113" x2="64" y2="120"/>
+                <line x1="8" y1="64" x2="15" y2="64"/>
+                <line x1="113" y1="64" x2="120" y2="64"/>
+                <line x1="24.4" y1="24.4" x2="29.4" y2="29.4"/>
+                <line x1="98.6" y1="98.6" x2="103.6" y2="103.6"/>
+                <line x1="24.4" y1="103.6" x2="29.4" y2="98.6"/>
+                <line x1="98.6" y1="29.4" x2="103.6" y2="24.4"/>
+                <line x1="43.5" y1="14.3" x2="45.5" y2="21.0"/>
+                <line x1="84.5" y1="14.3" x2="82.5" y2="21.0"/>
+                <line x1="43.5" y1="113.7" x2="45.5" y2="107.0"/>
+                <line x1="84.5" y1="113.7" x2="82.5" y2="107.0"/>
+                <line x1="14.3" y1="43.5" x2="21.0" y2="45.5"/>
+                <line x1="14.3" y1="84.5" x2="21.0" y2="82.5"/>
+                <line x1="113.7" y1="43.5" x2="107.0" y2="45.5"/>
+                <line x1="113.7" y1="84.5" x2="107.0" y2="82.5"/>
+              </g>
+              <!-- Middle Soft Mint Ring -->
+              <circle cx="64" cy="64" r="38" fill="#ECFDF5"/>
+              <!-- Inner Mint Ring -->
+              <circle cx="64" cy="64" r="28" fill="#D1FAE5"/>
+              <!-- Solid Green Center Circle -->
+              <circle cx="64" cy="64" r="20" fill="#10B981" filter="drop-shadow(0px 4px 10px rgba(16, 185, 129, 0.35))"/>
+              <!-- White Checkmark -->
+              <polyline points="56 64 62 70 73 58" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <h2 class="success-main-title">Account created successfully!</h2>
+          <p class="success-subtext">
+            Your account is ready to use. You can now book appointments, access your medical records, and chat with our AI assistant.
+          </p>
+
+          <button type="button" class="auth-submit-btn success-continue-btn" onclick="handleContinueToDashboard()">
+            <span>Continue to Dashboard</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Interactive JavaScript Logic -->
+  <script src="auth.js"></script>
+</body>
+</html>

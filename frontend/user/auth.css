@@ -1,0 +1,969 @@
+/* ==========================================================================
+   Nile Clinics - Patient Portal Authentication Stylesheet
+   Strict 1:1 Pixel-Accurate Implementation to UI Showcase Reference
+   Supports Responsive Desktop & Full Mobile App Flow
+   Zero Emojis - Premium Healthcare Tokens & SVG Geometry
+   ========================================================================== */
+
+:root {
+  /* Brand Palette */
+  --primary-blue: #2563EB;
+  --primary-blue-hover: #1D4ED8;
+  --primary-blue-subtle: #EFF6FF;
+  --primary-blue-border: #DBEAFE;
+  --primary-blue-dark: #1E3A8A;
+
+  /* Neutrals */
+  --bg-page: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --text-main: #0F172A;
+  --text-body: #334155;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+  --border-light: #E2E8F0;
+  --border-input: #E2E8F0;
+  --border-focus: #3B82F6;
+
+  /* Success Accents */
+  --green-main: #10B981;
+  --green-subtle: #ECFDF5;
+  --green-ring-outer: #F0FDF4;
+  --green-ring-mid: #DCFCE7;
+
+  /* Typography */
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-arabic: 'Cairo', 'Inter', system-ui, sans-serif;
+
+  /* Radii & Shadows */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+  --shadow-card: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 10px -2px rgba(15, 23, 42, 0.02);
+  --shadow-elevated: 0 20px 40px -10px rgba(37, 99, 235, 0.08);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL HEADER
+   -------------------------------------------------------------------------- */
+.auth-header {
+  height: 72px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.brand-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+.brand-logo-icon.small {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.brand-logo-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.brand-logo-icon.small svg {
+  width: 18px;
+  height: 18px;
+}
+
+.brand-text-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.header-help-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-blue);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.header-help-link:hover {
+  background: var(--primary-blue-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   2. MAIN CONTAINER & VIEW SWITCHING
+   -------------------------------------------------------------------------- */
+.auth-page-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 40px 48px;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.auth-card-view {
+  display: none;
+  width: 100%;
+}
+
+.auth-card-view.active {
+  display: block;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   3. DESKTOP SPLIT LAYOUT (Hero Left + Form Right)
+   -------------------------------------------------------------------------- */
+.auth-split-wrapper {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr;
+  gap: 48px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 48px 56px;
+  box-shadow: var(--shadow-card);
+  align-items: center;
+}
+
+/* Left Hero Panel */
+.auth-hero-panel {
+  display: flex;
+  flex-direction: column;
+  padding-right: 16px;
+}
+
+.hero-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-blue-subtle);
+  color: var(--primary-blue);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+
+.hero-main-title {
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.18;
+  letter-spacing: -0.8px;
+  margin-bottom: 14px;
+}
+
+.hero-subtext {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 28px;
+  max-width: 480px;
+}
+
+.hero-features-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.hero-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.feature-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--primary-blue-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Hero Illustration Container */
+.hero-illustration-container {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.clinic-svg-hero {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   4. RIGHT FORM PANEL
+   -------------------------------------------------------------------------- */
+.auth-form-panel {
+  display: flex;
+  justify-content: center;
+}
+
+.form-card-box {
+  width: 100%;
+  max-width: 430px;
+}
+
+.form-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+
+.form-desc {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+/* Toggle Switch: Email / Phone */
+.channel-toggle-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #F1F5F9;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.channel-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.channel-toggle-btn.active {
+  background: #FFFFFF;
+  color: var(--primary-blue);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Form Fields */
+.auth-interactive-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.field-label-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forgot-password-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
+
+.input-with-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-leading-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.input-leading-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.form-input-text {
+  width: 100%;
+  height: 44px;
+  border: 1px solid var(--border-input);
+  border-radius: 9px;
+  padding: 0 14px 0 42px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: #FFFFFF;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input-text::placeholder {
+  color: #94A3B8;
+  font-size: 13px;
+}
+
+.form-input-text:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.input-trailing-action-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.input-trailing-action-btn:hover {
+  color: var(--text-body);
+}
+
+.input-trailing-action-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Phone Composite Input */
+.phone-input-composite-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-input);
+  border-radius: 9px;
+  overflow: hidden;
+  height: 44px;
+  background: #FFFFFF;
+}
+
+.phone-input-composite-wrapper:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.phone-country-code-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  background: #F8FAFC;
+  border-right: 1px solid var(--border-input);
+  height: 100%;
+}
+
+.country-dial-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.phone-input-composite-wrapper .form-input-text {
+  border: none;
+  padding-left: 12px;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+
+/* Main Action Button */
+.auth-submit-btn {
+  width: 100%;
+  height: 46px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.15s ease, transform 0.05s ease;
+  font-family: inherit;
+}
+
+.auth-submit-btn:hover {
+  background: var(--primary-blue-hover);
+}
+
+.auth-submit-btn:active {
+  transform: scale(0.99);
+}
+
+/* Terms Note */
+.auth-terms-note {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.terms-link {
+  color: var(--primary-blue);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.terms-link:hover {
+  text-decoration: underline;
+}
+
+/* Divider Line */
+.auth-divider-line {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0 16px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.auth-divider-line::before,
+.auth-divider-line::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.auth-divider-line span {
+  padding: 0 12px;
+}
+
+/* Social Google Button */
+.auth-social-btn {
+  width: 100%;
+  height: 44px;
+  border: 1px solid var(--border-input);
+  border-radius: 9px;
+  background: #FFFFFF;
+  color: var(--text-main);
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  font-family: inherit;
+}
+
+.auth-social-btn:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+/* Bottom Switcher */
+.auth-bottom-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.switch-link-highlight {
+  color: var(--primary-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.switch-link-highlight:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   5. CENTERED CARD SCREENS (Verify Email & Success Screen)
+   -------------------------------------------------------------------------- */
+.auth-centered-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.verify-card-box,
+.success-card-box {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 44px 40px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  text-align: center;
+}
+
+.verify-back-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.verify-back-btn:hover {
+  background: #F1F5F9;
+  color: var(--text-main);
+}
+
+.verify-top-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.verify-mail-bubble {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--primary-blue-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.verify-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  margin-bottom: 8px;
+}
+
+.verify-desc {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.verify-target-email {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* 6-Digit OTP Inputs */
+.otp-inputs-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.otp-box {
+  width: 46px;
+  height: 52px;
+  border: 1.5px solid var(--border-input);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-blue-dark);
+  font-family: inherit;
+  transition: all 0.15s ease;
+  background: #FFFFFF;
+}
+
+.otp-box:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #FAF5FF;
+}
+
+.otp-box.filled {
+  border-color: var(--primary-blue);
+  background: var(--primary-blue-subtle);
+}
+
+/* Resend Timer */
+.otp-resend-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 28px;
+}
+
+.resend-faint-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.resend-action-btn {
+  background: none;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.resend-action-btn:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.verify-submit-btn {
+  background: #BFDBFE;
+  cursor: not-allowed;
+}
+
+.verify-submit-btn.ready {
+  background: var(--primary-blue);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   6. SUCCESS CONFIRMATION BADGE
+   -------------------------------------------------------------------------- */
+.success-radial-ring-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px auto 24px;
+}
+
+.radial-ring-outer {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--green-ring-outer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radial-ring-middle {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--green-ring-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radial-ring-inner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.success-main-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  margin-bottom: 10px;
+}
+
+.success-subtext {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 32px;
+}
+
+.success-continue-btn {
+  margin-top: 0;
+}
+
+.mobile-hero-banner {
+  display: none;
+}
+
+.desktop-desc {
+  display: block;
+}
+
+.mobile-desc {
+  display: none;
+}
+
+.success-radial-ring-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px auto 24px;
+}
+
+.success-badge-svg {
+  display: block;
+  overflow: visible;
+}
+
+/* --------------------------------------------------------------------------
+   7. RESPONSIVE MOBILE VIEW (Exact Match to iPhone Showcase)
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  body {
+    background-color: #FFFFFF;
+  }
+
+  .auth-header {
+    height: 60px;
+    padding: 0 16px;
+  }
+
+  .auth-page-container {
+    padding: 4px 14px 28px;
+    align-items: flex-start;
+  }
+
+  .auth-split-wrapper {
+    grid-template-columns: 1fr;
+    gap: 0;
+    border: none;
+    box-shadow: none;
+    padding: 4px 0;
+    background: transparent;
+  }
+
+  /* Hide Desktop Left Hero entirely on mobile */
+  .auth-hero-panel {
+    display: none !important;
+  }
+
+  /* Show Mobile Hero Banner above the card form */
+  .mobile-hero-banner {
+    display: block;
+    width: 100%;
+    margin-bottom: 18px;
+  }
+
+  .mobile-hero-illustration {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+    margin-bottom: 14px;
+  }
+
+  .mobile-svg-banner {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .mobile-tag {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .mobile-tag .hero-pill-badge {
+    margin-bottom: 0;
+  }
+
+  .desktop-desc {
+    display: none !important;
+  }
+
+  .mobile-desc {
+    display: block !important;
+  }
+
+  .form-card-box {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .form-title {
+    font-size: 24px;
+    letter-spacing: -0.4px;
+    margin-bottom: 6px;
+  }
+
+  .form-desc {
+    font-size: 13.5px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .verify-card-box,
+  .success-card-box {
+    border: none;
+    box-shadow: none;
+    padding: 16px 4px;
+  }
+
+  .otp-box {
+    width: 46px;
+    height: 50px;
+    font-size: 19px;
+  }
+}
+
+/* Spinner Animation */
+.spinner-spin {
+  animation: spinAround 0.8s linear infinite;
+}
+
+@keyframes spinAround {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Toast Notification (Accessible, Zero Emojis) */
+.auth-toast-notification {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px);
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  font-size: 13.5px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 9999;
+  max-width: 90vw;
+}
+
+.auth-toast-notification.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.auth-toast-notification .toast-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
