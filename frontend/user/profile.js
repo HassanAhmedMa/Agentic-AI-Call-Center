@@ -74,45 +74,35 @@
     );
   };
 
-  window.openNotificationPrefsModal = function () {
-    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-    openModal(
-      isAr ? 'تفضيلات الإشعارات' : 'Notification Preferences',
-      `<div style="display:flex; flex-direction:column; gap:10px;">
-        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> ${isAr ? 'إشعارات تأكيد وتذكير المواعيد (SMS)' : 'SMS Appointment Reminders'}</label>
-        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> ${isAr ? 'رسائل البريد الإلكتروني للمواعيد' : 'Email Notifications'}</label>
-        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox"> ${isAr ? 'العروض الصحية والفحوصات الدورية' : 'Health checkup promotions'}</label>
-      </div>`,
-      `<button class="btn-primary-action" onclick="closeActiveModal(); showToast('${isAr ? 'تم حفظ التفضيلات' : 'Preferences saved'}', 'success')">${isAr ? 'حفظ' : 'Save'}</button>`
-    );
-  };
+  function updateProfileLangButtons(lang) {
+    const cur = lang || (window.getCurrentLang ? window.getCurrentLang() : 'en');
+    const isAr = cur === 'ar';
+    const btnEn = document.getElementById('profileLangBtnEn');
+    const btnAr = document.getElementById('profileLangBtnAr');
+    const label = document.getElementById('profileActiveLangLabel');
+    if (btnEn) btnEn.classList.toggle('active', !isAr);
+    if (btnAr) btnAr.classList.toggle('active', isAr);
+    if (label) label.textContent = isAr ? 'العامية المصرية' : 'English';
+  }
 
-  window.openLanguageModal = function () {
-    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-    openModal(
-      isAr ? 'اختيار لغة الموقع' : 'Choose Language',
-      `<div style="display:flex; flex-direction:column; gap:10px;">
-        <button class="settings-menu-item" onclick="toggleLanguage(); closeActiveModal();">
-          <span>🇬🇧 English</span>
-        </button>
-        <button class="settings-menu-item" onclick="toggleLanguage(); closeActiveModal();">
-          <span>🇪🇬 العامية المصرية (Egyptian Arabic)</span>
-        </button>
-      </div>`
-    );
-  };
-
-  window.openPrivacyModal = function () {
-    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-    openModal(
-      isAr ? 'إعدادات الخصوصية وحماية البيانات' : 'Privacy Settings',
-      `<p style="font-size:13px; line-height:1.6; color:#475569;">
-        ${isAr ? 'بياناتك الطبية وسجلاتك محمية بنظام تشفير سحابي مشدد يطابق معايير HIPAA ووزارة الصحة المصرية. لا يمكن لأي طرف ثالث الاطلاع على سجلاتك دون إذن مسبق.' : 'Your medical data and visit history are encrypted and protected under strict healthcare confidentiality rules. No unauthorized party has access to your records.'}
-      </p>`
-    );
+  window.setPortalLanguage = function (lang) {
+    if (window.setLanguage) {
+      window.setLanguage(lang);
+    } else if (window.toggleLanguage) {
+      if (window.getCurrentLang && window.getCurrentLang() !== lang) {
+        window.toggleLanguage();
+      }
+    }
+    updateProfileLangButtons(lang);
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    updateProfileLangButtons(window.getCurrentLang ? window.getCurrentLang() : 'en');
+
+    window.addEventListener('clinic:language-changed', (e) => {
+      updateProfileLangButtons(e.detail?.lang);
+    });
+
     if (window.ClinicPortalAuth && typeof window.ClinicPortalAuth.checkSession === 'function') {
       window.ClinicPortalAuth.checkSession().then(populateProfileDetails);
     } else {

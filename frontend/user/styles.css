@@ -1660,9 +1660,12 @@ html[dir="rtl"] .user-balloon {
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-.interactive-modal-backdrop.active {
-  display: flex;
-  opacity: 1;
+.interactive-modal-backdrop.active,
+.interactive-modal-backdrop.open {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 .interactive-modal-container {
   width: 100%;
@@ -1915,3 +1918,48 @@ html[dir="rtl"] .toast-stack {
     min-width: 100%;
   }
 }
+
+/* Profile Language Selector */
+.settings-language-box {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-language-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.profile-lang-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.profile-lang-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.profile-lang-btn:hover {
+  background: var(--bg-hover);
+  border-color: #CBD5E1;
+}
+.profile-lang-btn.active {
+  border-color: var(--primary);
+  background: #EFF6FF;
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12);
+}
+

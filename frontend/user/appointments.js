@@ -135,14 +135,21 @@
     const specSel = document.getElementById('apptSpecialtyFilter');
     if (specSel && specSel.value) {
       const val = specSel.value;
-      filtered = filtered.filter(a => a.specialty_id == val || String(a.specialty_id) === val);
+      filtered = filtered.filter(a => 
+        (a.specialty_id !== undefined && String(a.specialty_id) === String(val)) ||
+        (a.specialty && String(a.specialty.id) === String(val)) ||
+        (a.doctor && String(a.doctor.specialty_id) === String(val))
+      );
     }
 
     // Doctor filter
     const docSel = document.getElementById('apptDoctorFilter');
     if (docSel && docSel.value) {
       const val = docSel.value;
-      filtered = filtered.filter(a => a.doctor_id == val || String(a.doctor_id) === val);
+      filtered = filtered.filter(a => 
+        (a.doctor_id !== undefined && String(a.doctor_id) === String(val)) ||
+        (a.doctor && String(a.doctor.id) === String(val))
+      );
     }
 
     // Date filter
@@ -233,6 +240,22 @@
     renderAppointmentsList();
   };
 
+  window.onSpecialtyFilterChange = function () {
+    const specSel = document.getElementById('apptSpecialtyFilter');
+    const selectedSpecId = specSel ? specSel.value : '';
+    
+    // Filter doctors dropdown to only show doctors in this department
+    const docSel = document.getElementById('apptDoctorFilter');
+    if (docSel) {
+      const filteredDocs = selectedSpecId 
+        ? allDoctors.filter(d => (d.specialty_id == selectedSpecId || d.specialty?.id == selectedSpecId))
+        : allDoctors;
+      populateDoctorFilter(filteredDocs);
+    }
+    
+    renderAppointmentsList();
+  };
+
   window.applyAppointmentFilters = function () {
     renderAppointmentsList();
   };
@@ -244,6 +267,7 @@
     if (s1) s1.value = '';
     if (s2) s2.value = '';
     if (s3) s3.value = '';
+    populateDoctorFilter(allDoctors);
     renderAppointmentsList();
   };
 
@@ -352,9 +376,20 @@
   };
 
   // BOOK NEW APPOINTMENT MODAL (Connected Live to Supabase DB)
-  window.openBookAppointmentModal = function () {
+  window.openBookAppointmentModal = async function () {
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
     const title = isAr ? 'حجز ميعاد كشف جديد' : 'Book New Appointment';
+
+    if (!allDoctors || allDoctors.length === 0) {
+      try {
+        allDoctors = await UserApi.getDoctors();
+      } catch (_) {}
+    }
+    if (!allSpecialties || allSpecialties.length === 0) {
+      try {
+        allSpecialties = await UserApi.getSpecialties();
+      } catch (_) {}
+    }
 
     // Build department options
     const specOptions = (allSpecialties || []).map(s => {

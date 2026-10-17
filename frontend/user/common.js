@@ -236,6 +236,12 @@
     showToast(next === 'ar' ? 'تم تحويل الواجهة إلى العامية المصرية' : 'Switched to English successfully', 'info');
   };
 
+  window.setLanguage = function (lang) {
+    const target = lang === 'ar' ? 'ar' : 'en';
+    applyLanguage(target);
+    showToast(target === 'ar' ? 'تم تحويل الواجهة إلى العامية المصرية' : 'Switched to English successfully', 'info');
+  };
+
   window.getCurrentLang = function () {
     return currentLang;
   };
@@ -347,13 +353,27 @@
     if (bodyEl) bodyEl.innerHTML = bodyHtml;
     if (footerEl) footerEl.innerHTML = footerHtml;
 
-    if (backdrop) backdrop.classList.add('open');
+    if (backdrop) {
+      backdrop.classList.add('active');
+      backdrop.classList.add('open');
+      backdrop.style.display = 'flex';
+      backdrop.style.opacity = '1';
+      backdrop.style.visibility = 'visible';
+      backdrop.style.pointerEvents = 'auto';
+    }
   }
   window.openModal = openModal;
 
   window.closeActiveModal = function () {
     const backdrop = document.getElementById('modalBackdrop');
-    if (backdrop) backdrop.classList.remove('open');
+    if (backdrop) {
+      backdrop.classList.remove('active');
+      backdrop.classList.remove('open');
+      backdrop.style.display = 'none';
+      backdrop.style.opacity = '0';
+      backdrop.style.visibility = 'hidden';
+      backdrop.style.pointerEvents = 'none';
+    }
   };
 
   window.handleBackdropClick = function (e) {

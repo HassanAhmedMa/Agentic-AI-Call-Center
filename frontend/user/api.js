@@ -140,9 +140,17 @@
     },
 
     async bookAppointment(payload) {
-      const patientId = window.ClinicSession?.id;
-      const patientPhone = window.ClinicSession?.phone;
-      const patientName = window.ClinicSession?.full_name || window.ClinicSession?.first_name;
+      let session = window.ClinicSession;
+      if (!session) {
+        try {
+          session = JSON.parse(localStorage.getItem('clinic_patient_session') || '{}');
+        } catch (_) {
+          session = {};
+        }
+      }
+      const patientId = session?.id || session?.customer_number;
+      const patientPhone = session?.phone;
+      const patientName = session?.full_name || session?.first_name;
       const enriched = {
         patient_id: patientId,
         phone: patientPhone,

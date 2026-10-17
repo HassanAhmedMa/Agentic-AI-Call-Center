@@ -596,6 +596,7 @@ def portal_router(
                     Doctor.name_ar.label("doctor_name_ar"),
                     Specialty.name_en.label("specialty_name"),
                     Specialty.name_ar.label("specialty_name_ar"),
+                    Specialty.id.label("specialty_id"),
                 )
                 .join(Doctor, Appointment.doctor_id == Doctor.id)
                 .join(Specialty, Doctor.specialty_id == Specialty.id)
@@ -619,6 +620,7 @@ def portal_router(
                     "doctor_name": item["doctor_name"],
                     "doctor_name_ar": item["doctor_name_ar"],
                     "doctor_id": item["doctor_id"],
+                    "specialty_id": item["specialty_id"],
                     "specialty_name": item["specialty_name"],
                     "specialty_name_ar": item["specialty_name_ar"],
                     "branch_name": "Main Branch - Heliopolis",
