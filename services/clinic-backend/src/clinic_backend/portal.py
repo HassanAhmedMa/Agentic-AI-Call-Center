@@ -1,10 +1,11 @@
 """Same-origin patient authentication. Provider credentials stay in HttpOnly cookies."""
 
+import base64
 import hashlib
 import re
 import secrets
 from datetime import UTC, datetime
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from clinic_schemas import portal as dto
 from clinic_schemas.identity import PatientProfile, Registration
@@ -23,6 +24,7 @@ from clinic_backend.supabase_auth import AuthClient, VerifiedAuthUser
 from clinic_backend.supabase_identity import SupabaseIdentity, active_auth_session
 
 PREFIX = "/api/v1/portal"
+GOOGLE = "clinic_portal_google"
 ACCESS, REFRESH, CONVERSATION, RECOVERY = (
     "clinic_portal_access",
     "clinic_portal_refresh",
@@ -109,7 +111,7 @@ def portal_router(
 
     def clear(response: Response, request: Request | None = None) -> None:
         sec = is_cookie_secure(request)
-        for name in [ACCESS, REFRESH, CONVERSATION, RECOVERY]:
+        for name in [ACCESS, REFRESH, CONVERSATION, RECOVERY, GOOGLE]:
             response.delete_cookie(
                 name,
                 path=PREFIX,
@@ -231,6 +233,119 @@ def portal_router(
             profile = await identity.complete(row, user, form)
         save_provider(response, data, request=request)
         return profile
+
+    def clear_google(response: Response, request: Request | None = None) -> None:
+        response.delete_cookie(
+            GOOGLE,
+            path=PREFIX,
+            httponly=True,
+            secure=is_cookie_secure(request),
+            samesite="lax",
+        )
+        response.headers["Cache-Control"] = "no-store"
+
+    @router.post("/google")
+    async def google_start(request: Request, response: Response) -> dict[str, str]:
+        if not settings.portal_google_enabled:
+            raise APIError(503, "SERVICE_UNAVAILABLE", "Google sign-in unavailable.")
+        await limit(request, "google")
+        verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
+        challenge = (
+            base64.urlsafe_b64encode(hashlib.sha256(verifier.encode("ascii")).digest())
+            .decode("ascii")
+            .rstrip("=")
+        )
+        # Only this temporary cookie is Lax: it must survive the Google redirect.
+        # Provider access/refresh cookies retain SameSite=Strict.
+        response.set_cookie(
+            GOOGLE,
+            verifier + "." + state,
+            max_age=600,
+            httponly=True,
+            secure=is_cookie_secure(request),
+            samesite="lax",
+            path=PREFIX,
+        )
+        response.headers["Cache-Control"] = "no-store"
+        req_origin = request.headers.get("Origin", "").rstrip("/")
+        base_origin = (
+            req_origin
+            if req_origin and is_allowed_portal_origin(req_origin, settings.portal_origin)
+            else settings.portal_origin.rstrip("/")
+        )
+        redirect = (
+            base_origin
+            + "/portal/auth.html?"
+            + urlencode({"oauth_state": state})
+        )
+        return {
+            "url": settings.supabase_url.rstrip("/")
+            + "/auth/v1/authorize?"
+            + urlencode(
+                {
+                    "provider": "google",
+                    "redirect_to": redirect,
+                    "code_challenge": challenge,
+                    "code_challenge_method": "s256",
+                }
+            )
+        }
+
+    @router.post("/google/exchange", response_model=PatientProfile)
+    async def google_exchange(
+        body: dto.GoogleExchange,
+        request: Request,
+        response: Response,
+    ) -> PatientProfile | Response:
+        if not settings.portal_google_enabled:
+            raise APIError(503, "SERVICE_UNAVAILABLE", "Google sign-in unavailable.")
+        await limit(request, "google_exchange")
+        try:
+            value = request.cookies.get(GOOGLE, "")
+            parts = value.split(".")
+            if (
+                len(parts) != 2
+                or not re.fullmatch(r"[A-Za-z0-9_-]{64}", parts[0])
+                or not re.fullmatch(r"[A-Za-z0-9_-]{43}", parts[1])
+                or not secrets.compare_digest(parts[1], body.state)
+            ):
+                raise APIError(
+                    401, "VERIFICATION_REQUIRED", "Start Google sign-in again."
+                )
+            data = await auth.request(
+                "token?grant_type=pkce",
+                body={
+                    "auth_code": body.code.get_secret_value(),
+                    "code_verifier": parts[0],
+                },
+            )
+            save_provider(response, data, request=request)
+            try:
+                result = await bind(request, response, data, None)
+            except APIError as error:
+                if error.code != "REGISTRATION_REQUIRED":
+                    raise
+                user = await auth.verify_access_token(str(data["access_token"]))
+                failure = error_response(
+                    request,
+                    error.status,
+                    error.code,
+                    error.message,
+                    {"email_verified": True, "email": user.email},
+                )
+                for header in response.raw_headers:
+                    if header[0].lower() == b"set-cookie":
+                        failure.raw_headers.append(header)
+                clear_google(failure, request=request)
+                return failure
+            clear_google(response, request=request)
+            return result
+        except APIError as error:
+            failure = error_response(
+                request, error.status, error.code, error.message, error.details
+            )
+            clear_google(failure, request=request)
+            return failure
 
     @router.post("/signup", status_code=202, response_model=dto.Delivery)
     async def signup(
@@ -431,7 +546,13 @@ def portal_router(
         body: dto.Email, request: Request, response: Response
     ) -> dto.Delivery:
         await limit(request, "recover", body.email)
-        redirect = settings.portal_origin.rstrip("/") + "/portal/auth.html"
+        req_origin = request.headers.get("Origin", "").rstrip("/")
+        base_origin = (
+            req_origin
+            if req_origin and is_allowed_portal_origin(req_origin, settings.portal_origin)
+            else settings.portal_origin.rstrip("/")
+        )
+        redirect = base_origin + "/portal/auth.html"
         await auth.request(
             "recover?redirect_to=" + quote(redirect, safe=""),
             body={"email": body.email},

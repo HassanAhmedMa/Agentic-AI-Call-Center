@@ -267,10 +267,19 @@
         verifiedIdentity = true;
         if (error.details.email) {
           pending = { email: error.details.email };
-          if ($('signupEmailInput')) $('signupEmailInput').value = error.details.email;
+          if ($('signupEmailInput')) {
+            $('signupEmailInput').value = error.details.email;
+            $('signupEmailInput').readOnly = true;
+          }
         }
-        if ($('signupPasswordInput')) $('signupPasswordInput').required = false;
-        if ($('signupPasswordConfirm')) $('signupPasswordConfirm').required = false;
+        ['signupPasswordInput', 'signupPasswordConfirm'].forEach(id => {
+          const el = $(id);
+          if (el) {
+            el.required = false;
+            const grp = el.closest('.form-field-group');
+            if (grp) grp.hidden = true;
+          }
+        });
         navigateToView('view-signup');
       }
     } finally {
@@ -735,6 +744,12 @@
       }
     });
   }
+  function handleGoogleLogin() {
+    return run(async () => {
+      const result = await api('google', {});
+      window.location.assign(result.url);
+    });
+  }
 
   function handleResetSubmit(event) {
     return handleResetPasswordSubmit(event);
@@ -751,14 +766,13 @@
   }
 
   /**
-   * Social Google Login placeholder
+   * Social Google Login
    */
   function handleGoogleLogin() {
-    showToast(
-      language === 'ar'
-        ? 'تسجيل جوجل مش متاح دلوقتي. استخدم البريد وكلمة السر.'
-        : 'Google sign-in is not configured. Use email and password.'
-    );
+    return run(async () => {
+      const result = await api('google', {});
+      window.location.assign(result.url);
+    });
   }
 
   /**
@@ -897,6 +911,18 @@
           }
         });
       });
+    }
+
+    // Google OAuth Callback Handler
+    const oauth = new URLSearchParams(window.location.search);
+    if (oauth.has('code') || oauth.has('oauth_state') || oauth.has('error')) {
+      history.replaceState(null, '', window.location.pathname);
+      await run(async () => {
+        if (!oauth.get('code') || !oauth.get('oauth_state') || oauth.has('error')) throw Error('VERIFICATION_REQUIRED');
+        success(await api('google/exchange', { code: oauth.get('code'), state: oauth.get('oauth_state') }));
+        window.location.assign('index.html');
+      });
+      return;
     }
 
     // Check URL for magic link recovery token callback: #access_token=...&type=recovery

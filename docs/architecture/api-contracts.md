@@ -734,3 +734,27 @@ Wrong credentials return generic 401; wrong origin returns 403; throttling 429.
 A profile conflict after successful OTP may return `details.email_verified=true`;
 retry with corrected profile data uses the already verified HttpOnly identity.
 The browser cannot bypass verification by changing its view/hash.
+
+### Google patient sign-in (opt-in)
+
+Enable `PORTAL_GOOGLE_ENABLED` with the existing Supabase portal. POST `/google`
+requires the exact portal Origin and returns `{url}` for the fixed Google provider
+on the configured Supabase host. A ten-minute HttpOnly Secure SameSite=Lax
+`clinic_portal_google` cookie holds a random PKCE verifier and browser state.
+Only this temporary cookie uses Lax; provider session cookies stay Strict.
+
+Supabase redirects to `/portal/auth.html?oauth_state=<state>&code=<code>`.
+The page immediately removes the callback query before POST `/google/exchange`
+with `{code,state}`. State is exactly 43 URL-safe characters; code is a bounded
+secret input. The backend checks the matching browser cookie, exchanges the code
+with `grant_type=pkce`, validates the returned Supabase identity and binds the
+clinic profile. Success returns PatientProfile, never provider tokens; a missing
+profile returns 409 REGISTRATION_REQUIRED with verified email and preserves
+HttpOnly identity for `/verify` profile completion. Missing/wrong state, invalid
+or reused code fails; temporary cookie is cleared on processed callbacks.
+Google email verification replaces the separate signup OTP for this flow only.
+Phone, DOB and consent remain required, with the existing uniqueness constraints.
+No staff API changes, new database migrations, Gmail API access or provider-token
+storage in JavaScript are introduced. OAuth cancellation returns to login with a
+localized verification error. Overlapping Google attempts in one browser require
+restarting the latest flow.
