@@ -22,7 +22,7 @@ DEFAULT_PORTS = {
 
 DEFAULT_N8N_URL = os.environ.get(
     "N8N_RELAY_URL",
-    "http://193.122.68.159:5678/webhook/agent-relay",
+    "https://n8n.193-122-68-159.sslip.io/webhook/agent-relay",
 )
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -109,23 +109,40 @@ def send_message(sender: str, destination: str, request_type: str, body: str, n8
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        n8n_url,
-        data=data,
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            res_body = resp.read().decode("utf-8")
-            print(f"[SUCCESS] Dispatched to {destination} via n8n relay: HTTP {resp.status}")
-            print(f"Response: {res_body}")
-            return True
-    except urllib.error.HTTPError as e:
-        print(f"[ERROR] Failed to dispatch via n8n: HTTP {e.code} - {e.read().decode('utf-8')}")
-        return False
-    except Exception as e:
-        print(f"[ERROR] Connection to n8n relay failed: {e}")
-        return False
+
+    candidates = [n8n_url]
+    if "/webhook/" in n8n_url:
+        candidates.append(n8n_url.replace("/webhook/", "/webhook-test/"))
+    elif "/webhook-test/" in n8n_url:
+        candidates.append(n8n_url.replace("/webhook-test/", "/webhook/"))
+
+    last_error = None
+    for url in candidates:
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                res_body = resp.read().decode("utf-8")
+                print(f"[SUCCESS] Dispatched to {destination} via n8n relay: HTTP {resp.status}")
+                if res_body:
+                    print(f"Response: {res_body}")
+                return True
+        except urllib.error.HTTPError as e:
+            last_error = f"HTTP {e.code} - {e.read().decode('utf-8')}"
+            if e.code == 404:
+                # Try next candidate (e.g. test webhook instead of prod)
+                continue
+            print(f"[ERROR] Failed to dispatch via n8n: {last_error}")
+            return False
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    print(f"[ERROR] Connection to n8n relay failed ({last_error}). Ensure the workflow is active or in Test mode in n8n.")
+    return False
 
 
 def run_server(name: str, port: int):
