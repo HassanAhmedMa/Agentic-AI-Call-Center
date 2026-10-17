@@ -109,9 +109,9 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             res_allowed_ip.headers.get("access-control-allow-origin")
             == "http://127.0.0.1:57296"
         )
-        assert "access-control-allow-credentials" not in res_allowed_ip.headers
+        assert res_allowed_ip.headers.get("access-control-allow-credentials") == "true"
 
-        # 2. Allowed: Localhost with changing port (e.g. 8002, 3000)
+        # 2. Allowed: Localhost with changing port (e.g. 8002, 3000, 5500)
         res_allowed_host = http.get(
             "/api/v1/health",
             headers={"Origin": "http://localhost:8002"},
@@ -121,8 +121,43 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             res_allowed_host.headers.get("access-control-allow-origin")
             == "http://localhost:8002"
         )
+        assert res_allowed_host.headers.get("access-control-allow-credentials") == "true"
 
-        # 3. Allowed: CORS preflight (OPTIONS)
+        res_allowed_case = http.get(
+            "/api/v1/health",
+            headers={"Origin": "http://LOCALHOST:5500"},
+        )
+        assert res_allowed_case.status_code == 200
+        assert (
+            res_allowed_case.headers.get("access-control-allow-origin")
+            == "http://LOCALHOST:5500"
+        )
+        assert res_allowed_case.headers.get("access-control-allow-credentials") == "true"
+
+        res_allowed_trailing_slash = http.get(
+            "/api/v1/health",
+            headers={"Origin": "http://127.0.0.1:8002/"},
+        )
+        assert res_allowed_trailing_slash.status_code == 200
+        assert (
+            res_allowed_trailing_slash.headers.get("access-control-allow-origin")
+            == "http://127.0.0.1:8002/"
+        )
+        assert res_allowed_trailing_slash.headers.get("access-control-allow-credentials") == "true"
+
+        # 3. Allowed: Configured loopback portal origin (http://localhost:8004) with credentials
+        res_allowed_portal = http.get(
+            "/api/v1/health",
+            headers={"Origin": "http://localhost:8004"},
+        )
+        assert res_allowed_portal.status_code == 200
+        assert (
+            res_allowed_portal.headers.get("access-control-allow-origin")
+            == "http://localhost:8004"
+        )
+        assert res_allowed_portal.headers.get("access-control-allow-credentials") == "true"
+
+        # 4. Allowed: CORS preflight (OPTIONS)
         res_preflight = http.options(
             "/api/v1/health",
             headers={
@@ -136,6 +171,7 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             res_preflight.headers.get("access-control-allow-origin")
             == "http://127.0.0.1:57296"
         )
+        assert res_preflight.headers.get("access-control-allow-credentials") == "true"
         assert "GET" in res_preflight.headers.get("access-control-allow-methods", "")
 
         # 4. Rejected: Unrelated external origin
@@ -155,3 +191,33 @@ def test_cors_allows_loopback_and_rejects_external_origins() -> None:
             },
         )
         assert "access-control-allow-origin" not in res_rejected_preflight.headers
+
+    # 6. Allowed: Configured production portal origin
+    prod_app = create_app(
+        Settings(
+            database_url="postgresql+asyncpg://postgres@127.0.0.1:1/missing",
+            portal_origin="https://clinic-api.193-122-68-159.sslip.io",
+        )
+    )
+    with TestClient(prod_app) as prod_http:
+        res_prod = prod_http.get(
+            "/api/v1/health",
+            headers={"Origin": "https://clinic-api.193-122-68-159.sslip.io"},
+        )
+        assert res_prod.status_code == 200
+        assert (
+            res_prod.headers.get("access-control-allow-origin")
+            == "https://clinic-api.193-122-68-159.sslip.io"
+        )
+        assert res_prod.headers.get("access-control-allow-credentials") == "true"
+
+        res_prod_slash = prod_http.get(
+            "/api/v1/health",
+            headers={"Origin": "https://clinic-api.193-122-68-159.sslip.io/"},
+        )
+        assert res_prod_slash.status_code == 200
+        assert (
+            res_prod_slash.headers.get("access-control-allow-origin")
+            == "https://clinic-api.193-122-68-159.sslip.io/"
+        )
+        assert res_prod_slash.headers.get("access-control-allow-credentials") == "true"

@@ -1,6 +1,7 @@
 """Same-origin patient authentication. Provider credentials stay in HttpOnly cookies."""
 
 import hashlib
+import re
 import secrets
 from datetime import UTC, datetime
 from urllib.parse import quote
@@ -29,16 +30,53 @@ ACCESS, REFRESH, CONVERSATION, RECOVERY = (
     "clinic_portal_recovery",
 )
 
+LOOPBACK_ORIGIN_REGEX = re.compile(
+    r"^http://(localhost|127\.0\.0\.1)(:\d+)?/?$", re.IGNORECASE
+)
+
+
+def is_allowed_portal_origin(origin_val: str, portal_origin: str) -> bool:
+    cleaned = (origin_val or "").strip().rstrip("/")
+    if cleaned and cleaned.lower() == (portal_origin or "").strip().rstrip("/").lower():
+        return True
+    return bool(LOOPBACK_ORIGIN_REGEX.fullmatch(cleaned))
+
+
+def is_loopback_http(request: Request | None) -> bool:
+    if request is None:
+        return False
+    origin = (request.headers.get("Origin", "") or "").strip().rstrip("/")
+    if origin:
+        return bool(LOOPBACK_ORIGIN_REGEX.fullmatch(origin))
+    proto = (
+        request.headers.get("X-Forwarded-Proto")
+        or request.scope.get("scheme", "http")
+        or "http"
+    ).split(",")[0].strip().lower()
+    if proto != "http":
+        return False
+    host = (
+        request.headers.get("Host")
+        or (request.scope.get("server") and request.scope["server"][0])
+        or ""
+    ).split(":")[0].strip().lower()
+    return host in {"localhost", "127.0.0.1"}
+
 
 def portal_router(
     sessions: async_sessionmaker[AsyncSession], settings: Settings, auth: AuthClient
 ) -> APIRouter:
+    def is_cookie_secure(request: Request | None) -> bool:
+        if is_loopback_http(request):
+            return False
+        return settings.portal_cookie_secure
+
     async def origin(request: Request) -> None:
         if request.query_params:
             raise APIError(400, "VALIDATION_FAILED", "Unexpected query parameters.")
-        if request.method != "GET" and request.headers.get("Origin", "").rstrip(
-            "/"
-        ) != settings.portal_origin.rstrip("/"):
+        if request.method != "GET" and not is_allowed_portal_origin(
+            request.headers.get("Origin", ""), settings.portal_origin
+        ):
             raise APIError(
                 403, "ACTION_NOT_ALLOWED", "Use the clinic portal to continue."
             )
@@ -51,25 +89,32 @@ def portal_router(
         prefix=PREFIX, tags=["Patient portal"], dependencies=[Depends(origin)]
     )
 
-    def cookie(response: Response, name: str, value: str, age: int = 3600) -> None:
+    def cookie(
+        response: Response,
+        name: str,
+        value: str,
+        age: int = 3600,
+        request: Request | None = None,
+    ) -> None:
         response.set_cookie(
             name,
             value,
             max_age=age,
             httponly=True,
-            secure=settings.portal_cookie_secure,
+            secure=is_cookie_secure(request),
             samesite="strict",
             path=PREFIX,
         )
         response.headers["Cache-Control"] = "no-store"
 
-    def clear(response: Response) -> None:
+    def clear(response: Response, request: Request | None = None) -> None:
+        sec = is_cookie_secure(request)
         for name in [ACCESS, REFRESH, CONVERSATION, RECOVERY]:
             response.delete_cookie(
                 name,
                 path=PREFIX,
                 httponly=True,
-                secure=settings.portal_cookie_secure,
+                secure=sec,
                 samesite="strict",
             )
         response.headers["Cache-Control"] = "no-store"
@@ -124,7 +169,7 @@ def portal_router(
                     client_ip=peer,
                 )
             )
-        cookie(response, CONVERSATION, token)
+        cookie(response, CONVERSATION, token, request=request)
         return token
 
     async def provider_session(
@@ -144,10 +189,14 @@ def portal_router(
             )
             access = str(data.get("access_token", ""))
             user = await auth.verify_access_token(access)
-            save_provider(response, data)
+            save_provider(response, data, request=request)
             return user, access
 
-    def save_provider(response: Response, data: dict[str, object]) -> None:
+    def save_provider(
+        response: Response,
+        data: dict[str, object],
+        request: Request | None = None,
+    ) -> None:
         access, refresh = data.get("access_token"), data.get("refresh_token")
         if (
             not isinstance(access, str)
@@ -158,8 +207,8 @@ def portal_router(
             or len(refresh) > 4096
         ):
             raise APIError(503, "SERVICE_UNAVAILABLE", "Authentication unavailable.")
-        cookie(response, ACCESS, access)
-        cookie(response, REFRESH, refresh)
+        cookie(response, ACCESS, access, request=request)
+        cookie(response, REFRESH, refresh, request=request)
 
     async def bind(
         request: Request,
@@ -180,7 +229,7 @@ def portal_router(
             if isinstance(row, APIError):
                 raise row
             profile = await identity.complete(row, user, form)
-        save_provider(response, data)
+        save_provider(response, data, request=request)
         return profile
 
     @router.post("/signup", status_code=202, response_model=dto.Delivery)
@@ -252,7 +301,7 @@ def portal_router(
             data = await auth.request(
                 "verify", body={"email": body.email, "token": code, "type": "signup"}
             )
-        save_provider(response, data)
+        save_provider(response, data, request=request)
         try:
             return await bind(request, response, data, body.registration)
         except APIError as error:
@@ -311,7 +360,7 @@ def portal_router(
             "token?grant_type=password",
             body={"email": email, "password": body.password.get_secret_value()},
         )
-        save_provider(response, data)
+        save_provider(response, data, request=request)
         try:
             return await bind(request, response, data, None)
         except APIError as error:
@@ -374,7 +423,7 @@ def portal_router(
             row = await identity.conversation(request.cookies.get(CONVERSATION, ""))
             if not isinstance(row, APIError):
                 await revoke(session, row.id, "logout", datetime.now(UTC))
-        clear(response)
+        clear(response, request=request)
         return response
 
     @router.post("/recover", status_code=202, response_model=dto.Delivery)
@@ -401,7 +450,7 @@ def portal_router(
                     401, "VERIFICATION_REQUIRED", "Request a new reset link."
                 )
         response = Response(status_code=204)
-        cookie(response, RECOVERY, token, 600)
+        cookie(response, RECOVERY, token, 600, request=request)
         return response
 
     @router.post("/reset-password", status_code=204)
@@ -445,7 +494,7 @@ def portal_router(
             if error.status != 401:
                 raise
         response = Response(status_code=204)
-        clear(response)
+        clear(response, request=request)
         return response
 
     return router

@@ -217,10 +217,21 @@ def create_app(
         response.headers["X-Request-Id"] = request.state.request_id
         return response
 
+    portal_origins = []
+    allow_origin_regex = r"(?i)^http://(localhost|127\.0\.0\.1)(:\d+)?/?$"
+    if settings.portal_origin:
+        clean = settings.portal_origin.strip().rstrip("/")
+        if clean:
+            portal_origins = [clean, clean + "/"]
+            allow_origin_regex = (
+                rf"(?i)^(http://(localhost|127\.0\.0\.1)(:\d+)?/?|{re.escape(clean)}/?)$"
+            )
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
-        allow_credentials=False,
+        allow_origins=portal_origins,
+        allow_origin_regex=allow_origin_regex,
+        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
