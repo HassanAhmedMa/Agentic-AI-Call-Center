@@ -1056,11 +1056,13 @@
 
     const tabNavHtml = `
       <div style="display:flex; border-bottom:1px solid #E2E8F0; margin-bottom:16px; gap:8px;">
-        <button type="button" onclick="switchSettingsTab('schedule')" style="padding:8px 14px; border:none; background:none; font-weight:${isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${isSchedule ? '#2563EB' : 'transparent'}; color:${isSchedule ? '#2563EB' : '#64748B'};">
-          📅 Clinic Schedule & Holidays (المواعيد والعطلات)
+        <button type="button" onclick="switchSettingsTab('schedule')" style="padding:8px 14px; border:none; background:none; font-weight:${isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${isSchedule ? '#2563EB' : 'transparent'}; color:${isSchedule ? '#2563EB' : '#64748B'}; display:inline-flex; align-items:center; gap:6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Clinic Schedule & Holidays (المواعيد والعطلات)</span>
         </button>
-        <button type="button" onclick="switchSettingsTab('connection')" style="padding:8px 14px; border:none; background:none; font-weight:${!isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${!isSchedule ? '#2563EB' : 'transparent'}; color:${!isSchedule ? '#2563EB' : '#64748B'};">
-          🔌 API & Server Connection (اتصال الخادم)
+        <button type="button" onclick="switchSettingsTab('connection')" style="padding:8px 14px; border:none; background:none; font-weight:${!isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${!isSchedule ? '#2563EB' : 'transparent'}; color:${!isSchedule ? '#2563EB' : '#64748B'}; display:inline-flex; align-items:center; gap:6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 2v6"/><path d="M10 20v2"/><path d="M14 20v2"/><path d="M18 13a6 6 0 0 1-12 0v-5h12v5z"/><path d="M9 2v4"/><path d="M15 2v4"/></svg>
+          <span>API & Server Connection (اتصال الخادم)</span>
         </button>
       </div>
     `;

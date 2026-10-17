@@ -26,8 +26,8 @@
       const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
       const firstName = profile.first_name || name.split(' ')[0];
       heroTitle.innerHTML = isAr 
-        ? `أهلاً بك، ${firstName} 👋`
-        : `Welcome back, ${firstName} 👋`;
+        ? `أهلاً بك، ${firstName}`
+        : `Welcome back, ${firstName}`;
     }
 
     // Chat greeting

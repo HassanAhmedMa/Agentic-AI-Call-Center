@@ -204,10 +204,8 @@
     html.setAttribute('lang', isAr ? 'ar' : 'en');
     html.setAttribute('dir', isAr ? 'rtl' : 'ltr');
 
-    const flagEl = document.getElementById('langFlagIcon');
     const labelEl = document.getElementById('langLabelText');
     const profileLangEl = document.getElementById('profileActiveLangLabel');
-    if (flagEl) flagEl.textContent = isAr ? '🇬🇧' : '🇪🇬';
     if (labelEl) labelEl.textContent = isAr ? 'English' : 'العامية المصرية';
     if (profileLangEl) profileLangEl.textContent = isAr ? 'العامية المصرية (Egyptian Arabic)' : 'English';
 

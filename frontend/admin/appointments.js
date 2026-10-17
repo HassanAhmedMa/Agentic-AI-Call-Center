@@ -334,7 +334,7 @@ function renderSchedule() {
       const formattedDate = selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       pastBanner.innerHTML = `
         <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; color:#475569;">
-          <span style="font-size:22px;">🔒</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" width="22" height="22" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <div style="flex:1;">
             <strong style="display:block; font-size:14px; color:#1E293B;">Past Date (${escapeHtml(formattedDate)}) — Read-Only Audit Mode</strong>
             <span style="font-size:12px; color:#64748B;">This date has already passed. Historical appointments can be reviewed, but scheduling new bookings or modifying past records is locked.</span>
@@ -431,7 +431,7 @@ function renderDaySchedule() {
       closureBanner.style.display = 'block';
       closureBanner.innerHTML = `
         <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; color:#92400E;">
-          <span style="font-size:22px;">🏖️</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" width="22" height="22" style="flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
           <div style="flex:1;">
             <strong style="display:block; font-size:14px; color:#78350F;">Clinic Closed: ${escapeHtml(holidayCheck.name_en)} (${escapeHtml(holidayCheck.name_ar || '')})</strong>
             <span style="font-size:12px; color:#92400E;">This date is configured as an official clinic-wide closure. Regular doctor consultations and clinic appointments are suspended.</span>
@@ -445,7 +445,7 @@ function renderDaySchedule() {
       closureBanner.style.display = 'block';
       closureBanner.innerHTML = `
         <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; color:#991B1B;">
-          <span style="font-size:22px;">🛑</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" width="22" height="22" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
           <div style="flex:1;">
             <strong style="display:block; font-size:14px; color:#991B1B;">Weekly Weekend (Friday / عطلة الجمعة الأسبوعية)</strong>
             <span style="font-size:12px; color:#B91C1C;">The clinic is closed on Fridays in accordance with Egyptian healthcare operating standards.</span>
@@ -548,7 +548,10 @@ function renderDaySchedule() {
             if (isDateInPast(selectedDate)) {
               cellsHtml += `
                 <td class="past-locked-slot" style="padding: 4px; text-align: center; vertical-align: middle;" title="Past Slot: Scheduling locked for historical audit">
-                  <span style="font-size: 11px; color: #94A3B8; font-weight: 500;">🔒 Locked</span>
+                  <span style="font-size: 11px; color: #94A3B8; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Locked
+                  </span>
                 </td>
               `;
             } else {
@@ -1694,7 +1697,10 @@ async function openNewAppointmentModal() {
       
       <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px;">
         <label style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 6px;">
-          <span>⚡ Link Registered Patient (Supabase DB)</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Link Registered Patient (Supabase DB)
+          </span>
           <span style="font-size: 11px; font-weight: 500; color: #15803D;">Auto-fills details below</span>
         </label>
         <select id="selectRegisteredPatient" onchange="handleSelectRegisteredPatient(this)" style="width: 100%; height: 38px; border: 1px solid #86EFAC; border-radius: 6px; padding: 0 10px; font-size: 13px; background: #FFFFFF; font-family: inherit; color: #1E293B;">

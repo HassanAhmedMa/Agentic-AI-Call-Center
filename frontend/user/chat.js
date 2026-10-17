@@ -125,7 +125,7 @@
         </div>
         <div class="msg-balloon-wrapper">
           <div class="balloon-card bot-balloon">
-            <p class="greeting-lead">${isAr ? 'أهلاً بيكي يا منى! 👋' : 'Hello Mona! 👋'}</p>
+            <p class="greeting-lead">${isAr ? 'أهلاً بيكي يا منى!' : 'Hello Mona!'}</p>
             <p class="sub-lead">${isAr ? 'أنا المساعد الذكي لعيادات النيل، أقدر أساعدك في إيه النهاردة؟' : "I'm the Nile Clinics AI Assistant. How can I assist you today?"}</p>
           </div>
           <div class="msg-timestamp">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
