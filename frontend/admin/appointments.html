@@ -402,89 +402,16 @@
 
               <div class="filter-pill-with-icon" style="margin-left:auto;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span id="activeDatePillText" style="font-weight:600;">14 Nov 2024</span>
+                <span id="activeDatePillText" style="font-weight:600;">Today</span>
               </div>
             </div>
 
             <!-- Schedule Day Title -->
-            <h3 class="schedule-day-heading" id="scheduleDayHeading">Thursday, 14 November 2024</h3>
+            <h3 class="schedule-day-heading" id="scheduleDayHeading">Loading Schedule...</h3>
 
-            <!-- Doctor Multi-Column Schedule Grid Container -->
+            <!-- Multi-View Schedule Grid Container (Day, Week, Month rendered dynamically) -->
             <div class="doctor-grid-container" id="calendarGridContainer">
-              <table class="doctor-schedule-table">
-                <thead>
-                  <tr>
-                    <th class="time-col-header">Time</th>
-                    
-                    <!-- Doctor 1: Dr. Ahmed Mohamed -->
-                    <th>
-                      <div class="doctor-header-cell">
-                        <div class="doctor-header-avatar" style="background:#EFF6FF; color:#2563EB;">AM</div>
-                        <div class="doctor-header-info">
-                          <span class="doctor-header-name">Dr. Ahmed Mohamed</span>
-                          <span class="doctor-header-dept">Cardiology</span>
-                        </div>
-                      </div>
-                    </th>
-
-                    <!-- Doctor 2: Dr. Sara Elsayed -->
-                    <th>
-                      <div class="doctor-header-cell">
-                        <div class="doctor-header-avatar" style="background:#FCE7F3; color:#DB2777;">SE</div>
-                        <div class="doctor-header-info">
-                          <span class="doctor-header-name">Dr. Sara Elsayed</span>
-                          <span class="doctor-header-dept">Dermatology</span>
-                        </div>
-                      </div>
-                    </th>
-
-                    <!-- Doctor 3: Dr. Mohamed Ali -->
-                    <th>
-                      <div class="doctor-header-cell">
-                        <div class="doctor-header-avatar" style="background:#FEF3C7; color:#D97706;">MA</div>
-                        <div class="doctor-header-info">
-                          <span class="doctor-header-name">Dr. Mohamed Ali</span>
-                          <span class="doctor-header-dept">Orthopedics</span>
-                        </div>
-                      </div>
-                    </th>
-
-                    <!-- Doctor 4: Dr. Mona Khaled -->
-                    <th>
-                      <div class="doctor-header-cell">
-                        <div class="doctor-header-avatar" style="background:#EDE9FE; color:#7C3AED;">MK</div>
-                        <div class="doctor-header-info">
-                          <span class="doctor-header-name">Dr. Mona Khaled</span>
-                          <span class="doctor-header-dept">Pediatrics</span>
-                        </div>
-                      </div>
-                    </th>
-
-                    <!-- Doctor 5: Dr. Youssef Hassan -->
-                    <th>
-                      <div class="doctor-header-cell">
-                        <div class="doctor-header-avatar" style="background:#E0E7FF; color:#4338CA;">YH</div>
-                        <div class="doctor-header-info">
-                          <span class="doctor-header-name">Dr. Youssef Hassan</span>
-                          <span class="doctor-header-dept">ENT</span>
-                        </div>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody id="scheduleGridBody">
-                  <tr><td class="time-slot-cell">08:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">09:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">10:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">11:00 AM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">12:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">01:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">02:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">03:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">04:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                  <tr><td class="time-slot-cell">05:00 PM</td><td></td><td></td><td></td><td></td><td></td></tr>
-                </tbody>
-              </table>
+              <!-- Dynamically populated by appointments.js renderSchedule() -->
             </div>
 
             <!-- List View Container (Hidden by default, toggleable via tab) -->
@@ -495,48 +422,22 @@
           <!-- RIGHT COLUMN: MINI CALENDAR, UPCOMING & DETAILS -->
           <div class="appointments-right-column">
             
-            <!-- 1. Mini Month Calendar (November 2024) -->
+            <!-- 1. Mini Month Calendar (Dynamic Interactive) -->
             <div class="mini-cal-panel">
               <div class="mini-cal-header">
-                <span class="mini-cal-month-title">November 2024</span>
+                <span class="mini-cal-month-title" id="miniCalMonthTitle">October 2026</span>
                 <div class="mini-cal-arrows">
-                  <button class="nav-arrow-btn" onclick="shiftMiniMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
-                  <button class="nav-arrow-btn" onclick="shiftMiniMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+                  <button class="nav-arrow-btn" onclick="shiftMiniMonth(-1)" title="Previous Month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+                  <button class="nav-arrow-btn" onclick="shiftMiniMonth(1)" title="Next Month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
                 </div>
               </div>
 
-              <div class="mini-cal-grid">
-                <span class="mini-day-head">Sun</span><span class="mini-day-head">Mon</span><span class="mini-day-head">Tue</span>
-                <span class="mini-day-head">Wed</span><span class="mini-day-head">Thu</span><span class="mini-day-head">Fri</span><span class="mini-day-head">Sat</span>
-                
-                <!-- Week 1 -->
-                <span class="mini-day-cell inactive-month">27</span><span class="mini-day-cell inactive-month">28</span><span class="mini-day-cell inactive-month">29</span><span class="mini-day-cell inactive-month">30</span><span class="mini-day-cell">31</span>
-                <span class="mini-day-cell">1</span><span class="mini-day-cell">2</span>
-                
-                <!-- Week 2 -->
-                <span class="mini-day-cell">3</span><span class="mini-day-cell">4</span><span class="mini-day-cell">5</span><span class="mini-day-cell">6</span>
-                <span class="mini-day-cell">7<span class="mini-day-dot"></span></span><span class="mini-day-cell">8</span><span class="mini-day-cell">9</span>
-                
-                <!-- Week 3: Day 14 Active -->
-                <span class="mini-day-cell">10</span>
-                <span class="mini-day-cell">11<span class="mini-day-dot"></span></span>
-                <span class="mini-day-cell">12<span class="mini-day-dot"></span></span>
-                <span class="mini-day-cell">13<span class="mini-day-dot"></span></span>
-                <span class="mini-day-cell active-day" onclick="selectCalendarDay(14, this)">14</span>
-                <span class="mini-day-cell">15<span class="mini-day-dot"></span></span>
-                <span class="mini-day-cell">16</span>
-                
-                <!-- Week 4 -->
-                <span class="mini-day-cell">17</span><span class="mini-day-cell">18</span><span class="mini-day-cell">19</span><span class="mini-day-cell">20</span>
-                <span class="mini-day-cell">21</span><span class="mini-day-cell">22</span><span class="mini-day-cell">23</span>
-                
-                <!-- Week 5 -->
-                <span class="mini-day-cell">24</span><span class="mini-day-cell">25</span><span class="mini-day-cell">26</span><span class="mini-day-cell">27</span>
-                <span class="mini-day-cell">28</span><span class="mini-day-cell">29</span><span class="mini-day-cell">30</span>
+              <div class="mini-cal-grid" id="miniCalGrid">
+                <!-- Dynamically populated by appointments.js renderMiniCalendar() -->
               </div>
             </div>
 
-            <!-- 2. Upcoming (0) Agenda -->
+            <!-- 2. Upcoming Agenda -->
             <div class="upcoming-appts-panel">
               <div class="upcoming-header-row">
                 <h4 class="upcoming-title">Upcoming (0)</h4>

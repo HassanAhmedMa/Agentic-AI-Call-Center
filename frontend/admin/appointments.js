@@ -107,8 +107,9 @@ let livePatientsCache = [];
 let selectedAppointment = null;
 let currentViewMode = 'calendar'; // 'calendar' | 'list'
 let currentInterval = 'day'; // 'day' | 'week' | 'month'
-let currentDateOffset = 0; // Days from 14 Nov 2024
-let currentActiveDayNumber = 14;
+let selectedDate = new Date(); // Active chosen date (defaults to today)
+let miniCalYear = selectedDate.getFullYear();
+let miniCalMonth = selectedDate.getMonth();
 
 function saveAppointmentsStore() {
   try {
@@ -116,94 +117,76 @@ function saveAppointmentsStore() {
   } catch (_) {}
 }
 
-function initAppointmentsStore() {
-  appointmentsData = [];
-  renderScheduleGrid();
+/* =============================================================================
+   DATE & TIME UTILITIES
+   ============================================================================= */
+function parseApptDate(dateVal) {
+  if (!dateVal) return null;
+  if (dateVal instanceof Date) return dateVal;
+  if (typeof dateVal === 'string') {
+    const m = dateVal.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) {
+      return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+    }
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
 }
 
-function renderScheduleGrid() {
-  const tbody = document.getElementById('scheduleGridBody');
-  if (!tbody) return;
+function isSameDay(d1, d2) {
+  if (!d1 || !d2) return false;
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+}
 
-  const times = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'
-  ];
+function formatDateIso(d) {
+  if (!d) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
-  const doctors = (Array.isArray(liveDoctorsCache) && liveDoctorsCache.length > 0)
-    ? liveDoctorsCache.slice(0, 5)
-    : [
-        { name_en: 'Dr. Amal Nour', specialty_id: 1 },
-        { name_en: 'Dr. Karim Salem', specialty_id: 1 },
-        { name_en: 'Dr. Salma Hany', specialty_id: 2 },
-        { name_en: 'Dr. Tarek Ali', specialty_id: 2 },
-        { name_en: 'Dr. Mariam Adel', specialty_id: 3 }
-      ];
+function matchTimeSlot(appt, slotTime) {
+  if (!appt) return false;
+  if (appt.timeShort && (appt.timeShort === slotTime || appt.timeShort.startsWith(slotTime.slice(0, 5)))) return true;
+  if (appt.time && appt.time.startsWith(slotTime)) return true;
 
-  const statusFilterEl = document.getElementById('statusSelectFilter');
-  const statusFilterVal = statusFilterEl ? statusFilterEl.value : 'All Statuses';
+  const tHour = parseInt(slotTime.slice(0, 2), 10) + (slotTime.includes('PM') && !slotTime.startsWith('12') ? 12 : 0);
+  const aStart = appt.start_time || (appt.time ? appt.time.slice(0, 5) : '');
+  if (aStart) {
+    const aHour = parseInt(aStart.slice(0, 2), 10);
+    if (aHour === tHour) return true;
+  }
+  return false;
+}
 
-  // CRITICAL: Cancelled appointments must NOT occupy slots in the active schedule grid!
-  // Only display non-cancelled appointments, unless the operator explicitly chose "Cancelled" in the status filter dropdown.
-  const activeAppointments = appointmentsData.filter(a => {
-    const isCancelled = (a.status || '').toLowerCase() === 'cancelled';
-    if (statusFilterVal === 'Cancelled') {
-      return isCancelled;
+function initAppointmentsStore() {
+  selectedDate = new Date();
+  miniCalYear = selectedDate.getFullYear();
+  miniCalMonth = selectedDate.getMonth();
+  updateDateHeading();
+  renderMiniCalendar();
+  renderSchedule();
+}
+
+/* =============================================================================
+   SCHEDULE RENDERING (DAY, WEEK, MONTH MODES)
+   ============================================================================= */
+function renderSchedule() {
+  if (currentViewMode === 'list') {
+    renderListView();
+  } else {
+    if (currentInterval === 'day') {
+      renderDaySchedule();
+    } else if (currentInterval === 'week') {
+      renderWeekSchedule();
+    } else if (currentInterval === 'month') {
+      renderMonthSchedule();
     }
-    return !isCancelled;
-  });
-
-  tbody.innerHTML = times.map(t => {
-    let cellsHtml = `<td class="time-slot-cell">${t}</td>`;
-
-    doctors.forEach(doc => {
-      const match = activeAppointments.find(a => {
-        const docIdMatch = a.doctorId && doc.id && Number(a.doctorId) === Number(doc.id);
-        const docNameMatch = a.doctor && (
-          a.doctor.toLowerCase().includes(doc.name_en.toLowerCase()) || 
-          doc.name_en.toLowerCase().includes(a.doctor.toLowerCase())
-        );
-        if (!docIdMatch && !docNameMatch) return false;
-
-        if (a.timeShort && (a.timeShort === t || a.timeShort.startsWith(t.slice(0, 5)))) return true;
-        if (a.time && a.time.startsWith(t)) return true;
-
-        const tHour = parseInt(t.slice(0, 2), 10) + (t.includes('PM') && !t.startsWith('12') ? 12 : 0);
-        const aStart = a.start_time || (a.time ? a.time.slice(0, 5) : '');
-        if (aStart) {
-          const aHour = parseInt(aStart.slice(0, 2), 10);
-          if (aHour === tHour) return true;
-        }
-        return false;
-      });
-
-      if (match) {
-        let cardColorClass = 'card-confirmed-green';
-        if (match.status === 'Pending') cardColorClass = 'card-orange';
-        if (match.status === 'In Clinic') cardColorClass = 'card-blue';
-        if (match.status === 'Cancelled') cardColorClass = 'card-purple';
-
-        const isSelected = selectedAppointment && selectedAppointment.id === match.id ? 'selected-appt-card' : '';
-
-        cellsHtml += `
-          <td style="padding: 4px; vertical-align: top;">
-            <div class="appt-slot-card ${cardColorClass} ${isSelected}" onclick="selectScheduleSlot(${match.id}, this)">
-              <div class="slot-top-row">
-                <span class="slot-time-text">${match.timeShort || t}</span>
-                <span class="status-pill status-${match.status.toLowerCase().replace(/\s+/g, '')}">${match.status}</span>
-              </div>
-              <span class="slot-patient-name">${escapeHtml(match.patientName)}</span>
-              <span class="slot-sub-type">${escapeHtml(match.type)} • ${escapeHtml(match.patientCode)}</span>
-            </div>
-          </td>
-        `;
-      } else {
-        cellsHtml += `<td style="padding: 4px; text-align: center; vertical-align: middle;"></td>`;
-      }
-    });
-
-    return `<tr>${cellsHtml}</tr>`;
-  }).join('');
+  }
 
   // Update Metrics
   metricsState.total = appointmentsData.length;
@@ -215,6 +198,424 @@ function renderScheduleGrid() {
   // Render Right Column Upcoming List
   renderUpcomingList();
 }
+
+// Fallback alias for legacy calls
+function renderScheduleGrid() {
+  renderSchedule();
+}
+
+/* 1. Day Schedule: Doctor Multi-Column Grid */
+function renderDaySchedule() {
+  const container = document.getElementById('calendarGridContainer');
+  if (!container) return;
+
+  const times = [
+    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'
+  ];
+
+  // Active appointments on selectedDate (excluding cancelled unless filtered)
+  const filteredAppointments = getFilteredAppointments();
+  const dayAppointments = filteredAppointments.filter(a => {
+    const aDate = parseApptDate(a.date);
+    return isSameDay(aDate, selectedDate);
+  });
+
+  const doctorFilterVal = document.getElementById('doctorSelectFilter') ? document.getElementById('doctorSelectFilter').value : 'All Doctors';
+
+  // Gather doctors to display
+  let doctors = [];
+  if (doctorFilterVal !== 'All Doctors') {
+    const foundDoc = liveDoctorsCache.find(d => d.name_en === doctorFilterVal);
+    if (foundDoc) {
+      doctors = [foundDoc];
+    } else {
+      doctors = [{ name_en: doctorFilterVal, specialty_id: 1 }];
+    }
+  } else {
+    // Collect all doctors who actually have appointments on this date
+    const dayDocNames = new Set(dayAppointments.map(a => a.doctor).filter(Boolean));
+    const activeDocObjects = liveDoctorsCache.filter(d => dayDocNames.has(d.name_en));
+
+    // Pad with first standard doctors if fewer than 5
+    const remainingDocs = liveDoctorsCache.filter(d => !dayDocNames.has(d.name_en));
+    doctors = [...activeDocObjects, ...remainingDocs].slice(0, 6);
+
+    if (doctors.length === 0) {
+      doctors = [
+        { name_en: 'Dr. Amal Nour', specialty_id: 1 },
+        { name_en: 'Dr. Karim Salem', specialty_id: 1 },
+        { name_en: 'Dr. Salma Hany', specialty_id: 2 },
+        { name_en: 'Dr. Tarek Ali', specialty_id: 2 },
+        { name_en: 'Dr. Mariam Adel', specialty_id: 3 }
+      ];
+    }
+  }
+
+  // Build the Table HTML
+  let theadHtml = `
+    <thead>
+      <tr>
+        <th class="time-col-header">Time</th>
+        ${doctors.map(doc => {
+          const spec = liveSpecialtiesCache.find(s => s.id === doc.specialty_id);
+          const deptName = doc.specialty?.name_en || (spec ? spec.name_en : doc.title_en || 'Consultant');
+          const cleanName = (doc.name_en || 'Doctor').replace(/Dr\.\s*/i, '');
+          const initials = cleanName.split(' ').map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase() || 'DR';
+          return `
+            <th>
+              <div class="doctor-header-cell">
+                <div class="doctor-header-avatar">${initials}</div>
+                <div class="doctor-header-info">
+                  <span class="doctor-header-name">${escapeHtml(doc.name_en)}</span>
+                  <span class="doctor-header-dept">${escapeHtml(deptName)}</span>
+                </div>
+              </div>
+            </th>
+          `;
+        }).join('')}
+      </tr>
+    </thead>
+  `;
+
+  let tbodyHtml = `
+    <tbody id="scheduleGridBody">
+      ${times.map(t => {
+        let cellsHtml = `<td class="time-slot-cell">${t}</td>`;
+
+        doctors.forEach(doc => {
+          const matches = dayAppointments.filter(a => {
+            const docIdMatch = a.doctorId && doc.id && Number(a.doctorId) === Number(doc.id);
+            const docNameMatch = a.doctor && (
+              a.doctor.toLowerCase().includes(doc.name_en.toLowerCase()) ||
+              doc.name_en.toLowerCase().includes(a.doctor.toLowerCase())
+            );
+            if (!docIdMatch && !docNameMatch) return false;
+            return matchTimeSlot(a, t);
+          });
+
+          if (matches.length > 0) {
+            cellsHtml += `<td style="padding: 4px; vertical-align: top;">`;
+            matches.forEach(match => {
+              let cardColorClass = 'card-confirmed-green';
+              if (match.status === 'Pending') cardColorClass = 'card-orange';
+              if (match.status === 'In Clinic') cardColorClass = 'card-blue';
+              if (match.status === 'Cancelled') cardColorClass = 'card-purple';
+
+              const isSelected = selectedAppointment && selectedAppointment.id === match.id ? 'selected-appt-card' : '';
+
+              cellsHtml += `
+                <div class="appt-slot-card ${cardColorClass} ${isSelected}" onclick="selectScheduleSlot(${match.id}, this)" style="margin-bottom: 4px;">
+                  <div class="slot-top-row">
+                    <span class="slot-time-text">${match.timeShort || t}</span>
+                    <span class="status-pill status-${match.status.toLowerCase().replace(/\s+/g, '')}">${match.status}</span>
+                  </div>
+                  <span class="slot-patient-name">${escapeHtml(match.patientName)}</span>
+                  <span class="slot-sub-type">${escapeHtml(match.type)} • ${escapeHtml(match.patientCode)}</span>
+                </div>
+              `;
+            });
+            cellsHtml += `</td>`;
+          } else {
+            cellsHtml += `<td style="padding: 4px; text-align: center; vertical-align: middle;"></td>`;
+          }
+        });
+
+        return `<tr>${cellsHtml}</tr>`;
+      }).join('')}
+    </tbody>
+  `;
+
+  container.innerHTML = `<table class="doctor-schedule-table">${theadHtml}${tbodyHtml}</table>`;
+}
+
+/* 2. Week Schedule: 7-Day Matrix */
+function renderWeekSchedule() {
+  const container = document.getElementById('calendarGridContainer');
+  if (!container) return;
+
+  const times = [
+    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'
+  ];
+
+  // Calculate 7 days of the week containing selectedDate (Sunday to Saturday)
+  const startOfWeek = new Date(selectedDate);
+  startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    weekDays.push(d);
+  }
+
+  const filteredAppointments = getFilteredAppointments();
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const today = new Date();
+
+  let theadHtml = `
+    <thead>
+      <tr>
+        <th class="time-col-header">Time</th>
+        ${weekDays.map((d, idx) => {
+          const isActive = isSameDay(d, selectedDate);
+          const isToday = isSameDay(d, today);
+          const activeClass = isActive ? 'active-week-col' : '';
+          const dayNumStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+          return `
+            <th class="${activeClass}" style="cursor: pointer;" onclick="selectCalendarDate(${d.getFullYear()}, ${d.getMonth()}, ${d.getDate()})">
+              <div class="week-day-header">
+                <span class="week-day-name">${dayNames[idx]}${isToday ? ' (Today)' : ''}</span>
+                <span class="week-day-num">${dayNumStr}</span>
+              </div>
+            </th>
+          `;
+        }).join('')}
+      </tr>
+    </thead>
+  `;
+
+  let tbodyHtml = `
+    <tbody>
+      ${times.map(t => {
+        let cellsHtml = `<td class="time-slot-cell">${t}</td>`;
+
+        weekDays.forEach(d => {
+          const isSelectedDay = isSameDay(d, selectedDate);
+          const cellClass = isSelectedDay ? 'active-week-col-td' : '';
+
+          const matches = filteredAppointments.filter(a => {
+            const aDate = parseApptDate(a.date);
+            if (!isSameDay(aDate, d)) return false;
+            return matchTimeSlot(a, t);
+          });
+
+          if (matches.length > 0) {
+            cellsHtml += `<td class="${cellClass}" style="padding: 4px; vertical-align: top;">`;
+            matches.forEach(match => {
+              let cardColorClass = 'card-confirmed-green';
+              if (match.status === 'Pending') cardColorClass = 'card-orange';
+              if (match.status === 'In Clinic') cardColorClass = 'card-blue';
+              if (match.status === 'Cancelled') cardColorClass = 'card-purple';
+
+              const isSelected = selectedAppointment && selectedAppointment.id === match.id ? 'selected-appt-card' : '';
+
+              cellsHtml += `
+                <div class="appt-slot-card ${cardColorClass} ${isSelected}" onclick="selectScheduleSlot(${match.id}, this)" style="margin-bottom: 4px;">
+                  <div class="slot-top-row">
+                    <span class="slot-time-text">${match.timeShort || t}</span>
+                    <span class="status-pill status-${match.status.toLowerCase().replace(/\s+/g, '')}">${match.status}</span>
+                  </div>
+                  <span class="slot-patient-name">${escapeHtml(match.patientName)}</span>
+                  <span class="slot-sub-type">${escapeHtml(match.doctor)} • ${escapeHtml(match.type)}</span>
+                </div>
+              `;
+            });
+            cellsHtml += `</td>`;
+          } else {
+            cellsHtml += `<td class="${cellClass}" style="padding: 4px; text-align: center; vertical-align: middle;"></td>`;
+          }
+        });
+
+        return `<tr>${cellsHtml}</tr>`;
+      }).join('')}
+    </tbody>
+  `;
+
+  container.innerHTML = `<table class="week-schedule-table">${theadHtml}${tbodyHtml}</table>`;
+}
+
+/* 3. Month Schedule: Full Monthly Grid */
+function renderMonthSchedule() {
+  const container = document.getElementById('calendarGridContainer');
+  if (!container) return;
+
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth();
+  const today = new Date();
+
+  const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sun
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const prevMonthTotalDays = new Date(year, month, 0).getDate();
+
+  const filteredAppointments = getFilteredAppointments();
+  const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  let cellsHtml = '';
+
+  // Leading days from previous month
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const prevDay = prevMonthTotalDays - i;
+    const prevDate = new Date(year, month - 1, prevDay);
+    cellsHtml += `
+      <div class="month-grid-cell inactive-month-cell" onclick="selectCalendarDate(${prevDate.getFullYear()}, ${prevDate.getMonth()}, ${prevDay}); switchInterval('day');">
+        <div class="month-cell-top">
+          <span class="month-cell-day-num">${prevDay}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Days of current month
+  for (let d = 1; d <= totalDays; d++) {
+    const dayDate = new Date(year, month, d);
+    const isToday = isSameDay(dayDate, today);
+    const isSelected = isSameDay(dayDate, selectedDate);
+
+    let cellClasses = ['month-grid-cell'];
+    if (isToday) cellClasses.push('today-month-cell');
+    if (isSelected) cellClasses.push('selected-day-cell');
+
+    const dayAppts = filteredAppointments.filter(a => {
+      const aDate = parseApptDate(a.date);
+      return isSameDay(aDate, dayDate);
+    });
+
+    let chipsHtml = '';
+    const displayAppts = dayAppts.slice(0, 3);
+    displayAppts.forEach(a => {
+      let chipClass = 'chip-confirmed';
+      const st = (a.status || '').toLowerCase();
+      if (st === 'pending') chipClass = 'chip-pending';
+      else if (st === 'in clinic') chipClass = 'chip-inclinic';
+      else if (st === 'cancelled') chipClass = 'chip-cancelled';
+
+      chipsHtml += `
+        <div class="month-appt-chip ${chipClass}" onclick="event.stopPropagation(); selectScheduleSlot(${a.id}, null);" title="${escapeHtml(a.patientName)} (${a.timeShort}) - ${escapeHtml(a.doctor)}">
+          <span style="font-weight:700;">${a.timeShort}</span>
+          <span>${escapeHtml(a.patientName)}</span>
+        </div>
+      `;
+    });
+
+    if (dayAppts.length > 3) {
+      chipsHtml += `<div class="month-chip-more">+${dayAppts.length - 3} more</div>`;
+    }
+
+    const countBadge = dayAppts.length > 0 ? `<span class="month-cell-count-badge">${dayAppts.length}</span>` : '';
+
+    cellsHtml += `
+      <div class="${cellClasses.join(' ')}" onclick="selectCalendarDate(${year}, ${month}, ${d}); switchInterval('day');" title="Click to view full schedule for this day">
+        <div class="month-cell-top">
+          <span class="month-cell-day-num">${d}</span>
+          ${countBadge}
+        </div>
+        ${chipsHtml}
+      </div>
+    `;
+  }
+
+  // Trailing days from next month to complete row of 7
+  const totalRendered = firstDayIndex + totalDays;
+  const nextDaysNeeded = (7 - (totalRendered % 7)) % 7;
+  for (let n = 1; n <= nextDaysNeeded; n++) {
+    const nextDate = new Date(year, month + 1, n);
+    cellsHtml += `
+      <div class="month-grid-cell inactive-month-cell" onclick="selectCalendarDate(${nextDate.getFullYear()}, ${nextDate.getMonth()}, ${n}); switchInterval('day');">
+        <div class="month-cell-top">
+          <span class="month-cell-day-num">${n}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="month-schedule-grid">
+      <div class="month-grid-header">
+        ${dayHeaders.map(h => `<span>${h}</span>`).join('')}
+      </div>
+      <div class="month-grid-body">
+        ${cellsHtml}
+      </div>
+    </div>
+  `;
+}
+
+/* =============================================================================
+   DYNAMIC MINI CALENDAR (RIGHT PANEL WIDGET)
+   ============================================================================= */
+function renderMiniCalendar() {
+  const monthTitle = document.getElementById('miniCalMonthTitle');
+  const gridContainer = document.getElementById('miniCalGrid');
+  if (!gridContainer) return;
+
+  const monthDate = new Date(miniCalYear, miniCalMonth, 1);
+  const monthName = monthDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  if (monthTitle) monthTitle.textContent = monthName;
+
+  const firstDay = new Date(miniCalYear, miniCalMonth, 1).getDay(); // 0 = Sun
+  const daysInMonth = new Date(miniCalYear, miniCalMonth + 1, 0).getDate();
+  const prevDaysInMonth = new Date(miniCalYear, miniCalMonth, 0).getDate();
+
+  const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let html = dayHeaders.map(h => `<span class="mini-day-head">${h}</span>`).join('');
+
+  // Previous month trailing days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const pDay = prevDaysInMonth - i;
+    const pDate = new Date(miniCalYear, miniCalMonth - 1, pDay);
+    html += `<span class="mini-day-cell inactive-month" onclick="selectCalendarDate(${pDate.getFullYear()}, ${pDate.getMonth()}, ${pDay})">${pDay}</span>`;
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayDate = new Date(miniCalYear, miniCalMonth, d);
+    const isActive = isSameDay(dayDate, selectedDate);
+    const hasAppts = appointmentsData.some(a => {
+      const aDate = parseApptDate(a.date);
+      return isSameDay(aDate, dayDate) && (a.status || '').toLowerCase() !== 'cancelled';
+    });
+
+    const activeClass = isActive ? 'active-day' : '';
+    const dotHtml = hasAppts ? '<span class="mini-day-dot"></span>' : '';
+
+    html += `
+      <span class="mini-day-cell ${activeClass}" onclick="selectCalendarDate(${miniCalYear}, ${miniCalMonth}, ${d})">
+        ${d}${dotHtml}
+      </span>
+    `;
+  }
+
+  // Next month leading days
+  const totalCells = firstDay + daysInMonth;
+  const nextDays = (7 - (totalCells % 7)) % 7;
+  for (let n = 1; n <= nextDays; n++) {
+    const nDate = new Date(miniCalYear, miniCalMonth + 1, n);
+    html += `<span class="mini-day-cell inactive-month" onclick="selectCalendarDate(${nDate.getFullYear()}, ${nDate.getMonth()}, ${n})">${n}</span>`;
+  }
+
+  gridContainer.innerHTML = html;
+}
+
+function shiftMiniMonth(delta) {
+  miniCalMonth += delta;
+  if (miniCalMonth < 0) {
+    miniCalMonth = 11;
+    miniCalYear--;
+  } else if (miniCalMonth > 11) {
+    miniCalMonth = 0;
+    miniCalYear++;
+  }
+  renderMiniCalendar();
+}
+
+function selectCalendarDate(year, month, day) {
+  selectedDate = new Date(year, month, day);
+  miniCalYear = year;
+  miniCalMonth = month;
+  updateDateHeading();
+  renderMiniCalendar();
+  renderSchedule();
+  syncLiveAvailability();
+}
+
+function selectCalendarDay(day) {
+  selectCalendarDate(miniCalYear, miniCalMonth, day);
+}
+
+window.shiftMiniMonth = shiftMiniMonth;
+window.selectCalendarDate = selectCalendarDate;
+window.selectCalendarDay = selectCalendarDay;
 
 function renderUpcomingList() {
   const container = document.querySelector('.upcoming-items-list');
@@ -247,6 +648,7 @@ function renderUpcomingList() {
     </div>
   `).join('');
 }
+
 
 /* =============================================================================
    4. APPOINTMENT SELECTION & DETAILS DRAWER
@@ -542,63 +944,92 @@ function renderListView() {
 function switchInterval(interval, btn) {
   currentInterval = interval;
   document.querySelectorAll('.segmented-pill-group .seg-pill-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-
-  const heading = document.getElementById('scheduleDayHeading');
-  if (interval === 'day') {
-    heading.textContent = 'Thursday, 14 November 2024';
-  } else if (interval === 'week') {
-    heading.textContent = 'Week 46 (10 Nov 2024 – 16 Nov 2024)';
-  } else if (interval === 'month') {
-    heading.textContent = 'November 2024 Schedule Overview';
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    document.querySelectorAll('.segmented-pill-group .seg-pill-btn').forEach(b => {
+      if (b.textContent.trim().toLowerCase() === interval.toLowerCase()) {
+        b.classList.add('active');
+      }
+    });
   }
+
+  updateDateHeading();
+  renderSchedule();
   showToast(`Switched view to ${interval.toUpperCase()} mode.`, 'info');
 }
 
 function goToTodaySchedule() {
-  currentDateOffset = 0;
-  currentActiveDayNumber = 14;
+  selectedDate = new Date();
+  miniCalYear = selectedDate.getFullYear();
+  miniCalMonth = selectedDate.getMonth();
   updateDateHeading();
-  highlightCalendarDay(14);
-  showToast('Returned to Today (14 Nov 2024).', 'info');
+  renderMiniCalendar();
+  renderSchedule();
+  syncLiveAvailability();
+  if (currentViewMode === 'list') {
+    renderListView();
+  }
+  const formatted = selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  showToast(`Returned to Today (${formatted}).`, 'info');
 }
 
 function shiftScheduleDate(delta) {
-  currentDateOffset += delta;
-  currentActiveDayNumber = Math.max(1, Math.min(30, currentActiveDayNumber + delta));
+  if (currentInterval === 'day') {
+    selectedDate.setDate(selectedDate.getDate() + delta);
+  } else if (currentInterval === 'week') {
+    selectedDate.setDate(selectedDate.getDate() + delta * 7);
+  } else if (currentInterval === 'month') {
+    selectedDate.setMonth(selectedDate.getMonth() + delta);
+  }
+  miniCalYear = selectedDate.getFullYear();
+  miniCalMonth = selectedDate.getMonth();
   updateDateHeading();
-  highlightCalendarDay(currentActiveDayNumber);
+  renderMiniCalendar();
+  renderSchedule();
+  syncLiveAvailability();
+  if (currentViewMode === 'list') {
+    renderListView();
+  }
 }
 
 function getSelectedDate() {
-  const d = new Date();
-  d.setDate(d.getDate() + currentDateOffset);
-  return d;
+  return selectedDate;
 }
 
 function getSelectedDateIso() {
-  const d = getSelectedDate();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  return formatDateIso(selectedDate);
 }
 
 function updateDateHeading() {
   const heading = document.getElementById('scheduleDayHeading');
   const pillText = document.getElementById('activeDatePillText');
-  const curDate = getSelectedDate();
 
-  const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  const formatted = curDate.toLocaleDateString('en-GB', options);
-  const shortFormatted = curDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
-  if (heading) heading.textContent = formatted;
-  if (pillText) pillText.textContent = shortFormatted;
+  if (currentInterval === 'day') {
+    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    const formatted = selectedDate.toLocaleDateString('en-GB', options);
+    const shortFormatted = selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (heading) heading.textContent = formatted;
+    if (pillText) pillText.textContent = shortFormatted;
+  } else if (currentInterval === 'week') {
+    const startOfWeek = new Date(selectedDate);
+    startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const startStr = startOfWeek.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const endStr = endOfWeek.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (heading) heading.textContent = `Week Schedule (${startStr} – ${endStr})`;
+    if (pillText) pillText.textContent = `${startStr} – ${endStr}`;
+  } else if (currentInterval === 'month') {
+    const monthStr = selectedDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (heading) heading.textContent = `${monthStr} Schedule Overview`;
+    if (pillText) pillText.textContent = selectedDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  }
 
   // Sync live availability for newly selected date (silent so it doesn't disturb connection indicator)
   syncLiveAvailability();
 }
+
 
 async function loadLiveCatalog() {
   if (!window.ClinicApi) return;
@@ -634,7 +1065,9 @@ async function loadLiveCatalog() {
       saveAppointmentsStore();
     }
 
-    renderScheduleGrid();
+    renderSchedule();
+    renderMiniCalendar();
+    updateDateHeading();
     if (selectedAppointment) {
       const match = appointmentsData.find(a => a.id === selectedAppointment.id);
       if (!match || match.status === 'Cancelled') {
@@ -795,38 +1228,20 @@ function getFilteredAppointments() {
 }
 
 function filterSchedule() {
+  renderSchedule();
   const filtered = getFilteredAppointments();
-  const allCards = document.querySelectorAll('.doctor-schedule-table .appt-slot-card');
-
-  // Filter in Calendar View: hide or dim slots not matching
-  allCards.forEach(card => {
-    const onclickAttr = card.getAttribute('onclick') || '';
-    const match = onclickAttr.match(/selectScheduleSlot\((\d+)/);
-    if (match) {
-      const id = parseInt(match[1]);
-      const isVisible = filtered.some(a => a.id === id);
-      if (isVisible) {
-        card.style.display = 'block';
-        card.style.opacity = '1';
-      } else {
-        card.style.display = 'none';
-      }
-    }
-  });
-
-  if (currentViewMode === 'list') {
-    renderListView();
-  }
-
   showToast(`Filtered: ${filtered.length} appointment(s) matching criteria.`, 'info');
 }
 
 function handleSearchAppointments(term) {
   if (!term) {
-    document.querySelectorAll('.doctor-schedule-table .appt-slot-card').forEach(c => c.style.display = 'block');
+    document.querySelectorAll('.appt-slot-card, .month-appt-chip').forEach(c => {
+      c.style.display = 'block';
+      c.style.boxShadow = 'none';
+    });
     return;
   }
-  document.querySelectorAll('.doctor-schedule-table .appt-slot-card').forEach(card => {
+  document.querySelectorAll('.appt-slot-card, .month-appt-chip').forEach(card => {
     const text = card.textContent.toLowerCase();
     if (text.includes(term)) {
       card.style.display = 'block';
@@ -1258,50 +1673,195 @@ function handleExportAppointments() {
   showToast('Appointments schedule exported successfully as CSV.', 'success');
 }
 
-// Open All Upcoming Modal
-function openAllUpcomingModal() {
-  const activeUpcoming = appointmentsData.filter(a => (a.status || '').toLowerCase() !== 'cancelled');
-  let bodyHtml = '';
+// Open All Upcoming Modal (Executive Queue View)
+let upcomingModalFilter = 'all';
 
-  if (activeUpcoming.length === 0) {
-    bodyHtml = `
-      <div style="padding: 36px 16px; text-align: center; color: var(--text-muted);">
+function openAllUpcomingModal() {
+  upcomingModalFilter = 'all';
+  const activeUpcoming = appointmentsData.filter(a => (a.status || '').toLowerCase() !== 'cancelled');
+
+  const total = activeUpcoming.length;
+  const confirmed = activeUpcoming.filter(a => (a.status || '').toLowerCase() === 'confirmed' || (a.status || '').toLowerCase() === 'scheduled').length;
+  const pending = activeUpcoming.filter(a => (a.status || '').toLowerCase() === 'pending').length;
+  const todayCount = activeUpcoming.filter(a => {
+    const aDate = parseApptDate(a.date);
+    return isSameDay(aDate, new Date());
+  }).length;
+
+  let bodyHtml = `
+    <div class="upcoming-modal-wrapper">
+      <div class="upcoming-modal-toolbar">
+        <div class="upcoming-search-input-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="16" height="16">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="upcomingModalSearch" placeholder="Search by patient, phone, doctor, or department..." oninput="filterUpcomingModalList()">
+        </div>
+        <div class="upcoming-filter-pills">
+          <button class="upcoming-filter-pill-btn active" data-filter="all" onclick="setUpcomingFilter('all', this)">All (${total})</button>
+          <button class="upcoming-filter-pill-btn" data-filter="confirmed" onclick="setUpcomingFilter('confirmed', this)">Confirmed (${confirmed})</button>
+          <button class="upcoming-filter-pill-btn" data-filter="pending" onclick="setUpcomingFilter('pending', this)">Pending (${pending})</button>
+          <button class="upcoming-filter-pill-btn" data-filter="today" onclick="setUpcomingFilter('today', this)">Today (${todayCount})</button>
+        </div>
+      </div>
+
+      <div class="upcoming-cards-container" id="upcomingCardsContainer">
+        ${renderUpcomingCardsHtml(activeUpcoming)}
+      </div>
+    </div>
+  `;
+
+  const footerHtml = `
+    <div style="margin-right:auto; font-size:12px; color:var(--text-muted); font-weight:600;" id="upcomingModalSummaryText">
+      Showing ${total} upcoming appointment(s)
+    </div>
+    <button class="modal-btn-secondary" onclick="closeAdminModal()">Close</button>
+    <button class="modal-btn-primary" onclick="closeAdminModal(); openNewAppointmentModal();" style="display:inline-flex; align-items:center; gap:6px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Schedule New
+    </button>
+  `;
+
+  openAdminModal(`Upcoming Consultation Queue (${total})`, bodyHtml, footerHtml, 'modal-xl');
+}
+
+function renderUpcomingCardsHtml(list) {
+  if (!list || list.length === 0) {
+    return `
+      <div style="padding: 40px 16px; text-align: center; color: var(--text-muted);">
         <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" width="48" height="48" style="margin-bottom: 12px;">
           <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
           <line x1="8" y1="2" x2="8" y2="6"/>
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
-        <div style="font-weight: 700; color: var(--text-dark); font-size: 16px; margin-bottom: 6px;">No Appointments Today</div>
-        <p style="font-size: 13px; margin: 0 0 20px 0;">There are no active scheduled appointments in today's clinic calendar.</p>
-        <button class="modal-btn-primary" onclick="closeAdminModal(); openNewAppointmentModal();" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:8px 16px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Schedule New Appointment
-        </button>
-      </div>
-    `;
-  } else {
-    bodyHtml = `
-      <div style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto; padding-right:4px;">
-        ${activeUpcoming.slice(0, 15).map(a => `
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#F8FAFC; border:1px solid var(--border-light); border-radius:8px;">
-            <div>
-              <div style="font-weight:700; color:var(--text-dark); font-size:13px;">${a.patientName}</div>
-              <div style="font-size:12px; color:var(--text-muted);">${a.time} • ${a.doctor} (${a.doctorDept})</div>
-            </div>
-            <span class="status-pill status-${(a.status || 'Confirmed').toLowerCase().replace(' ', '')}">• ${a.status}</span>
-          </div>
-        `).join('')}
+        <div style="font-weight: 700; color: var(--text-dark); font-size: 15px; margin-bottom: 4px;">No Matching Appointments</div>
+        <p style="font-size: 12.5px; margin: 0;">Try adjusting your search query or switching active filter tabs.</p>
       </div>
     `;
   }
 
-  const footerHtml = `
-    <button class="modal-btn-secondary" onclick="closeAdminModal()">Close</button>
-  `;
+  return list.map(a => {
+    let statusClass = 'status-confirmed';
+    const st = (a.status || '').toLowerCase();
+    if (st === 'pending') statusClass = 'status-pending';
+    else if (st === 'in clinic') statusClass = 'status-inclinic';
 
-  openAdminModal('All Upcoming Queue Today', bodyHtml, footerHtml);
+    const pAvatar = a.patientAvatar || (a.patientName ? a.patientName.charAt(0).toUpperCase() : 'P');
+    const pCode = a.patientCode || `#${a.id}`;
+    const pPhone = a.patientPhone || 'No contact provided';
+
+    return `
+      <div class="upcoming-card-row">
+        <div class="upcoming-card-left">
+          <div class="upcoming-card-avatar" style="background:${a.patientAvatarBg || '#EFF6FF'}; color:${a.patientAvatarColor || '#2563EB'};">
+            ${pAvatar}
+          </div>
+          <div class="upcoming-card-meta">
+            <div class="upcoming-card-name-row">
+              <span class="upcoming-card-name">${escapeHtml(a.patientName)}</span>
+              <span class="upcoming-card-id-badge">${escapeHtml(pCode)}</span>
+              <span style="font-size:11.5px; color:var(--text-muted);">• ${escapeHtml(pPhone)}</span>
+            </div>
+            <div class="upcoming-card-doctor-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <strong style="color:var(--text-dark);">${escapeHtml(a.doctor)}</strong>
+              <span style="color:var(--primary-blue); font-weight:600;">(${escapeHtml(a.doctorDept)})</span>
+              <span style="font-size:11px; color:#94A3B8;">— ${escapeHtml(a.type || 'Consultation')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="upcoming-card-right">
+          <div class="upcoming-card-timing">
+            <div class="upcoming-card-time">${escapeHtml(a.timeShort || a.time)}</div>
+            <div class="upcoming-card-date">${escapeHtml(a.date)}</div>
+            <div><span class="status-pill ${statusClass}" style="margin-top:2px;">• ${escapeHtml(a.status)}</span></div>
+          </div>
+          <div class="upcoming-card-actions">
+            <button type="button" class="upcoming-btn-action btn-primary-action" onclick="jumpToAppointment(${a.id})" title="Jump directly to this appointment on calendar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              View on Grid
+            </button>
+            <button type="button" class="upcoming-btn-action" onclick="closeAdminModal(); selectScheduleSlot(${a.id}, null); handleStartCallWithPatient();" title="Start direct call with patient">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              Call
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
+
+function filterUpcomingModalList() {
+  const query = (document.getElementById('upcomingModalSearch') ? document.getElementById('upcomingModalSearch').value : '').toLowerCase().trim();
+  const container = document.getElementById('upcomingCardsContainer');
+  const summary = document.getElementById('upcomingModalSummaryText');
+  if (!container) return;
+
+  let list = appointmentsData.filter(a => (a.status || '').toLowerCase() !== 'cancelled');
+
+  if (upcomingModalFilter === 'confirmed') {
+    list = list.filter(a => (a.status || '').toLowerCase() === 'confirmed' || (a.status || '').toLowerCase() === 'scheduled');
+  } else if (upcomingModalFilter === 'pending') {
+    list = list.filter(a => (a.status || '').toLowerCase() === 'pending');
+  } else if (upcomingModalFilter === 'today') {
+    list = list.filter(a => {
+      const aDate = parseApptDate(a.date);
+      return isSameDay(aDate, new Date());
+    });
+  }
+
+  if (query) {
+    list = list.filter(a => 
+      (a.patientName && a.patientName.toLowerCase().includes(query)) ||
+      (a.patientPhone && a.patientPhone.toLowerCase().includes(query)) ||
+      (a.doctor && a.doctor.toLowerCase().includes(query)) ||
+      (a.doctorDept && a.doctorDept.toLowerCase().includes(query)) ||
+      (a.patientCode && a.patientCode.toLowerCase().includes(query)) ||
+      (String(a.id).includes(query))
+    );
+  }
+
+  container.innerHTML = renderUpcomingCardsHtml(list);
+  if (summary) summary.textContent = `Showing ${list.length} appointment(s)`;
+}
+
+function setUpcomingFilter(filterType, btn) {
+  upcomingModalFilter = filterType;
+  document.querySelectorAll('.upcoming-filter-pills .upcoming-filter-pill-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  filterUpcomingModalList();
+}
+
+function jumpToAppointment(apptId) {
+  const found = appointmentsData.find(a => a.id === apptId);
+  if (!found) return;
+
+  const aDate = parseApptDate(found.date);
+  if (aDate) {
+    selectedDate = new Date(aDate);
+    miniCalYear = selectedDate.getFullYear();
+    miniCalMonth = selectedDate.getMonth();
+  }
+
+  // Switch to day view for that date
+  currentInterval = 'day';
+  document.querySelectorAll('.segmented-pill-group .seg-pill-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.textContent.trim().toLowerCase() === 'day') b.classList.add('active');
+  });
+
+  updateDateHeading();
+  renderMiniCalendar();
+  renderSchedule();
+
+  selectScheduleSlot(found.id, null);
+  closeAdminModal();
+  showToast(`Navigated to appointment for ${found.patientName} on ${found.date}.`, 'success');
+}
+
 
 // Edit Selected Appointment Modal
 function openEditSelectedApptModal() {
@@ -1391,11 +1951,17 @@ function toggleNotifications() {
   showToast('Appointments System: 18 scheduled sessions today, doctor schedules synced.', 'info');
 }
 
-function openAdminModal(title, bodyHtml, footerHtml = '') {
+function openAdminModal(title, bodyHtml, footerHtml = '', sizeClass = '') {
   const backdrop = document.getElementById('adminModalBackdrop');
+  const container = document.getElementById('adminModalContainer');
   const titleEl = document.getElementById('adminModalTitle');
   const bodyEl = document.getElementById('adminModalBody');
   const footerEl = document.getElementById('adminModalFooter');
+
+  if (container) {
+    container.classList.remove('modal-lg', 'modal-xl');
+    if (sizeClass) container.classList.add(sizeClass);
+  }
 
   if (titleEl) titleEl.textContent = title;
   if (bodyEl) bodyEl.innerHTML = bodyHtml;
@@ -1412,6 +1978,10 @@ function closeAdminModal(e) {
     return;
   }
   const backdrop = document.getElementById('adminModalBackdrop');
+  const container = document.getElementById('adminModalContainer');
+  if (container) {
+    container.classList.remove('modal-lg', 'modal-xl');
+  }
   if (backdrop) {
     backdrop.classList.remove('active');
     backdrop.classList.remove('open');
