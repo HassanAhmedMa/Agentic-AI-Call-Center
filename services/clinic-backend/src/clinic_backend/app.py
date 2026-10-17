@@ -1736,6 +1736,17 @@ def create_app(
                 "app.js",
                 "portal-session.js",
                 "portal-api.js",
+                "appointments.html",
+                "appointments.js",
+                "chat.html",
+                "chat.js",
+                "profile.html",
+                "profile.js",
+                "support.html",
+                "clinic-info.html",
+                "api.js",
+                "common.js",
+                "home.js",
             }
             if asset not in allowed or not (settings.portal_assets / asset).is_file():
                 raise APIError(404, "NOT_FOUND", "Page not found.")

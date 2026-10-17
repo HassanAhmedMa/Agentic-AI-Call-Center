@@ -120,3 +120,9 @@ class PatientProfile(BaseModel):
     customer_number: str
     first_name: str
     preferred_language: Literal["ar", "en"]
+    full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    date_of_birth: date | None = None
+    gender: str | None = None
+    address: str | None = None

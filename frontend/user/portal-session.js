@@ -1,19 +1,146 @@
-/* Dashboard access is derived from the server, never a browser boolean. */
-document.addEventListener('DOMContentLoaded', async () => {
-  const bar = document.createElement('aside');
-  bar.style.cssText = 'padding:10px 20px;background:#eff6ff;color:#0f172a;display:flex;gap:16px;align-items:center;flex-wrap:wrap;font:14px Arial';
-  const label = document.createElement('span'); label.textContent = 'Checking your session / بنراجع جلسة الدخول…';bar.appendChild(label);document.body.prepend(bar);
-  try {
-    const response = await window.ClinicPortalAPI.request('session');
-    const profile = response;
-    label.textContent = `${profile.first_name} · ${profile.customer_number}`;
-    const notice = document.createElement('span');notice.textContent='Demo dashboard: appointment cards are not live records yet. / الصفحة تجريبية والمواعيد المعروضة مش بيانات حسابك.';bar.appendChild(notice);
-    const logout=document.createElement('button');logout.textContent='Sign out / تسجيل الخروج';bar.appendChild(logout);
-    logout.addEventListener('click',async()=>{
-      logout.disabled=true;
-      try {
-        await window.ClinicPortalAPI.request('logout',{});window.location.replace('auth.html');
-      }catch(_){logout.disabled=false;label.textContent='Sign out failed. Try again. / حاول تسجّل خروج تاني.';}
+/**
+ * Nile Clinics - Patient Portal Session Manager
+ * Safely inspects session state with the backend using ClinicPortalAPI while updating the UI.
+ */
+(function () {
+  'use strict';
+
+  function applySessionToUI(profile) {
+    if (!profile) return;
+    const name = profile.full_name || profile.first_name || 'Patient';
+    const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'P';
+
+    // Header badge
+    const badgeAvatar = document.getElementById('userBadgeAvatar');
+    const badgeName = document.getElementById('userBadgeName');
+    if (badgeAvatar) badgeAvatar.textContent = initials;
+    if (badgeName) badgeName.textContent = name;
+
+    // Home greeting
+    const heroFName = document.getElementById('heroPatientFirstName');
+    if (heroFName) {
+      heroFName.textContent = profile.first_name || name.split(' ')[0];
+    }
+    const heroTitle = document.getElementById('homeHeroGreeting');
+    if (heroTitle && !heroFName) {
+      const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
+      const firstName = profile.first_name || name.split(' ')[0];
+      heroTitle.innerHTML = isAr 
+        ? `أهلاً بك، ${firstName} 👋`
+        : `Welcome back, ${firstName} 👋`;
+    }
+
+    // Chat greeting
+    const chatLead = document.getElementById('chatGreetingLead') || document.getElementById('chatGreetingHi');
+    if (chatLead) {
+      const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
+      const firstName = profile.first_name || name.split(' ')[0];
+      chatLead.textContent = isAr ? `أهلاً ${firstName}!` : `Hello ${firstName}!`;
+    }
+
+    // Profile page elements if on profile page
+    if (typeof window.populateProfileDetails === 'function') {
+      window.populateProfileDetails(profile);
+    }
+  }
+
+  async function checkSession() {
+    try {
+      let session = null;
+      if (window.ClinicPortalAPI && typeof window.ClinicPortalAPI.request === 'function') {
+        session = await window.ClinicPortalAPI.request('session');
+      } else {
+        const cleanBase = (window.__CLINIC_API_BASE__ || '').replace(/\/+$/, '');
+        const response = await fetch(`${cleanBase}/api/v1/portal/session`, {
+          credentials: cleanBase ? 'include' : 'same-origin',
+          cache: 'no-store'
+        });
+        if (response.ok) {
+          session = await response.json();
+        } else if (response.status === 401) {
+          try {
+            localStorage.removeItem('clinic_patient_session');
+          } catch (_) {}
+          window.ClinicSession = null;
+          return null;
+        }
+      }
+
+      if (session) {
+        window.ClinicSession = session;
+        try {
+          localStorage.setItem('clinic_patient_session', JSON.stringify(session));
+        } catch (_) {}
+        applySessionToUI(session);
+        return window.ClinicSession;
+      }
+    } catch (error) {
+      if (error && ['VERIFICATION_REQUIRED', 'SESSION_EXPIRED', 'UNAUTHORIZED'].includes(error.message)) {
+        if (window.location && typeof window.location.pathname === 'string' && !window.location.pathname.includes('auth.html')) {
+          window.location.replace('auth.html');
+        }
+        return null;
+      }
+    }
+
+    // Fallback to cached session from last successful login
+    try {
+      const cached = localStorage.getItem('clinic_patient_session');
+      if (cached) {
+        window.ClinicSession = JSON.parse(cached);
+        applySessionToUI(window.ClinicSession);
+        return window.ClinicSession;
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
+  async function logout() {
+    try {
+      if (window.ClinicPortalAPI && typeof window.ClinicPortalAPI.request === 'function') {
+        await window.ClinicPortalAPI.request('logout', {});
+      } else {
+        const cleanBase = (window.__CLINIC_API_BASE__ || '').replace(/\/+$/, '');
+        await fetch(`${cleanBase}/api/v1/portal/logout`, {
+          method: 'POST',
+          credentials: cleanBase ? 'include' : 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}',
+          cache: 'no-store'
+        });
+      }
+    } catch (_) {}
+
+    try {
+      localStorage.removeItem('clinic_patient_session');
+      localStorage.removeItem('clinic_user_session');
+    } catch (_) {}
+
+    window.location.href = 'auth.html';
+  }
+
+  window.ClinicPortalAuth = {
+    checkSession,
+    logout,
+    applySessionToUI,
+    getDefaultProfile: () => ({
+      first_name: 'Patient',
+      full_name: 'Patient User',
+      customer_number: '—',
+      email: '—',
+      phone: '—',
+      date_of_birth: '—',
+      gender: '—',
+      address: '—'
+    })
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkSession().then((profile) => {
+      if (typeof CustomEvent !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('clinic:session-loaded', { detail: profile }));
+      }
     });
-  } catch (error) { if (['VERIFICATION_REQUIRED','SESSION_EXPIRED'].includes(error.message)) { window.location.replace('auth.html'); return; } label.textContent='Session check unavailable. Reload to retry. / الخدمة مش متاحة. حدّث الصفحة.'; }
-});
+  });
+})();
