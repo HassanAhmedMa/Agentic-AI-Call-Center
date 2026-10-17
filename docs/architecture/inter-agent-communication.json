@@ -110,7 +110,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://172.17.0.1:9102/agent-message",
+        "url": "http://172.20.0.1:9102/agent-message",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.body) }}",
@@ -130,7 +130,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://172.17.0.1:9103/agent-message",
+        "url": "http://172.20.0.1:9103/agent-message",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.body) }}",
@@ -150,7 +150,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://172.17.0.1:9101/agent-message",
+        "url": "http://172.20.0.1:9101/agent-message",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.body) }}",
