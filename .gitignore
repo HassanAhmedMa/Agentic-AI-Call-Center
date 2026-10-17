@@ -21,7 +21,10 @@ Thumbs.db
 desktop.ini
 
 # IDE & Editors
-.agents/
+.agents/*
+!.agents/skills/
+!.agents/skills/**
+.agents/inbox.json
 .idea/
 .vscode/
 *.swp
