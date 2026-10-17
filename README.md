@@ -126,3 +126,5 @@ To explore the architecture and prepare your local environment, consult:
 ## ADR-003 review and next implementation step
 
 Identity/booking decisions remain **Proposed** pending the recorded approval gates. Read the [review findings](docs/development/architecture-review-2026-10-10.md) and [implementation roadmap](docs/development/implementation-roadmap.md). Phase 1 targets deterministic backend identity and a minimal browser text/form page; currently the backend implements catalog, conversations and patient identity.
+
+For isolated CI container checks without the Oracle server, see [CI reproduction](docs/development/ci-reproduction.md).

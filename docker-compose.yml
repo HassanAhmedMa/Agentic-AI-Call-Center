@@ -5,9 +5,9 @@
 # The catalog backend is opt-in with --profile backend. Other application
 # services remain architecture blueprints until their implementation lands.
 #
-# Below, shared persistence infrastructure (PostgreSQL & Redis) is configured
-# for local development. Service containers are declared and documented as
-# blueprints to be un-commented as service implementations land in Phase 1+.
+# PostgreSQL is external (Supabase); disposable PostgreSQL for CI is defined
+# in docker-compose.ci.yml. Redis and Mailpit are available locally.
+# Other service containers are documented as blueprints to be un-commented as service implementations land in Phase 1+.
 # ==============================================================================
 
 services:
@@ -75,10 +75,8 @@ services:
       N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
     networks:
       - default
-      - supabase_default
-    depends_on:
-      database:
-        condition: service_healthy
+    # External Supabase is selected by docker-compose.supabase.yml.
+    # CI adds its disposable database through docker-compose.ci.yml.
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready', timeout=6)"]
       interval: 10s
@@ -136,5 +134,3 @@ volumes:
 
 networks:
   default:
-  supabase_default:
-    external: true

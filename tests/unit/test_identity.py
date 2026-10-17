@@ -39,6 +39,9 @@ def test_registration_normalizes_email_and_preserves_arabic_name():
         ("full_name", "  "),
         ("date_of_birth", 0),
         ("email", "a@"),
+        ("email", "a@ "),
+        ("email", "@"),
+        ("email", ""),
     ],
 )
 def test_invalid_registration_rejected(field, value):

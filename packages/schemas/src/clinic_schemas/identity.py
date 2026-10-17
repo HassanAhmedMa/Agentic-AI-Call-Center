@@ -48,7 +48,7 @@ class Registration(Input):
         try:
             parsed = Address(addr_spec=value)
             domain = parsed.domain.encode("idna").decode("ascii")
-        except (ValueError, UnicodeError, HeaderParseError) as exc:
+        except (ValueError, UnicodeError, HeaderParseError, IndexError) as exc:
             raise ValueError("Invalid email") from exc
         if (
             not parsed.username.isascii()

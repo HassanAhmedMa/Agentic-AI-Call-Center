@@ -1,0 +1,48 @@
+# Isolated synthetic test infrastructure. Never apply this file to Oracle.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile backend ...
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: clinic_ci
+      POSTGRES_PASSWORD: synthetic_ci_password
+      POSTGRES_DB: clinic_ci
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U clinic_ci -d clinic_ci"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    container_name: !reset null
+    ports: !override
+      - "127.0.0.1:${CI_MAILPIT_HTTP_PORT:-8025}:8025"
+
+  clinic-backend:
+    ports: !override
+      - "127.0.0.1:${CI_BACKEND_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://clinic_ci:synthetic_ci_password@database:5432/clinic_ci
+      DATABASE_SCHEMA: public
+      ENVIRONMENT: test
+      IDENTITY_PROVIDER: clinic
+      PORTAL_ENABLED: "false"
+      EMAIL_DELIVERY: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_FROM: clinic@example.test
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+      SMTP_USE_TLS: "false"
+      SUPABASE_URL: ""
+      SUPABASE_PUBLIC_KEY: ""
+      SUPABASE_ISSUER: ""
+      N8N_WEBHOOK_URL: ""
+      N8N_WEBHOOK_SECRET: ""
+    depends_on:
+      database:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
