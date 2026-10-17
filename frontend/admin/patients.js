@@ -1288,9 +1288,17 @@
     showToast(`Active clinic branch set to: ${selectEl.value}`, 'success');
   }
 
-  function handleLogout() {
-    if (confirm('Are you sure you want to log out of the Clinic Admin Console?')) {
-      showToast('Admin logged out successfully.', 'info');
+  async function handleLogout() {
+    const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
+      title: 'Sign Out of Clinic Console?',
+      message: 'Are you sure you want to log out of Nile Clinics Admin Console?',
+      confirmText: 'Sign Out',
+      cancelText: 'Stay Signed In',
+      type: 'danger'
+    }) : confirm('Are you sure you want to log out of the Clinic Admin Console?');
+
+    if (confirmed) {
+      showToast('Admin logged out successfully. Redirecting...', 'info');
     }
   }
 

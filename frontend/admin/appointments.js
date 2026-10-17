@@ -1702,7 +1702,11 @@ async function submitNewAppointment() {
   const notes = document.getElementById('newApptNotes').value.trim();
 
   if (!name || !phone) {
-    alert('Please provide patient name and contact phone number.');
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Required Information', 'Please provide patient full name and contact phone number.', 'warning');
+    } else {
+      alert('Please provide patient name and contact phone number.');
+    }
     return;
   }
 
@@ -1712,7 +1716,15 @@ async function submitNewAppointment() {
       ? window.ClinicApi.isClinicHoliday(dateVal)
       : { isHoliday: false };
     if (holidayCheck.isHoliday) {
-      alert(`The clinic is closed on this date (${holidayCheck.name_en} / ${holidayCheck.name_ar || ''}). Please choose an open clinic date.`);
+      if (window.ClinicDialog) {
+        await window.ClinicDialog.alert(
+          'Clinic Closed on Selected Date',
+          `The clinic is closed on this date (${holidayCheck.name_en} / ${holidayCheck.name_ar || ''}).<br>Please choose an open clinic date.`,
+          'warning'
+        );
+      } else {
+        alert(`The clinic is closed on this date (${holidayCheck.name_en} / ${holidayCheck.name_ar || ''}). Please choose an open clinic date.`);
+      }
       return;
     }
   }
@@ -1743,7 +1755,11 @@ async function submitNewAppointment() {
     }
   } catch (err) {
     console.error('[Appointments] Booking error:', err);
-    alert('Failed to schedule appointment: ' + (err.message || 'Database error'));
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Booking Error', 'Failed to schedule appointment: ' + (err.message || 'Database error'), 'danger');
+    } else {
+      alert('Failed to schedule appointment: ' + (err.message || 'Database error'));
+    }
   }
 }
 
@@ -1824,7 +1840,11 @@ async function confirmRescheduleAppointment() {
     }
   } catch (err) {
     console.error('[Appointments] Reschedule error:', err);
-    alert('Failed to reschedule appointment: ' + (err.message || 'Database error'));
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Reschedule Failed', 'Failed to reschedule appointment: ' + (err.message || 'Database error'), 'danger');
+    } else {
+      alert('Failed to reschedule appointment: ' + (err.message || 'Database error'));
+    }
   }
 }
 
@@ -1832,7 +1852,15 @@ async function confirmRescheduleAppointment() {
 async function handleCancelAppointment() {
   if (!selectedAppointment) return;
 
-  if (confirm(`Are you sure you want to cancel the appointment for ${selectedAppointment.patientName} on ${selectedAppointment.date}?`)) {
+  const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
+    title: 'Cancel Appointment?',
+    message: `Are you sure you want to cancel the appointment for <strong>${escapeHtml(selectedAppointment.patientName)}</strong> on ${selectedAppointment.date} (${selectedAppointment.time})?`,
+    confirmText: 'Yes, Cancel Appointment',
+    cancelText: 'Keep Appointment',
+    type: 'danger'
+  }) : confirm(`Are you sure you want to cancel the appointment for ${selectedAppointment.patientName} on ${selectedAppointment.date}?`);
+
+  if (confirmed) {
     try {
       if (window.ClinicApi) {
         try {
@@ -1866,7 +1894,11 @@ async function handleCancelAppointment() {
       }
     } catch (err) {
       console.error('[Appointments] Cancellation error:', err);
-      alert('Failed to cancel appointment: ' + (err.message || 'Database error'));
+      if (window.ClinicDialog) {
+        await window.ClinicDialog.alert('Cancellation Error', 'Failed to cancel appointment: ' + (err.message || 'Database error'), 'danger');
+      } else {
+        alert('Failed to cancel appointment: ' + (err.message || 'Database error'));
+      }
     }
   }
 }
@@ -2181,9 +2213,17 @@ function handleBranchChange() {
   }
 }
 
-function handleLogout() {
-  if (confirm('Are you sure you want to log out of the Clinic Admin Console?')) {
-    showToast('Admin logged out successfully.', 'info');
+async function handleLogout() {
+  const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
+    title: 'Sign Out of Clinic Console?',
+    message: 'Are you sure you want to log out of Nile Clinics Admin Console?',
+    confirmText: 'Sign Out',
+    cancelText: 'Stay Signed In',
+    type: 'danger'
+  }) : confirm('Are you sure you want to log out of the Clinic Admin Console?');
+
+  if (confirmed) {
+    showToast('Admin logged out successfully. Redirecting...', 'info');
   }
 }
 

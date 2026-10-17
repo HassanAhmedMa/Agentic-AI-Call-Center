@@ -734,6 +734,192 @@
   };
 
   /* =========================================================================
+     GLOBAL POPUP CONFIRMATION & ALERT DIALOGS (Custom Modal System)
+     ========================================================================= */
+  let activeDialogResolver = null;
+
+  function ensureDialogBackdropExists() {
+    let backdrop = document.getElementById('clinicDialogBackdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'clinicDialogBackdrop';
+      backdrop.className = 'clinic-dialog-backdrop';
+      backdrop.innerHTML = `
+        <div class="clinic-dialog-box" id="clinicDialogBox" role="dialog" aria-modal="true">
+          <div id="clinicDialogIcon" class="clinic-dialog-icon-circle clinic-dialog-icon-danger"></div>
+          <h3 class="clinic-dialog-title" id="clinicDialogTitle">Confirmation Required</h3>
+          <p class="clinic-dialog-message" id="clinicDialogMessage">Are you sure you want to proceed?</p>
+          <div class="clinic-dialog-actions" id="clinicDialogActions">
+            <button type="button" class="modal-btn-secondary" id="clinicDialogCancelBtn">Cancel</button>
+            <button type="button" class="modal-btn-primary" id="clinicDialogConfirmBtn">Confirm</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+
+      // Handle keyboard Escape and Enter
+      window.addEventListener('keydown', (e) => {
+        if (!backdrop.classList.contains('open')) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          dismissDialog(false);
+        } else if (e.key === 'Enter') {
+          const confirmBtn = document.getElementById('clinicDialogConfirmBtn');
+          if (confirmBtn && document.activeElement !== document.getElementById('clinicDialogCancelBtn')) {
+            e.preventDefault();
+            dismissDialog(true);
+          }
+        }
+      });
+
+      // Handle backdrop outside click
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          dismissDialog(false);
+        }
+      });
+    }
+    return backdrop;
+  }
+
+  function dismissDialog(result) {
+    const backdrop = document.getElementById('clinicDialogBackdrop');
+    if (backdrop) {
+      backdrop.classList.remove('open');
+    }
+    if (activeDialogResolver) {
+      const resolve = activeDialogResolver;
+      activeDialogResolver = null;
+      resolve(result);
+    }
+  }
+
+  const ClinicDialog = {
+    confirm: function (options) {
+      if (typeof options === 'string') {
+        options = { message: options };
+      }
+      options = options || {};
+
+      return new Promise((resolve) => {
+        activeDialogResolver = resolve;
+        const backdrop = ensureDialogBackdropExists();
+        const iconEl = document.getElementById('clinicDialogIcon');
+        const titleEl = document.getElementById('clinicDialogTitle');
+        const msgEl = document.getElementById('clinicDialogMessage');
+        const cancelBtn = document.getElementById('clinicDialogCancelBtn');
+        const confirmBtn = document.getElementById('clinicDialogConfirmBtn');
+
+        const type = options.type || 'danger';
+        const title = options.title || 'Please Confirm';
+        const message = options.message || 'Are you sure you want to proceed?';
+        const confirmText = options.confirmText || 'Confirm';
+        const cancelText = options.cancelText || 'Cancel';
+
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.innerHTML = message;
+
+        if (iconEl) {
+          iconEl.className = `clinic-dialog-icon-circle clinic-dialog-icon-${type}`;
+          if (type === 'danger') {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+          } else if (type === 'warning') {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+          } else if (type === 'success') {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="26" height="26"><polyline points="20 6 9 17 4 12"/></svg>`;
+          } else {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+          }
+        }
+
+        if (cancelBtn) {
+          cancelBtn.style.display = 'inline-flex';
+          cancelBtn.textContent = cancelText;
+          cancelBtn.onclick = () => dismissDialog(false);
+        }
+
+        if (confirmBtn) {
+          confirmBtn.textContent = confirmText;
+          if (type === 'danger') {
+            confirmBtn.style.backgroundColor = '#DC2626';
+            confirmBtn.style.borderColor = '#DC2626';
+          } else if (type === 'warning') {
+            confirmBtn.style.backgroundColor = '#D97706';
+            confirmBtn.style.borderColor = '#D97706';
+          } else {
+            confirmBtn.style.backgroundColor = 'var(--primary-blue, #2563EB)';
+            confirmBtn.style.borderColor = 'var(--primary-blue, #2563EB)';
+          }
+          confirmBtn.onclick = () => dismissDialog(true);
+        }
+
+        backdrop.classList.add('open');
+        if (confirmBtn) confirmBtn.focus();
+      });
+    },
+
+    alert: function (titleOrOptions, message, type = 'info') {
+      let opts = {};
+      if (typeof titleOrOptions === 'string') {
+        if (message !== undefined) {
+          opts = { title: titleOrOptions, message: message, type: type };
+        } else {
+          opts = { title: 'Notification', message: titleOrOptions, type: 'info' };
+        }
+      } else {
+        opts = titleOrOptions || {};
+      }
+
+      return new Promise((resolve) => {
+        activeDialogResolver = resolve;
+        const backdrop = ensureDialogBackdropExists();
+        const iconEl = document.getElementById('clinicDialogIcon');
+        const titleEl = document.getElementById('clinicDialogTitle');
+        const msgEl = document.getElementById('clinicDialogMessage');
+        const cancelBtn = document.getElementById('clinicDialogCancelBtn');
+        const confirmBtn = document.getElementById('clinicDialogConfirmBtn');
+
+        const dialogType = opts.type || 'info';
+        const title = opts.title || 'Notification';
+        const msg = opts.message || '';
+        const confirmText = opts.confirmText || 'OK';
+
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.innerHTML = msg;
+
+        if (iconEl) {
+          iconEl.className = `clinic-dialog-icon-circle clinic-dialog-icon-${dialogType}`;
+          if (dialogType === 'danger' || dialogType === 'error') {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+          } else if (dialogType === 'warning') {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+          } else if (dialogType === 'success') {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="26" height="26"><polyline points="20 6 9 17 4 12"/></svg>`;
+          } else {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+          }
+        }
+
+        if (cancelBtn) {
+          cancelBtn.style.display = 'none';
+        }
+
+        if (confirmBtn) {
+          confirmBtn.textContent = confirmText;
+          confirmBtn.style.backgroundColor = 'var(--primary-blue, #2563EB)';
+          confirmBtn.style.borderColor = 'var(--primary-blue, #2563EB)';
+          confirmBtn.onclick = () => dismissDialog(true);
+        }
+
+        backdrop.classList.add('open');
+        if (confirmBtn) confirmBtn.focus();
+      });
+    }
+  };
+
+  window.ClinicDialog = ClinicDialog;
+
+  /* =========================================================================
      AUTOMATIC CONNECTION STATUS BADGE CONTROLLER
      ========================================================================= */
   function initStatusBadge() {
@@ -1076,8 +1262,16 @@
     }).join('');
   };
 
-  window.executeRemoveHoliday = function (dateStr, nameEn) {
-    if (confirm(`Remove clinic closure on ${dateStr} (${nameEn})?`)) {
+  window.executeRemoveHoliday = async function (dateStr, nameEn) {
+    const confirmed = await ClinicDialog.confirm({
+      title: 'Remove Clinic Closure?',
+      message: `Are you sure you want to remove the clinic closure on <strong>${dateStr}</strong> (${escapeHtml(nameEn)})?<br>Appointments for this date will become available for scheduling.`,
+      confirmText: 'Yes, Remove Closure',
+      cancelText: 'Keep Closed',
+      type: 'danger'
+    });
+
+    if (confirmed) {
       ClinicApi.removeClinicHoliday(dateStr);
       renderHolidaysList();
       if (typeof showToast === 'function') {
@@ -1086,7 +1280,7 @@
     }
   };
 
-  window.submitAddClinicClosure = function () {
+  window.submitAddClinicClosure = async function () {
     const dateInput = document.getElementById('newClosureDate');
     const nameEnInput = document.getElementById('newClosureNameEn');
     const nameArInput = document.getElementById('newClosureNameAr');
@@ -1096,12 +1290,20 @@
     const nameAr = nameArInput ? nameArInput.value.trim() : '';
 
     if (!date) {
-      alert('Please select a closure date.');
+      await ClinicDialog.alert({
+        title: 'Missing Closure Date',
+        message: 'Please choose an off-duty / closure date for the clinic.',
+        type: 'warning'
+      });
       if (dateInput) dateInput.focus();
       return;
     }
     if (!nameEn) {
-      alert('Please enter a reason or holiday name in English.');
+      await ClinicDialog.alert({
+        title: 'Missing Reason Name',
+        message: 'Please enter a holiday name or closure reason in English (e.g. National Holiday, Renovation).',
+        type: 'warning'
+      });
       if (nameEnInput) nameEnInput.focus();
       return;
     }

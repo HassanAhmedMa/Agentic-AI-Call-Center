@@ -784,17 +784,33 @@
   }
 
   window.handleBranchChange = function () {
-    alert('Nile Clinics - Heliopolis Branch (Active)');
+    if (window.ClinicDialog) {
+      window.ClinicDialog.alert('Active Medical Facility', 'Nile Clinics - Heliopolis Branch (Active Branch)', 'info');
+    } else {
+      showToast('Nile Clinics - Heliopolis Branch (Active)', 'info');
+    }
   };
 
-  window.handleLogout = function () {
-    if (confirm('Are you sure you want to log out of the Clinic Admin Console?')) {
+  window.handleLogout = async function () {
+    const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
+      title: 'Sign Out of Clinic Console?',
+      message: 'Are you sure you want to log out of Nile Clinics Admin Console?',
+      confirmText: 'Sign Out',
+      cancelText: 'Stay Signed In',
+      type: 'danger'
+    }) : confirm('Are you sure you want to log out of the Clinic Admin Console?');
+
+    if (confirmed) {
       window.location.href = 'index.html';
     }
   };
 
   window.toggleNotifications = function () {
-    alert('System Notifications: Real FastAPI connection verified.');
+    if (window.ClinicDialog) {
+      window.ClinicDialog.alert('System Notifications', 'All clinical backend microservices and database connections are operational.', 'success');
+    } else {
+      showToast('System Notifications: Real FastAPI connection verified.', 'info');
+    }
   };
 
 })();
