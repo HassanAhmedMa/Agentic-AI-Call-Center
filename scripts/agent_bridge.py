@@ -210,12 +210,51 @@ def invoke_active_agent(name: str, record: dict):
             stdout, stderr = proc.communicate(timeout=120)
             if stdout:
                 print(f"\n--- [{name}'s Agent Response] ---\n{stdout.strip()}\n---------------------------------")
+                if req_type == "Inquiry" and sender != name:
+                    import re
+                    # Extract response body from output
+                    match = re.search(r'--body\s+["\'](.*?)["\']', stdout, re.DOTALL)
+                    if match:
+                        answer = match.group(1).strip()
+                    else:
+                        match_resp = re.search(r'\*\*Response:\*\*\s*\n*(.*?)(?=\n\*\*|\n---|\Z)', stdout, re.DOTALL)
+                        if match_resp:
+                            answer = match_resp.group(1).strip()
+                        else:
+                            answer = stdout.strip()[:350]
+
+                    if answer:
+                        print(f"[*] Auto-dispatching 1-turn Response back to {sender}...")
+                        send_message(sender=name, destination=sender, request_type="Response", body=answer)
+                        mark_record_handled(record)
             if proc.returncode != 0 and stderr:
                 print(f"[!] Agent invocation stderr: {stderr.strip()}")
         except Exception as e:
             print(f"[!] Error during agent invocation: {e}")
 
     threading.Thread(target=_runner, daemon=True).start()
+
+
+def mark_record_handled(record: dict):
+    try:
+        if os.path.exists(INBOX_FILE):
+            with open(INBOX_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            updated = False
+            for r in data:
+                if (
+                    r.get("received_at") == record.get("received_at")
+                    and r.get("sender") == record.get("sender")
+                    and r.get("body") == record.get("body")
+                ):
+                    r["handled"] = True
+                    updated = True
+            if updated:
+                with open(INBOX_FILE, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[!] Error marking record handled: {e}")
+
 
 
 def send_message(sender: str, destination: str, request_type: str, body: str, n8n_url: str = DEFAULT_N8N_URL):
