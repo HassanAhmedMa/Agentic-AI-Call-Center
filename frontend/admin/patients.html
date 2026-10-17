@@ -85,7 +85,7 @@
           <span class="nav-text">Appointments</span>
         </a>
 
-        <!-- 4. Doctors (Catalog) -->
+        <!-- 4. Doctors (Live Supabase Catalog) -->
         <a href="doctors.html" class="nav-link" id="nav-doctors">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
@@ -94,6 +94,7 @@
             <path d="M6 8v6"/>
           </svg>
           <span class="nav-text">Doctors</span>
+          <span class="nav-badge-blue" id="doctorsCountBadge">10</span>
         </a>
 
         <!-- 5. Patients (Active) -->
@@ -137,7 +138,19 @@
           <span class="nav-text">Analytics</span>
         </a>
 
-        <!-- 8. Settings -->
+        <!-- 8. Operators (Above Settings) -->
+        <a href="operators.html" class="nav-link" id="nav-operators">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-text">Operators</span>
+          <span class="nav-badge-blue" id="operatorsCountBadge">2</span>
+        </a>
+
+        <!-- 9. Settings -->
         <a href="index.html#settings" class="nav-link" id="nav-settings">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
@@ -240,8 +253,8 @@
               <div class="metric-value-row">
                 <span class="metric-number" id="metricTotalPatients">0</span>
                 <span class="metric-trend text-green">
-                  <span>Active</span>
-                  <span class="trend-sub">records</span>
+                  <span>Live</span>
+                  <span class="trend-sub">database</span>
                 </span>
               </div>
             </div>
@@ -323,9 +336,9 @@
             <div class="patients-panel-header">
               <div style="display:flex; align-items:center; gap:10px;">
                 <h2 class="patients-panel-title">Patients</h2>
-                <span class="live-status-pill" style="display:inline-flex; align-items:center; gap:5px; background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:12px; border:1px solid #BBF7D0;" title="Patient Directory connected to clinic registry">
+                <span class="live-status-pill" style="display:inline-flex; align-items:center; gap:5px; background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:12px; border:1px solid #BBF7D0;" title="Live Patient Directory connected to backend database">
                   <span style="width:7px; height:7px; border-radius:50%; background:#16A34A; display:inline-block;"></span>
-                  <span>Verified Directory</span>
+                  <span>Live Database Synced</span>
                 </span>
               </div>
               <div class="patients-header-actions">
@@ -718,7 +731,7 @@
             <div id="patientDetailsEmptyNotice" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
               <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">No Patient Selected</h4>
-              <p style="color:#64748B; font-size:13px; margin:0;">Select a patient from the directory to review their profile.</p>
+              <p style="color:#64748B; font-size:13px; margin:0;">Select a patient from the live database directory to review their profile.</p>
             </div>
 
           </div>
@@ -750,6 +763,7 @@
   <div class="toast-stack" id="adminToastContainer"></div>
 
   <!-- Centralized Config & API Client -->
+  <script src="admin-auth.js?v=live_v3"></script>
   <script src="config.js?v=live_v3"></script>
   <script src="api.js?v=live_v3"></script>
 

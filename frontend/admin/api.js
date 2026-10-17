@@ -270,6 +270,10 @@
      * POST /api/v1/doctors
      */
     createDoctor: async function (doctorData) {
+      if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('add_doctor')) {
+        AdminAuth.showAdminPrivilegeWarning('Adding a doctor');
+        throw new Error('Operation not permitted. Requires Administrator privileges.');
+      }
       const res = await request('/doctors', {
         method: 'POST',
         body: doctorData
@@ -283,6 +287,10 @@
      * DELETE /api/v1/doctors/{id}
      */
     deleteDoctor: async function (doctorId) {
+      if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_doctor')) {
+        AdminAuth.showAdminPrivilegeWarning('Removing a doctor');
+        throw new Error('Operation not permitted. Requires Administrator privileges.');
+      }
       try {
         const res = await request(`/doctors/${encodeURIComponent(doctorId)}`, {
           method: 'DELETE'
@@ -553,6 +561,10 @@
      * DELETE /api/v1/admin/patients/{id}
      */
     deletePatient: async function (patientId) {
+      if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_patient')) {
+        AdminAuth.showAdminPrivilegeWarning('Cancelling / removing a patient');
+        throw new Error('Operation not permitted. Requires Administrator privileges.');
+      }
       try {
         const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
           method: 'DELETE'
@@ -630,7 +642,7 @@
           {
             type: 'completed',
             title: 'Patient Registered',
-            sub: 'Clinical profile verified',
+            sub: 'Database profile verified',
             date: regDate,
             time: raw.created_at ? new Date(raw.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''
           }
@@ -963,19 +975,19 @@
         dot.className = 'status-indicator-dot';
         if (state === 'connected') {
           dot.classList.add('dot-connected');
-          text.textContent = 'System Online';
-          badge.title = `Clinic System Online (Active)\n(Click to view settings)`;
+          text.textContent = 'Live Backend: Connected';
+          badge.title = `Connected to FastAPI Backend at ${baseUrl}\n(Click to view settings)`;
         } else if (state === 'connecting') {
           dot.classList.add('dot-connecting');
-          text.textContent = 'Connecting...';
+          text.textContent = 'API: Connecting...';
         } else if (state === 'error') {
           dot.classList.add('dot-error');
-          text.textContent = 'System Error';
-          badge.title = `Connection error\n(Click to view details)`;
+          text.textContent = 'API: Error (Click to view)';
+          badge.title = `Error connecting to ${baseUrl}\n(Click to view details)`;
         } else {
           dot.classList.add('dot-disconnected');
-          text.textContent = 'System Offline';
-          badge.title = `Clinic System Offline\n(Click to configure)`;
+          text.textContent = 'Backend: Offline (Click to setup)';
+          badge.title = `Cannot reach ${baseUrl}\n(Click to configure URL or SSH tunnel)`;
         }
       }
     });
@@ -1056,13 +1068,11 @@
 
     const tabNavHtml = `
       <div style="display:flex; border-bottom:1px solid #E2E8F0; margin-bottom:16px; gap:8px;">
-        <button type="button" onclick="switchSettingsTab('schedule')" style="padding:8px 14px; border:none; background:none; font-weight:${isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${isSchedule ? '#2563EB' : 'transparent'}; color:${isSchedule ? '#2563EB' : '#64748B'}; display:inline-flex; align-items:center; gap:6px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span>Clinic Schedule & Holidays (المواعيد والعطلات)</span>
+        <button type="button" onclick="switchSettingsTab('schedule')" style="padding:8px 14px; border:none; background:none; font-weight:${isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${isSchedule ? '#2563EB' : 'transparent'}; color:${isSchedule ? '#2563EB' : '#64748B'};">
+          📅 Clinic Schedule & Holidays (المواعيد والعطلات)
         </button>
-        <button type="button" onclick="switchSettingsTab('connection')" style="padding:8px 14px; border:none; background:none; font-weight:${!isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${!isSchedule ? '#2563EB' : 'transparent'}; color:${!isSchedule ? '#2563EB' : '#64748B'}; display:inline-flex; align-items:center; gap:6px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 2v6"/><path d="M10 20v2"/><path d="M14 20v2"/><path d="M18 13a6 6 0 0 1-12 0v-5h12v5z"/><path d="M9 2v4"/><path d="M15 2v4"/></svg>
-          <span>API & Server Connection (اتصال الخادم)</span>
+        <button type="button" onclick="switchSettingsTab('connection')" style="padding:8px 14px; border:none; background:none; font-weight:${!isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${!isSchedule ? '#2563EB' : 'transparent'}; color:${!isSchedule ? '#2563EB' : '#64748B'};">
+          🔌 API & Server Connection (اتصال الخادم)
         </button>
       </div>
     `;
@@ -1181,7 +1191,7 @@
               <strong>Active Endpoint:</strong> <code style="background:#E2E8F0; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:12px;">${currentBase}</code>
             </div>
             <div style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;">
-              All requests communicate strictly with the secure Clinic API gateway. Direct database access is strictly prohibited.
+              All requests communicate strictly with FastAPI (<code style="font-size:11px;">services/clinic-backend</code>). Direct database and Supabase client access are prohibited.
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-light);">
               <span style="font-size:12px; font-weight:600; color:var(--text-dark);">Real-time Sync (WebSockets):</span>

@@ -76,7 +76,22 @@
     initGlobalShortcuts();
     initSidebarNav();
     loadLiveDoctors();
+    checkDoctorRoleRestrictions();
   });
+
+  function checkDoctorRoleRestrictions() {
+    if (typeof AdminAuth !== 'undefined' && AdminAuth.isOperator()) {
+      const addDocBtn = document.querySelector('button[onclick="openAddDoctorModal()"]');
+      if (addDocBtn) {
+        addDocBtn.style.opacity = '0.5';
+        addDocBtn.title = 'Requires Administrator privileges';
+        addDocBtn.onclick = (e) => {
+          e.preventDefault();
+          AdminAuth.showAdminPrivilegeWarning('Adding a doctor');
+        };
+      }
+    }
+  }
 
   /* =============================================================================
      1. LIVE CLOCK TICKER
@@ -433,7 +448,7 @@
     bodyEl.innerHTML = `
       <div style="padding: 24px; text-align: center; color: var(--text-muted);">
         <div class="status-indicator-dot dot-connecting" style="width:12px; height:12px; margin:0 auto 12px auto;"></div>
-        Loading doctor profile...
+        Loading live doctor profile from Supabase PostgreSQL...
       </div>
     `;
 
@@ -442,7 +457,7 @@
 
     try {
       const doc = await window.ClinicApi.getDoctor(doctorId);
-      const spec = doc.specialty || allSpecialties.find(s => s.id === docSpecId) || {};
+      const spec = doc.specialty || allSpecialties.find(s => s.id === doc.specialty_id) || {};
       
       const fee = doc.consultation_fee 
         ? `${doc.consultation_fee.amount ?? doc.consultation_fee} ${doc.consultation_fee.currency || 'EGP'}`
@@ -504,17 +519,25 @@
           ` : ''}
 
           <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:10px 12px; font-size:12px; color:#1E40AF;">
-            <strong>Verified Record:</strong> Doctor ID #${doc.id} mapped to Nile Clinics staff registry.
+            <strong>Verified Record:</strong> Doctor ID #${doc.id} mapped from PostgreSQL <code style="font-family:monospace;">clinic.doctors</code> table.
           </div>
         </div>
       `;
 
       if (footerEl) {
+        const canDelete = typeof AdminAuth === 'undefined' || AdminAuth.checkPermission('delete_doctor');
         footerEl.innerHTML = `
-          <button class="modal-btn-secondary" style="margin-right:auto; color:#DC2626; border-color:#FECACA; background:#FEF2F2;" onclick="confirmRemoveDoctor(${doc.id}, '${escapeJs(doc.name_en)}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:6px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            Remove Doctor
-          </button>
+          ${canDelete ? `
+            <button class="modal-btn-secondary" style="margin-right:auto; color:#DC2626; border-color:#FECACA; background:#FEF2F2;" onclick="confirmRemoveDoctor(${doc.id}, '${escapeJs(doc.name_en)}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:6px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              Remove Doctor
+            </button>
+          ` : `
+            <button class="modal-btn-secondary" style="margin-right:auto; opacity:0.5;" onclick="AdminAuth.showAdminPrivilegeWarning('Removing a doctor')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:6px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              Remove Doctor
+            </button>
+          `}
           <button class="modal-btn-secondary" onclick="closeDoctorModal()">Close</button>
           <a href="appointments.html" class="modal-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Book Appointment</a>
         `;
@@ -533,6 +556,11 @@
   }
 
   window.confirmRemoveDoctor = function (doctorId, doctorName) {
+    if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_doctor')) {
+      AdminAuth.showAdminPrivilegeWarning('Removing a doctor');
+      return;
+    }
+
     const backdrop = document.getElementById('adminModalBackdrop');
     const titleEl = document.getElementById('adminModalTitle');
     const bodyEl = document.getElementById('adminModalBody');
@@ -571,6 +599,10 @@
   };
 
   window.executeRemoveDoctor = async function (doctorId, doctorName) {
+    if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_doctor')) {
+      AdminAuth.showAdminPrivilegeWarning('Removing a doctor');
+      return;
+    }
     try {
       if (typeof ClinicApi !== 'undefined' && typeof ClinicApi.deleteDoctor === 'function') {
         await ClinicApi.deleteDoctor(doctorId);
@@ -592,6 +624,11 @@
   };
 
   window.openAddDoctorModal = function () {
+    if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('add_doctor')) {
+      AdminAuth.showAdminPrivilegeWarning('Adding a doctor');
+      return;
+    }
+
     const backdrop = document.getElementById('adminModalBackdrop');
     const titleEl = document.getElementById('adminModalTitle');
     const bodyEl = document.getElementById('adminModalBody');
@@ -677,7 +714,7 @@
     if (footerEl) {
       footerEl.innerHTML = `
         <button type="button" class="modal-btn-secondary" onclick="closeDoctorModal()">Cancel</button>
-        <button type="button" id="btnSubmitAddDoctor" class="modal-btn-primary" onclick="document.getElementById('addDoctorForm').requestSubmit()">Save Doctor Profile</button>
+        <button type="button" id="btnSubmitAddDoctor" class="modal-btn-primary" onclick="document.getElementById('addDoctorForm').requestSubmit()">Save Doctor to Supabase</button>
       `;
     }
 
@@ -721,7 +758,7 @@
 
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Saving Profile...';
+      btn.textContent = 'Saving to Database...';
     }
 
     try {
@@ -739,18 +776,18 @@
         bio_ar: 'استشاري متميز في عيادات النيل.'
       });
 
-      showToast(`Doctor ${nameEn} added successfully!`, 'success');
+      showToast(`Doctor ${nameEn} added successfully to Supabase!`, 'success');
       closeDoctorModal();
       await loadLiveDoctors();
     } catch (err) {
       console.error('[Doctors] Error adding doctor:', err);
       if (errBox) {
-        errBox.textContent = err.message || 'Failed to save doctor profile.';
+        errBox.textContent = err.message || 'Failed to save doctor to database.';
         errBox.style.display = 'block';
       }
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Save Doctor Profile';
+        btn.textContent = 'Save Doctor to Supabase';
       }
     }
   };
@@ -794,14 +831,18 @@
   window.handleLogout = async function () {
     const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
       title: 'Sign Out of Clinic Console?',
-      message: 'Are you sure you want to log out of Nile Clinics Admin Console?',
+      message: 'Are you sure you want to log out or switch accounts?',
       confirmText: 'Sign Out',
       cancelText: 'Stay Signed In',
       type: 'danger'
-    }) : confirm('Are you sure you want to log out of the Clinic Admin Console?');
+    }) : confirm('Are you sure you want to log out or switch accounts?');
 
     if (confirmed) {
-      window.location.href = 'index.html';
+      if (typeof AdminAuth !== 'undefined') {
+        AdminAuth.logout();
+      } else {
+        window.location.href = 'login.html';
+      }
     }
   };
 

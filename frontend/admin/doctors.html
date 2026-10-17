@@ -79,6 +79,7 @@
             <path d="M6 8v6"/>
           </svg>
           <span class="nav-text">Doctors</span>
+          <span class="nav-badge-blue" id="doctorsCountBadge">10</span>
         </a>
 
         <!-- 5. Patients -->
@@ -122,7 +123,19 @@
           <span class="nav-text">Analytics</span>
         </a>
 
-        <!-- 9. Settings -->
+        <!-- 9. Operators (Above Settings) -->
+        <a href="operators.html" class="nav-link" id="nav-operators">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-text">Operators</span>
+          <span class="nav-badge-blue" id="operatorsCountBadge">2</span>
+        </a>
+
+        <!-- 10. Settings -->
         <a href="index.html#settings" class="nav-link" id="nav-settings">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
@@ -223,7 +236,7 @@
               <div class="metric-value-row">
                 <span class="metric-number" id="metricTotalDoctors"><span class="skeleton-shimmer skeleton-pill" style="display:inline-block; width:38px; height:22px; vertical-align:middle; border-radius:6px;"></span></span>
                 <span class="metric-trend text-green">
-                  <span>Active Directory</span>
+                  <span>Supabase Live</span>
                 </span>
               </div>
             </div>
@@ -242,7 +255,7 @@
               <div class="metric-value-row">
                 <span class="metric-number" id="metricActiveDoctors"><span class="skeleton-shimmer skeleton-pill" style="display:inline-block; width:38px; height:22px; vertical-align:middle; border-radius:6px;"></span></span>
                 <span class="metric-trend text-green">
-                  <span>Verified Staff</span>
+                  <span>100% On-Duty</span>
                 </span>
               </div>
             </div>
@@ -328,7 +341,7 @@
           <!-- Loading State -->
           <div id="doctorsLoadingState" style="display: none; padding: 48px; text-align: center; color: var(--text-muted); flex-direction: column; align-items: center; gap: 12px;">
             <div class="status-indicator-dot dot-connecting" style="width: 14px; height: 14px;"></div>
-            <span>Loading clinical directory...</span>
+            <span>Fetching live doctors from FastAPI and Supabase database...</span>
           </div>
 
           <!-- Error State -->
@@ -374,6 +387,7 @@
   <div class="toast-stack" id="adminToastContainer"></div>
 
   <!-- Centralized Config & API Client -->
+  <script src="admin-auth.js"></script>
   <script src="config.js"></script>
   <script src="api.js"></script>
 

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>SHIFFAA / Nile Clinics - Admin & Operator Portal Login</title>
+
+  <!-- Typography: Cairo for Arabic & Inter for English -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #0066FF;
+      --primary-hover: #0052CC;
+      --primary-subtle: #EBF3FF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --bg-card: #FFFFFF;
+      --bg-page: #F8FAFC;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* Main Container (matching the user's mockup) */
+    .portal-auth-card {
+      width: 100%;
+      max-width: 980px;
+      min-height: 600px;
+      background: var(--bg-card);
+      border-radius: 28px;
+      box-shadow: 0 20px 45px -10px rgba(0, 50, 150, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      overflow: hidden;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    /* Left Hero Showcase */
+    .auth-hero-section {
+      background: linear-gradient(135deg, #F0F6FF 0%, #E0EDFF 100%);
+      padding: 44px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-curves {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 100% 30%, rgba(255,255,255,0.7) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-top-brand {
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .shiffaa-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: #0066FF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 8px 16px rgba(0, 102, 255, 0.25);
+    }
+
+    .shiffaa-name-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shiffaa-ar {
+      font-family: 'Cairo', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #0066FF;
+      line-height: 1;
+    }
+
+    .shiffaa-en {
+      font-size: 11px;
+      letter-spacing: 3px;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .admin-portal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 102, 255, 0.15);
+      color: #0066FF;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .hero-headline {
+      font-size: 30px;
+      font-weight: 800;
+      color: #0F172A;
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+
+    .hero-desc {
+      font-size: 14.5px;
+      color: #475569;
+      line-height: 1.55;
+      max-width: 400px;
+      margin-bottom: 28px;
+    }
+
+    .hero-interior-photo {
+      position: relative;
+      z-index: 2;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+      border: 3px solid #FFFFFF;
+      background: #E2E8F0;
+      margin-bottom: 18px;
+    }
+
+    .hero-interior-photo img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hero-footer-quote {
+      position: relative;
+      z-index: 2;
+      font-size: 12px;
+      color: #64748B;
+      border-top: 1px solid rgba(0, 102, 255, 0.12);
+      padding-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Right Form Section */
+    .auth-form-section {
+      padding: 48px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #FFFFFF;
+    }
+
+    .form-header-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 6px;
+    }
+
+    .form-header-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      color: #94A3B8;
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 48px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 12px;
+      padding: 0 42px 0 42px;
+      font-size: 14px;
+      color: #0F172A;
+      outline: none;
+      transition: all 0.2s ease;
+      background: #FFFFFF;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.15);
+    }
+
+    .toggle-password-btn {
+      position: absolute;
+      right: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #94A3B8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+
+    .toggle-password-btn:hover {
+      color: #475569;
+    }
+
+    .role-helper-box {
+      background: #F8FAFC;
+      border: 1px dashed #CBD5E1;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #475569;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .role-helper-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      color: #0066FF;
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 48px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
+    }
+
+    .btn-submit:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0, 102, 255, 0.35);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .form-footer-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748B;
+      padding-top: 24px;
+    }
+
+    /* Error Toast */
+    .login-error-banner {
+      display: none;
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+      color: #B91C1C;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .portal-auth-card {
+        grid-template-columns: 1fr;
+      }
+      .auth-hero-section {
+        display: none;
+      }
+      .auth-form-section {
+        padding: 32px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="portal-auth-card">
+
+    <!-- LEFT HERO SHOWCASE (Matches Design Mockup) -->
+    <div class="auth-hero-section">
+      <div class="hero-curves"></div>
+
+      <div class="hero-top-brand">
+        <!-- Logo -->
+        <div class="brand-logo-row">
+          <div class="shiffaa-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" width="28" height="28" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              <path d="M3.22 12H9.5l1.5-3 2 6 1.5-3h6.28"/>
+            </svg>
+          </div>
+          <div class="shiffaa-name-col">
+            <span class="shiffaa-ar">شفاء</span>
+            <span class="shiffaa-en">SHIFFAA</span>
+          </div>
+        </div>
+
+        <!-- Pill -->
+        <div class="admin-portal-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span>Admin Portal</span>
+        </div>
+
+        <!-- Headline & Description -->
+        <h1 class="hero-headline">Manage care.<br>Keep things running.</h1>
+        <p class="hero-desc">A secure portal for administrators and operators to manage appointments, patients, doctors, and more.</p>
+
+        <!-- Interior Photo (Extracted from Mockup) -->
+        <div class="hero-interior-photo">
+          <img src="clinic_interior.png" alt="Nile Clinics / SHIFFAA Reception" onerror="this.src='admin_auth_hero.png'">
+        </div>
+      </div>
+
+      <!-- Quote -->
+      <div class="hero-footer-quote">
+        <span>"Better organization. A healthier tomorrow."</span>
+        <span style="font-weight: 700;">SHIFFAA —</span>
+      </div>
+    </div>
+
+    <!-- RIGHT LOGIN FORM -->
+    <div class="auth-form-section">
+      <div>
+        <h2 class="form-header-title">Welcome Back</h2>
+        <p class="form-header-sub">Sign in to your SHIFFAA Admin & Operator Portal</p>
+
+        <!-- Error Banner -->
+        <div class="login-error-banner" id="loginErrorBanner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span id="loginErrorMessage">Invalid credentials</span>
+        </div>
+
+        <form id="portalLoginForm" onsubmit="handlePortalLogin(event)">
+          <!-- Email Input -->
+          <div class="form-group">
+            <label class="form-label" for="loginEmail">Email</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <input type="text" id="loginEmail" class="form-input" required placeholder="name@shifaa.app or user@operator.clinic" autocomplete="username">
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input type="password" id="loginPassword" class="form-input" required placeholder="Enter your password" autocomplete="current-password">
+              <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility()" aria-label="Toggle password visibility">
+                <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Role Credential Helper -->
+          <div class="role-helper-box">
+            <svg class="role-helper-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <div>
+              <strong>Role Access:</strong> Emails containing <code>@operator</code> log in as <strong>Operator</strong> (Patients & Doctors view/edit). All other clinic emails log in as <strong>Administrator</strong>.
+            </div>
+          </div>
+
+          <!-- Sign In Submit Button -->
+          <button type="submit" class="btn-submit" id="btnSubmitLogin">
+            <span>Sign In</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="18" height="18">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- Footer Security Note -->
+      <div class="form-footer-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="14" height="14">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>Secure access for authorized staff only.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="admin-auth.js"></script>
+  <script>
+    function togglePasswordVisibility() {
+      const input = document.getElementById('loginPassword');
+      const eye = document.getElementById('eyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.innerHTML = '<path d="m9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>';
+      } else {
+        input.type = 'password';
+        eye.innerHTML = '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    }
+
+    function handlePortalLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorBanner = document.getElementById('loginErrorBanner');
+      const errorMsg = document.getElementById('loginErrorMessage');
+
+      if (!email || !password) {
+        errorMsg.textContent = 'Please provide both email and password.';
+        errorBanner.style.display = 'flex';
+        return;
+      }
+
+      // Check for @operator credentials
+      const isOp = email.toLowerCase().includes('@operator');
+      const role = isOp ? 'operator' : 'admin';
+
+      let displayName = 'Ahmed Salah';
+      if (isOp) {
+        // Check if there is an existing registered operator with this email
+        const storedOps = AdminAuth.getStoredOperators();
+        const found = storedOps.find(o => o.email.toLowerCase() === email.toLowerCase());
+        if (found) {
+          displayName = found.name;
+        } else {
+          // Format username from email: e.g. salma@operator -> Salma
+          const prefix = email.split('@')[0];
+          displayName = prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' (Operator)';
+        }
+      }
+
+      const userSession = {
+        name: displayName,
+        email: email,
+        role: role,
+        avatar: displayName.charAt(0).toUpperCase()
+      };
+
+      AdminAuth.setCurrentUser(userSession);
+
+      // Redirect to index.html or target page
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect') || 'index.html';
+      window.location.href = redirect;
+    }
+  </script>
+</body>
+</html>

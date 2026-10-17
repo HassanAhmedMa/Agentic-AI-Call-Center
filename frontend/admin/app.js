@@ -917,14 +917,18 @@ function handleBranchChange(selectEl) {
 async function handleLogout() {
   const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
     title: 'Sign Out of Clinic Console?',
-    message: 'Are you sure you want to log out of Nile Clinics Admin Console?',
+    message: 'Are you sure you want to log out or switch accounts?',
     confirmText: 'Sign Out',
     cancelText: 'Stay Signed In',
     type: 'danger'
-  }) : confirm('Are you sure you want to log out of the Clinic Admin Console?');
+  }) : confirm('Are you sure you want to log out or switch accounts?');
 
   if (confirmed) {
-    showToast('Admin logged out successfully. Redirecting...', 'info');
+    if (typeof AdminAuth !== 'undefined') {
+      AdminAuth.logout();
+    } else {
+      window.location.href = 'login.html';
+    }
   }
 }
 

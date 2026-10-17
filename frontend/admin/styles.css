@@ -199,6 +199,17 @@ html, body {
   line-height: 1.4;
 }
 
+.nav-badge-blue {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  line-height: 1.4;
+}
+
 /* Sidebar Bottom Cluster */
 .sidebar-bottom-cluster {
   display: flex;
@@ -3571,34 +3582,6 @@ html, body {
   background-color: #10B981;
   position: absolute;
   bottom: 2px;
-}
-
-.mini-day-cell.past-day {
-  color: #94A3B8;
-  background-color: #F8FAFC;
-}
-
-.mini-day-cell.past-day:hover {
-  background-color: #F1F5F9;
-  color: #64748B;
-}
-
-.mini-day-cell.past-day.active-day {
-  background-color: #64748B !important;
-  color: #FFFFFF !important;
-}
-
-.past-locked-slot {
-  background: repeating-linear-gradient(
-    -45deg,
-    #F8FAFC,
-    #F8FAFC 8px,
-    #F1F5F9 8px,
-    #F1F5F9 16px
-  ) !important;
-  pointer-events: none !important;
-  cursor: not-allowed !important;
-  opacity: 0.85;
 }
 
 /* Upcoming Appointments List Panel */
