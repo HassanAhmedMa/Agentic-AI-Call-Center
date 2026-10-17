@@ -150,10 +150,12 @@ def find_executable(name: str) -> str | None:
             if c and os.path.exists(c):
                 return c
     elif name == "Ziad":
+        import glob
+        glob_matches = glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe"))
         candidates = [
             shutil.which("codex"),
+            *glob_matches,
             os.path.expandvars(r"%LOCALAPPDATA%\OpenAI\Codex\bin\codex.exe"),
-            os.path.expandvars(r"%LOCALAPPDATA%\OpenAI\Codex\bin\2e5e00daee91c61d\codex.exe"),
             os.path.expanduser(r"~/.local/bin/codex"),
             "/usr/local/bin/codex",
         ]
@@ -161,6 +163,38 @@ def find_executable(name: str) -> str | None:
             if c and os.path.exists(c):
                 return c
     return None
+
+
+def get_latest_codex_session_info():
+    import glob
+    import json
+    import re
+    sessions_root = os.path.expandvars(r"%USERPROFILE%\.codex\sessions")
+    files = glob.glob(os.path.join(sessions_root, "**", "*.jsonl"), recursive=True)
+    if not files:
+        return None, None
+    files.sort(key=os.path.getmtime, reverse=True)
+    for f in files:
+        basename = os.path.basename(f)
+        match = re.search(r"([0-9a-fA-F-]{36})\.jsonl$", basename)
+        if match:
+            session_id = match.group(1)
+            model = None
+            try:
+                with open(f, "r", encoding="utf-8") as fh:
+                    line1 = fh.readline()
+                    data = json.loads(line1)
+                    model = (
+                        data.get("payload", {}).get("model")
+                        or data.get("payload", {})
+                        .get("base_instructions", {})
+                        .get("provenance", {})
+                        .get("model")
+                    )
+            except Exception:
+                pass
+            return session_id, model
+    return None, None
 
 
 def invoke_active_agent(name: str, record: dict):
@@ -192,7 +226,14 @@ def invoke_active_agent(name: str, record: dict):
     if name in {"Hassan", "Ali"}:
         cmd = [exe, "--continue", "-p", prompt]
     else:
-        cmd = [exe, "exec", "resume", "--last", prompt]
+        session_id, model = get_latest_codex_session_info()
+        if session_id:
+            cmd = [exe, "exec", "fork", session_id]
+            if model:
+                cmd.extend(["-m", model])
+            cmd.extend(["--dangerously-bypass-approvals-and-sandbox", prompt])
+        else:
+            cmd = [exe, "exec", "--dangerously-bypass-approvals-and-sandbox", prompt]
 
     print(f"[*] Auto-invoking active session for {name} using: {os.path.basename(exe)}...")
 
