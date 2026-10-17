@@ -59,6 +59,41 @@
 
   window.ClinicCache = ClinicCache;
 
+  /* =========================================================================
+     DEFAULT EGYPTIAN & CLINIC HOLIDAYS CONFIGURATION
+     ========================================================================= */
+  const DEFAULT_CLINIC_HOLIDAYS = [
+    { date: '2026-01-07', name_en: 'Coptic Christmas', name_ar: 'عيد الميلاد المجيد', type: 'national' },
+    { date: '2026-01-25', name_en: 'Police Day & 25 Jan Revolution', name_ar: 'عيد الشرطة وثورة 25 يناير', type: 'national' },
+    { date: '2026-03-20', name_en: 'Eid El-Fitr (Day 1)', name_ar: 'عيد الفطر المبارك (اليوم الأول)', type: 'religious' },
+    { date: '2026-03-21', name_en: 'Eid El-Fitr (Day 2)', name_ar: 'عيد الفطر المبارك (اليوم الثاني)', type: 'religious' },
+    { date: '2026-04-13', name_en: 'Sham El-Nessim', name_ar: 'عيد شم النسيم', type: 'national' },
+    { date: '2026-04-25', name_en: 'Sinai Liberation Day', name_ar: 'عيد تحرير سيناء', type: 'national' },
+    { date: '2026-05-01', name_en: 'Labor Day', name_ar: 'عيد العمال', type: 'national' },
+    { date: '2026-05-27', name_en: 'Arafat Day', name_ar: 'وقفة عرفات', type: 'religious' },
+    { date: '2026-05-28', name_en: 'Eid El-Adha', name_ar: 'عيد الأضحى المبارك', type: 'religious' },
+    { date: '2026-06-30', name_en: '30 June Revolution', name_ar: 'ذكرى ثورة 30 يونيو', type: 'national' },
+    { date: '2026-07-23', name_en: 'Revolution Day', name_ar: 'عيد ثورة 23 يوليو', type: 'national' },
+    { date: '2026-10-06', name_en: 'Armed Forces Day', name_ar: 'عيد القوات المسلحة (6 أكتوبر)', type: 'national' }
+  ];
+
+  function getStoredClinicHolidays() {
+    try {
+      const stored = localStorage.getItem('clinic_closures_custom');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return DEFAULT_CLINIC_HOLIDAYS.slice();
+  }
+
+  function saveStoredClinicHolidays(holidays) {
+    try {
+      localStorage.setItem('clinic_closures_custom', JSON.stringify(holidays));
+    } catch (_) {}
+  }
+
   let connectionState = 'untested'; // 'untested' | 'connecting' | 'connected' | 'disconnected'
   let lastCheckedAt = null;
 
@@ -622,6 +657,79 @@
       if (!fee) return '0 EGP';
       if (typeof fee === 'number') return `${fee} EGP`;
       return `${fee.amount ?? 0} ${fee.currency || 'EGP'}`;
+    },
+
+    /* =========================================================================
+       CLINIC SCHEDULE & HOLIDAYS MANAGEMENT
+       ========================================================================= */
+    getClinicHolidays: function () {
+      return getStoredClinicHolidays();
+    },
+
+    addClinicHoliday: function (holiday) {
+      const holidays = getStoredClinicHolidays();
+      const existingIdx = holidays.findIndex(h => h.date === holiday.date);
+      if (existingIdx >= 0) {
+        holidays[existingIdx] = { ...holidays[existingIdx], ...holiday };
+      } else {
+        holidays.push(holiday);
+      }
+      holidays.sort((a, b) => a.date.localeCompare(b.date));
+      saveStoredClinicHolidays(holidays);
+      window.dispatchEvent(new CustomEvent('clinic-schedule-updated', { detail: holiday }));
+      return holidays;
+    },
+
+    removeClinicHoliday: function (dateStr) {
+      let holidays = getStoredClinicHolidays();
+      holidays = holidays.filter(h => h.date !== dateStr);
+      saveStoredClinicHolidays(holidays);
+      window.dispatchEvent(new CustomEvent('clinic-schedule-updated', { detail: { date: dateStr, removed: true } }));
+      return holidays;
+    },
+
+    isClinicHoliday: function (dateInput) {
+      if (!dateInput) return { isHoliday: false };
+      let dateStr = '';
+      let isoDay = null;
+      if (dateInput instanceof Date) {
+        const y = dateInput.getFullYear();
+        const m = String(dateInput.getMonth() + 1).padStart(2, '0');
+        const d = String(dateInput.getDate()).padStart(2, '0');
+        dateStr = `${y}-${m}-${d}`;
+        const day = dateInput.getDay();
+        isoDay = day === 0 ? 7 : day;
+      } else if (typeof dateInput === 'string') {
+        dateStr = dateInput.slice(0, 10);
+        const dt = new Date(dateStr);
+        if (!isNaN(dt.getTime())) {
+          const day = dt.getDay();
+          isoDay = day === 0 ? 7 : day;
+        }
+      }
+
+      if (isoDay === 5) {
+        return {
+          isHoliday: true,
+          isWeekend: true,
+          date: dateStr,
+          name_en: 'Weekly Weekend (Friday)',
+          name_ar: 'عطلة نهاية الأسبوع الأسبوعية (الجمعة)'
+        };
+      }
+
+      const holidays = getStoredClinicHolidays();
+      const match = holidays.find(h => h.date === dateStr);
+      if (match) {
+        return {
+          isHoliday: true,
+          isWeekend: false,
+          date: dateStr,
+          name_en: match.name_en,
+          name_ar: match.name_ar
+        };
+      }
+      return { isHoliday: false };
     }
   };
 
@@ -698,9 +806,53 @@
   }
 
   /* =========================================================================
-     GLOBAL API CONFIGURATION MODAL
+     GLOBAL CLINIC SETTINGS & SCHEDULE MODAL
      ========================================================================= */
-  window.openApiConfigModal = function () {
+  window.activeSettingsTab = 'schedule';
+
+  window.openApiConfigModal = function (activeTab = 'schedule') {
+    window.activeSettingsTab = activeTab;
+    const backdrop = document.getElementById('adminModalBackdrop');
+    const titleEl = document.getElementById('adminModalTitle');
+    const bodyEl = document.getElementById('adminModalBody');
+
+    if (!backdrop || !bodyEl) return;
+
+    const container = backdrop.querySelector('.admin-modal-container');
+    if (container) {
+      container.classList.add('modal-lg');
+      container.style.maxWidth = '680px';
+    }
+
+    if (titleEl) titleEl.textContent = 'Clinic System Settings & Schedule';
+
+    renderSettingsModalContent();
+
+    backdrop.classList.add('active');
+    backdrop.classList.add('open');
+  };
+
+  window.switchSettingsTab = function (tabName) {
+    window.activeSettingsTab = tabName;
+    renderSettingsModalContent();
+  };
+
+  window.closeAdminModal = function (e) {
+    if (e && e.target && e.target.id !== 'adminModalBackdrop' && !e.target.closest('.modal-close-icon-btn') && !e.target.classList.contains('modal-btn-secondary')) {
+      return;
+    }
+    const backdrop = document.getElementById('adminModalBackdrop');
+    if (backdrop) {
+      backdrop.classList.remove('active');
+      backdrop.classList.remove('open');
+    }
+  };
+
+  window.renderSettingsModalContent = function () {
+    const bodyEl = document.getElementById('adminModalBody');
+    const footerEl = document.getElementById('adminModalFooter');
+    if (!bodyEl) return;
+
     const currentBase = window.ClinicConfig ? window.ClinicConfig.getApiBaseUrl() : '/api/v1';
     const rawVal = window.ClinicConfig ? window.ClinicConfig.getRawBaseUrl() : '';
     const state = ClinicApi.getConnectionState();
@@ -714,69 +866,259 @@
       statePill = '<span class="status-pill status-cancelled">• Error</span>';
     }
 
-    const bodyHtml = `
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:10px; padding:14px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span style="font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Connection Status</span>
-            ${statePill}
-          </div>
-          <div style="font-size:13px; color:var(--text-dark); word-break:break-all;">
-            <strong>Active Endpoint:</strong> <code style="background:#E2E8F0; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:12px;">${currentBase}</code>
-          </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;">
-            All requests communicate strictly with FastAPI (<code style="font-size:11px;">services/clinic-backend</code>). Direct database and Supabase client access are prohibited.
-          </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-light);">
-            <span style="font-size:12px; font-weight:600; color:var(--text-dark);">Real-time Sync (WebSockets):</span>
-            <span id="wsModalStatusPill" class="status-pill status-${window.ClinicRealtime && window.ClinicRealtime.isConnected ? 'confirmed' : 'pending'}">• ${window.ClinicRealtime && window.ClinicRealtime.isConnected ? 'Live Active (WebSocket)' : 'Connecting / Standby'}</span>
-          </div>
-        </div>
+    const isSchedule = window.activeSettingsTab === 'schedule';
 
-        <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
-            Backend Base URL (Leave empty for default relative <code style="font-size:11px;">/api/v1</code>)
-          </label>
-          <input type="text" id="cfgApiBaseUrlInput" placeholder="e.g. http://localhost:8000 or http://localhost:8002" value="${rawVal.startsWith('(') ? '' : rawVal}" style="width:100%; height:38px; border:1px solid var(--border-light); border-radius:8px; padding:0 12px; font-size:13px; font-family:inherit;">
-          <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:4px;">
-            For local SSH tunnel development, enter your local forward (e.g. <code style="font-size:11px;">http://localhost:8002</code>).
-          </span>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
-            Administrator Access Token (<code style="font-size:11px;">ADMIN_API_TOKEN</code>)
-          </label>
-          <input type="password" id="cfgAdminTokenInput" placeholder="Paste ADMIN_API_TOKEN here" value="${(function(){ try { return localStorage.getItem('clinic_admin_api_token') || ''; } catch(_){ return ''; } })()}" style="width:100%; height:38px; border:1px solid var(--border-light); border-radius:8px; padding:0 12px; font-size:13px; font-family:inherit;">
-          <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:4px;">
-            Required for adding doctors, managing appointments, and WebSocket live updates.
-          </span>
-        </div>
-
-        <div id="cfgTestResultBox" style="display:none; padding:10px 12px; border-radius:8px; font-size:12px;"></div>
+    const tabNavHtml = `
+      <div style="display:flex; border-bottom:1px solid #E2E8F0; margin-bottom:16px; gap:8px;">
+        <button type="button" onclick="switchSettingsTab('schedule')" style="padding:8px 14px; border:none; background:none; font-weight:${isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${isSchedule ? '#2563EB' : 'transparent'}; color:${isSchedule ? '#2563EB' : '#64748B'};">
+          📅 Clinic Schedule & Holidays (المواعيد والعطلات)
+        </button>
+        <button type="button" onclick="switchSettingsTab('connection')" style="padding:8px 14px; border:none; background:none; font-weight:${!isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${!isSchedule ? '#2563EB' : 'transparent'}; color:${!isSchedule ? '#2563EB' : '#64748B'};">
+          🔌 API & Server Connection (اتصال الخادم)
+        </button>
       </div>
     `;
 
-    const footerHtml = `
-      <button class="modal-btn-secondary" onclick="testModalApiConnection()">Test Connection</button>
-      <button class="modal-btn-secondary" onclick="resetModalApiConnection()">Reset to Default</button>
-      <button class="modal-btn-primary" onclick="saveModalApiConnection()">Save & Reload</button>
-    `;
+    if (isSchedule) {
+      bodyEl.innerHTML = `
+        ${tabNavHtml}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- 1. Weekly Operating Days -->
+          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <div>
+                <h4 style="margin:0; font-size:13px; font-weight:700; color:#1E293B;">Weekly Operating Schedule (ساعات وأيام العمل الأسبوعية)</h4>
+                <span style="font-size:11.5px; color:#64748B;">Official clinic working days and standard shifts</span>
+              </div>
+              <span style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px;">6 Days Open / 1 Day Closed</span>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(78px, 1fr)); gap:6px; margin-bottom:10px;">
+              <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-radius:8px; padding:6px 6px; text-align:center;">
+                <div style="font-weight:700; font-size:11.5px; color:#166534;">Sat (السبت)</div>
+                <div style="font-size:10px; color:#15803D; font-weight:600;">08:00 - 20:00</div>
+              </div>
+              <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-radius:8px; padding:6px 6px; text-align:center;">
+                <div style="font-weight:700; font-size:11.5px; color:#166534;">Sun (الأحد)</div>
+                <div style="font-size:10px; color:#15803D; font-weight:600;">08:00 - 20:00</div>
+              </div>
+              <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-radius:8px; padding:6px 6px; text-align:center;">
+                <div style="font-weight:700; font-size:11.5px; color:#166534;">Mon (الإثنين)</div>
+                <div style="font-size:10px; color:#15803D; font-weight:600;">08:00 - 20:00</div>
+              </div>
+              <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-radius:8px; padding:6px 6px; text-align:center;">
+                <div style="font-weight:700; font-size:11.5px; color:#166534;">Tue (الثلاثاء)</div>
+                <div style="font-size:10px; color:#15803D; font-weight:600;">08:00 - 20:00</div>
+              </div>
+              <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-radius:8px; padding:6px 6px; text-align:center;">
+                <div style="font-weight:700; font-size:11.5px; color:#166534;">Wed (الأربعاء)</div>
+                <div style="font-size:10px; color:#15803D; font-weight:600;">08:00 - 20:00</div>
+              </div>
+              <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-radius:8px; padding:6px 6px; text-align:center;">
+                <div style="font-weight:700; font-size:11.5px; color:#166534;">Thu (الخميس)</div>
+                <div style="font-size:10px; color:#15803D; font-weight:600;">08:00 - 20:00</div>
+              </div>
+              <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:8px; padding:6px 6px; text-align:center;">
+                <div style="font-weight:700; font-size:11.5px; color:#991B1B;">Fri (الجمعة)</div>
+                <div style="font-size:10px; color:#DC2626; font-weight:700;">WEEKEND</div>
+              </div>
+            </div>
 
-    const backdrop = document.getElementById('adminModalBackdrop');
-    const titleEl = document.getElementById('adminModalTitle');
-    const bodyEl = document.getElementById('adminModalBody');
-    const footerEl = document.getElementById('adminModalFooter');
+            <div style="font-size:11.5px; color:#64748B; line-height:1.4;">
+              ℹ️ <strong>Healthcare Standard:</strong> Friday is universally closed clinic-wide (enforced by database constraint <code style="font-size:10.5px;">ck_appointment_weekday</code>). Individual doctor shift times & working days are adjusted in the <a href="doctors.html" style="color:#2563EB; font-weight:600; text-decoration:none;">Doctors Directory</a>.
+            </div>
+          </div>
 
-    if (titleEl) titleEl.textContent = 'Clinic Backend API Connection';
-    if (bodyEl) bodyEl.innerHTML = bodyHtml;
-    if (footerEl) footerEl.innerHTML = footerHtml;
+          <!-- 2. Public Holidays & Closures -->
+          <div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <div>
+                <h4 style="margin:0; font-size:13px; font-weight:700; color:#1E293B;">Public Holidays & Clinic Closures (العطلات الرسمية وأيام الإغلاق)</h4>
+                <span style="font-size:11.5px; color:#64748B;">Dates when all appointments are suspended across the clinic</span>
+              </div>
+              <span id="holidaysCountBadge" style="background:#FEF3C7; color:#B45309; font-weight:700; font-size:11px; padding:2px 8px; border-radius:12px;">...</span>
+            </div>
 
-    if (backdrop) {
-      backdrop.classList.add('active');
-      backdrop.classList.add('open');
+            <div id="clinicHolidaysListContainer" style="max-height:175px; overflow-y:auto; border:1px solid #E2E8F0; border-radius:8px; background:#FFFFFF; padding:4px;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- 3. Add Closure Form -->
+          <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:10px; padding:12px 14px;">
+            <div style="font-size:12px; font-weight:700; color:#1E293B; margin-bottom:8px;">+ Add Clinic Closure Date (إضافة يوم إغلاق أو عطلة جديدة)</div>
+            <div style="display:grid; grid-template-columns: 135px 1fr 1fr auto; gap:8px; align-items:center;">
+              <div>
+                <label style="display:block; font-size:10.5px; font-weight:600; color:#475569; margin-bottom:3px;">Closure Date *</label>
+                <input type="date" id="newClosureDate" style="width:100%; height:34px; border:1px solid #CBD5E1; border-radius:6px; padding:0 8px; font-size:12px; background:#FFFFFF;">
+              </div>
+              <div>
+                <label style="display:block; font-size:10.5px; font-weight:600; color:#475569; margin-bottom:3px;">Reason (English) *</label>
+                <input type="text" id="newClosureNameEn" placeholder="e.g. National Holiday" style="width:100%; height:34px; border:1px solid #CBD5E1; border-radius:6px; padding:0 10px; font-size:12px; background:#FFFFFF;">
+              </div>
+              <div>
+                <label style="display:block; font-size:10.5px; font-weight:600; color:#475569; margin-bottom:3px;">Reason (Arabic) *</label>
+                <input type="text" id="newClosureNameAr" dir="rtl" placeholder="مثال: عطلة رسمية" style="width:100%; height:34px; border:1px solid #CBD5E1; border-radius:6px; padding:0 10px; font-size:12px; background:#FFFFFF;">
+              </div>
+              <div style="align-self:end;">
+                <button type="button" class="modal-btn-primary" onclick="submitAddClinicClosure()" style="height:34px; padding:0 14px; font-size:12px; font-weight:600; white-space:nowrap;">
+                  Add Date
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (footerEl) {
+        footerEl.innerHTML = `
+          <button type="button" class="modal-btn-secondary" onclick="closeAdminModal()">Close</button>
+          <a href="appointments.html" class="modal-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">View Appointments Calendar</a>
+        `;
+      }
+
+      renderHolidaysList();
     } else {
-      alert(`API Endpoint: ${currentBase}\nStatus: ${state.state}`);
+      // Connection tab
+      bodyEl.innerHTML = `
+        ${tabNavHtml}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:10px; padding:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <span style="font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Connection Status</span>
+              ${statePill}
+            </div>
+            <div style="font-size:13px; color:var(--text-dark); word-break:break-all;">
+              <strong>Active Endpoint:</strong> <code style="background:#E2E8F0; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:12px;">${currentBase}</code>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;">
+              All requests communicate strictly with FastAPI (<code style="font-size:11px;">services/clinic-backend</code>). Direct database and Supabase client access are prohibited.
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-light);">
+              <span style="font-size:12px; font-weight:600; color:var(--text-dark);">Real-time Sync (WebSockets):</span>
+              <span id="wsModalStatusPill" class="status-pill status-${window.ClinicRealtime && window.ClinicRealtime.isConnected ? 'confirmed' : 'pending'}">• ${window.ClinicRealtime && window.ClinicRealtime.isConnected ? 'Live Active (WebSocket)' : 'Connecting / Standby'}</span>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
+              Backend Base URL (Leave empty for default relative <code style="font-size:11px;">/api/v1</code>)
+            </label>
+            <input type="text" id="cfgApiBaseUrlInput" placeholder="e.g. http://localhost:8000 or http://localhost:8002" value="${rawVal.startsWith('(') ? '' : rawVal}" style="width:100%; height:38px; border:1px solid var(--border-light); border-radius:8px; padding:0 12px; font-size:13px; font-family:inherit;">
+            <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:4px;">
+              For local SSH tunnel development, enter your local forward (e.g. <code style="font-size:11px;">http://localhost:8002</code>).
+            </span>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
+              Administrator Access Token (<code style="font-size:11px;">ADMIN_API_TOKEN</code>)
+            </label>
+            <input type="password" id="cfgAdminTokenInput" placeholder="Paste ADMIN_API_TOKEN here" value="${(function(){ try { return localStorage.getItem('clinic_admin_api_token') || ''; } catch(_){ return ''; } })()}" style="width:100%; height:38px; border:1px solid var(--border-light); border-radius:8px; padding:0 12px; font-size:13px; font-family:inherit;">
+            <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:4px;">
+              Required for adding doctors, managing appointments, and WebSocket live updates.
+            </span>
+          </div>
+
+          <div id="cfgTestResultBox" style="display:none; padding:10px 12px; border-radius:8px; font-size:12px;"></div>
+        </div>
+      `;
+
+      if (footerEl) {
+        footerEl.innerHTML = `
+          <button type="button" class="modal-btn-secondary" onclick="testModalApiConnection()">Test Connection</button>
+          <button type="button" class="modal-btn-secondary" onclick="resetModalApiConnection()">Reset to Default</button>
+          <button type="button" class="modal-btn-primary" onclick="saveModalApiConnection()">Save & Reload</button>
+        `;
+      }
+    }
+  };
+
+  window.renderHolidaysList = function () {
+    const listEl = document.getElementById('clinicHolidaysListContainer');
+    const badgeEl = document.getElementById('holidaysCountBadge');
+    if (!listEl) return;
+    const holidays = ClinicApi.getClinicHolidays();
+    if (badgeEl) badgeEl.textContent = `${holidays.length} Holidays Configured`;
+
+    if (holidays.length === 0) {
+      listEl.innerHTML = '<div style="padding:16px; text-align:center; color:#94A3B8; font-size:12px;">No clinic closures configured. Regular schedule applies.</div>';
+      return;
+    }
+
+    listEl.innerHTML = holidays.map(h => {
+      let dateBadge = h.date;
+      try {
+        const dt = new Date(h.date + 'T00:00:00');
+        dateBadge = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      } catch (_) {}
+
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid #F1F5F9; font-size:12.5px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-family:monospace; font-weight:700; color:#1E293B; background:#F8FAFC; border:1px solid #E2E8F0; padding:2px 8px; border-radius:6px; font-size:11.5px;">
+              ${dateBadge}
+            </span>
+            <div>
+              <strong style="color:#0F172A; font-size:13px;">${h.name_en}</strong>
+              <span style="color:#64748B; font-family:'Cairo', sans-serif; margin-left:6px;" dir="rtl">${h.name_ar || ''}</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="background:#FEF3C7; color:#92400E; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:10px;">Closed</span>
+            <button type="button" onclick="executeRemoveHoliday('${h.date}', '${h.name_en.replace(/'/g, "\\'")}')" title="Delete closure" style="border:none; background:#FEE2E2; color:#DC2626; width:26px; height:26px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  window.executeRemoveHoliday = function (dateStr, nameEn) {
+    if (confirm(`Remove clinic closure on ${dateStr} (${nameEn})?`)) {
+      ClinicApi.removeClinicHoliday(dateStr);
+      renderHolidaysList();
+      if (typeof showToast === 'function') {
+        showToast(`Clinic closure on ${dateStr} removed.`, 'info');
+      }
+    }
+  };
+
+  window.submitAddClinicClosure = function () {
+    const dateInput = document.getElementById('newClosureDate');
+    const nameEnInput = document.getElementById('newClosureNameEn');
+    const nameArInput = document.getElementById('newClosureNameAr');
+
+    const date = dateInput ? dateInput.value.trim() : '';
+    const nameEn = nameEnInput ? nameEnInput.value.trim() : '';
+    const nameAr = nameArInput ? nameArInput.value.trim() : '';
+
+    if (!date) {
+      alert('Please select a closure date.');
+      if (dateInput) dateInput.focus();
+      return;
+    }
+    if (!nameEn) {
+      alert('Please enter a reason or holiday name in English.');
+      if (nameEnInput) nameEnInput.focus();
+      return;
+    }
+
+    ClinicApi.addClinicHoliday({
+      date: date,
+      name_en: nameEn,
+      name_ar: nameAr || nameEn
+    });
+
+    if (dateInput) dateInput.value = '';
+    if (nameEnInput) nameEnInput.value = '';
+    if (nameArInput) nameArInput.value = '';
+
+    renderHolidaysList();
+    if (typeof showToast === 'function') {
+      showToast(`Clinic closure for ${nameEn} (${date}) added successfully!`, 'success');
     }
   };
 

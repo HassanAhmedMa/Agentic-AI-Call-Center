@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initAppointmentsStore();
   loadLiveCatalog();
   initRealtimeAppointmentsSync();
+
+  window.addEventListener('clinic-schedule-updated', () => {
+    renderSchedule();
+    updateDateHeading();
+  });
 });
 
 function initRealtimeAppointmentsSync() {
@@ -372,6 +377,47 @@ function renderDaySchedule() {
   }
 
   const isFriday = getIsoWeekday(selectedDate) === 5;
+  const holidayCheck = (window.ClinicApi && typeof window.ClinicApi.isClinicHoliday === 'function')
+    ? window.ClinicApi.isClinicHoliday(selectedDate)
+    : { isHoliday: false };
+  const isClinicClosed = isFriday || holidayCheck.isHoliday;
+
+  // Render or hide the clinic closure / holiday notice banner
+  const closureBanner = document.getElementById('clinicClosureNoticeBanner');
+  if (closureBanner) {
+    if (holidayCheck.isHoliday && !holidayCheck.isWeekend) {
+      closureBanner.style.display = 'block';
+      closureBanner.innerHTML = `
+        <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; color:#92400E;">
+          <span style="font-size:22px;">🏖️</span>
+          <div style="flex:1;">
+            <strong style="display:block; font-size:14px; color:#78350F;">Clinic Closed: ${escapeHtml(holidayCheck.name_en)} (${escapeHtml(holidayCheck.name_ar || '')})</strong>
+            <span style="font-size:12px; color:#92400E;">This date is configured as an official clinic-wide closure. Regular doctor consultations and clinic appointments are suspended.</span>
+          </div>
+          <button onclick="if(typeof openApiConfigModal==='function') openApiConfigModal('schedule');" class="modal-btn-secondary" style="font-size:11.5px; height:30px; padding:0 10px; white-space:nowrap; background:#FFFFFF; border-color:#FCD34D; color:#92400E; cursor:pointer;">
+            Manage Holidays
+          </button>
+        </div>
+      `;
+    } else if (isFriday) {
+      closureBanner.style.display = 'block';
+      closureBanner.innerHTML = `
+        <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; color:#991B1B;">
+          <span style="font-size:22px;">🛑</span>
+          <div style="flex:1;">
+            <strong style="display:block; font-size:14px; color:#991B1B;">Weekly Weekend (Friday / عطلة الجمعة الأسبوعية)</strong>
+            <span style="font-size:12px; color:#B91C1C;">The clinic is closed on Fridays in accordance with Egyptian healthcare operating standards.</span>
+          </div>
+          <button onclick="if(typeof openApiConfigModal==='function') openApiConfigModal('schedule');" class="modal-btn-secondary" style="font-size:11.5px; height:30px; padding:0 10px; white-space:nowrap; background:#FFFFFF; border-color:#FCA5A5; color:#991B1B; cursor:pointer;">
+            View Clinic Hours
+          </button>
+        </div>
+      `;
+    } else {
+      closureBanner.style.display = 'none';
+      closureBanner.innerHTML = '';
+    }
+  }
 
   // Build the Table HTML
   let theadHtml = `
@@ -393,7 +439,7 @@ function renderDaySchedule() {
                 <div class="doctor-header-info">
                   <div style="display: flex; align-items: center; gap: 4px;">
                     <span class="doctor-header-name">${escapeHtml(doc.name_en)}</span>
-                    ${!onDutyToday ? '<span class="doctor-off-badge">Off-Duty</span>' : ''}
+                    ${(!onDutyToday || isClinicClosed) ? '<span class="doctor-off-badge">' + (isClinicClosed ? 'Closed' : 'Off-Duty') + '</span>' : ''}
                   </div>
                   <span class="doctor-header-dept">${escapeHtml(deptName)} • <small style="color:var(--text-muted); font-size:10px;">${shiftText}</small></span>
                 </div>
@@ -413,8 +459,8 @@ function renderDaySchedule() {
         doctors.forEach(doc => {
           const onDutyToday = isDoctorWorkingOnDate(doc, selectedDate);
 
-          if (!onDutyToday || isFriday) {
-            cellsHtml += `<td class="off-duty-cell"></td>`;
+          if (!onDutyToday || isClinicClosed) {
+            cellsHtml += `<td class="off-duty-cell" title="${isClinicClosed ? (holidayCheck.name_en || 'Clinic Weekend') : 'Doctor Off-Duty'}"></td>`;
             return;
           }
 
@@ -1660,11 +1706,13 @@ async function submitNewAppointment() {
     return;
   }
 
-  // Validate Friday closure
+  // Validate Clinic Closures & Friday Weekend
   if (dateVal) {
-    const d = new Date(dateVal + 'T00:00:00');
-    if (d.getDay() === 5) {
-      alert('The clinic is closed on Fridays. Please choose another date.');
+    const holidayCheck = (window.ClinicApi && typeof window.ClinicApi.isClinicHoliday === 'function')
+      ? window.ClinicApi.isClinicHoliday(dateVal)
+      : { isHoliday: false };
+    if (holidayCheck.isHoliday) {
+      alert(`The clinic is closed on this date (${holidayCheck.name_en} / ${holidayCheck.name_ar || ''}). Please choose an open clinic date.`);
       return;
     }
   }
