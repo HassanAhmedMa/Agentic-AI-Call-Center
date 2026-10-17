@@ -1,4 +1,5 @@
 {
+  "id": "d8yRlJ6OkvQcsu2R",
   "name": "Agentic Clinic - Inter-Agent Relay",
   "nodes": [
     {
@@ -19,27 +20,86 @@
     },
     {
       "parameters": {
-        "dataType": "string",
-        "value1": "={{ $json.body.destination }}",
         "rules": {
-          "rules": [
+          "values": [
             {
-              "value2": "Ziad",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-ziad",
+                    "leftValue": "={{ $json.body.destination }}",
+                    "rightValue": "Ziad",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
               "outputKey": "Ziad"
             },
             {
-              "value2": "Ali",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-ali",
+                    "leftValue": "={{ $json.body.destination }}",
+                    "rightValue": "Ali",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
               "outputKey": "Ali"
             },
             {
-              "value2": "Hassan",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-hassan",
+                    "leftValue": "={{ $json.body.destination }}",
+                    "rightValue": "Hassan",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
               "outputKey": "Hassan"
             }
           ]
-        }
+        },
+        "options": {}
       },
       "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
+      "typeVersion": 3.2,
       "position": [
         260,
         0
