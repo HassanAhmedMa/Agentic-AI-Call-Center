@@ -174,6 +174,30 @@ def get_latest_codex_session_info():
     if not files:
         return None, None
     files.sort(key=os.path.getmtime, reverse=True)
+    
+    # First pass: find latest interactive user session (source != 'exec')
+    for f in files:
+        basename = os.path.basename(f)
+        match = re.search(r"([0-9a-fA-F-]{36})\.jsonl$", basename)
+        if match:
+            try:
+                with open(f, "r", encoding="utf-8") as fh:
+                    data = json.loads(fh.readline())
+                    src = data.get("payload", {}).get("source")
+                    if src != "exec":
+                        session_id = match.group(1)
+                        model = (
+                            data.get("payload", {}).get("model")
+                            or data.get("payload", {})
+                            .get("base_instructions", {})
+                            .get("provenance", {})
+                            .get("model")
+                        )
+                        return session_id, model
+            except Exception:
+                continue
+
+    # Fallback to absolute newest session
     for f in files:
         basename = os.path.basename(f)
         match = re.search(r"([0-9a-fA-F-]{36})\.jsonl$", basename)
@@ -182,8 +206,7 @@ def get_latest_codex_session_info():
             model = None
             try:
                 with open(f, "r", encoding="utf-8") as fh:
-                    line1 = fh.readline()
-                    data = json.loads(line1)
+                    data = json.loads(fh.readline())
                     model = (
                         data.get("payload", {}).get("model")
                         or data.get("payload", {})
