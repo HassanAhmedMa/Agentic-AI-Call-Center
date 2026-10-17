@@ -154,6 +154,24 @@ function formatDateIso(d) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function isDateInPast(d) {
+  if (!d) return false;
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return target < today;
+}
+
+function getApptDateTime(appt) {
+  if (!appt) return null;
+  const d = parseApptDate(appt.appointment_date || appt.date);
+  if (!d) return null;
+  const tStr = appt.timeShort || appt.time || appt.start_time || '00:00';
+  const t24 = parseSlotTo24h(tStr);
+  const [h, m] = t24.split(':').map(Number);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h || 0, m || 0);
+}
+
 const SCHEDULE_TIME_SLOTS = [
   '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM',
   '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
@@ -308,6 +326,30 @@ function initAppointmentsStore() {
    SCHEDULE RENDERING (DAY, WEEK, MONTH MODES)
    ============================================================================= */
 function renderSchedule() {
+  const isPast = isDateInPast(selectedDate);
+  const pastBanner = document.getElementById('pastDateNoticeBanner');
+  if (pastBanner) {
+    if (isPast) {
+      pastBanner.style.display = 'block';
+      const formattedDate = selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      pastBanner.innerHTML = `
+        <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; color:#475569;">
+          <span style="font-size:22px;">🔒</span>
+          <div style="flex:1;">
+            <strong style="display:block; font-size:14px; color:#1E293B;">Past Date (${escapeHtml(formattedDate)}) — Read-Only Audit Mode</strong>
+            <span style="font-size:12px; color:#64748B;">This date has already passed. Historical appointments can be reviewed, but scheduling new bookings or modifying past records is locked.</span>
+          </div>
+          <button onclick="goToTodaySchedule()" class="modal-btn-secondary" style="font-size:12px; height:32px; padding:0 12px; background:#FFFFFF; border-color:#94A3B8; color:#1E293B; cursor:pointer; font-weight:600; white-space:nowrap;">
+            Return to Today
+          </button>
+        </div>
+      `;
+    } else {
+      pastBanner.style.display = 'none';
+      pastBanner.innerHTML = '';
+    }
+  }
+
   if (currentViewMode === 'list') {
     renderListView();
   } else {
@@ -503,11 +545,19 @@ function renderDaySchedule() {
             });
             cellsHtml += `</td>`;
           } else {
-            // Available slot within shift
-            cellsHtml += `
-              <td class="available-shift-slot" style="padding: 4px; text-align: center; vertical-align: middle; cursor: pointer;" onclick="openNewAppointmentForSlot('${escapeHtml(doc.name_en)}', '${t}')" title="Available Slot: Click to book with ${escapeHtml(doc.name_en)} at ${t}">
-              </td>
-            `;
+            if (isDateInPast(selectedDate)) {
+              cellsHtml += `
+                <td class="past-locked-slot" style="padding: 4px; text-align: center; vertical-align: middle;" title="Past Slot: Scheduling locked for historical audit">
+                  <span style="font-size: 11px; color: #94A3B8; font-weight: 500;">🔒 Locked</span>
+                </td>
+              `;
+            } else {
+              // Available slot within shift
+              cellsHtml += `
+                <td class="available-shift-slot" style="padding: 4px; text-align: center; vertical-align: middle; cursor: pointer;" onclick="openNewAppointmentForSlot('${escapeHtml(doc.name_en)}', '${t}')" title="Available Slot: Click to book with ${escapeHtml(doc.name_en)} at ${t}">
+                </td>
+              `;
+            }
           }
         });
 
@@ -520,6 +570,18 @@ function renderDaySchedule() {
 }
 
 window.openNewAppointmentForSlot = function(doctorName, slotTime) {
+  if (isDateInPast(selectedDate)) {
+    if (window.ClinicDialog) {
+      window.ClinicDialog.alert(
+        'Past Date Locked',
+        'Cannot schedule appointments on past dates. Please select today or a future date to book.',
+        'warning'
+      );
+    } else {
+      alert('Cannot schedule appointments on past dates.');
+    }
+    return;
+  }
   openNewAppointmentModal();
   setTimeout(() => {
     const docSelect = document.getElementById('newApptDoctor');
@@ -788,27 +850,36 @@ function renderMiniCalendar() {
   const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   let html = dayHeaders.map(h => `<span class="mini-day-head">${h}</span>`).join('');
 
+  const now = new Date();
+  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   // Previous month trailing days
   for (let i = firstDay - 1; i >= 0; i--) {
     const pDay = prevDaysInMonth - i;
     const pDate = new Date(miniCalYear, miniCalMonth - 1, pDay);
-    html += `<span class="mini-day-cell inactive-month" onclick="selectCalendarDate(${pDate.getFullYear()}, ${pDate.getMonth()}, ${pDay})">${pDay}</span>`;
+    const isPast = pDate < todayZero;
+    const pastClass = isPast ? 'past-day' : '';
+    const title = isPast ? 'Past Date (Read-Only Mode)' : '';
+    html += `<span class="mini-day-cell inactive-month ${pastClass}" title="${title}" onclick="selectCalendarDate(${pDate.getFullYear()}, ${pDate.getMonth()}, ${pDay})">${pDay}</span>`;
   }
 
   // Current month days
   for (let d = 1; d <= daysInMonth; d++) {
     const dayDate = new Date(miniCalYear, miniCalMonth, d);
     const isActive = isSameDay(dayDate, selectedDate);
+    const isPast = dayDate < todayZero;
     const hasAppts = appointmentsData.some(a => {
       const aDate = parseApptDate(a.date);
       return isSameDay(aDate, dayDate) && (a.status || '').toLowerCase() !== 'cancelled';
     });
 
     const activeClass = isActive ? 'active-day' : '';
+    const pastClass = isPast ? 'past-day' : '';
     const dotHtml = hasAppts ? '<span class="mini-day-dot"></span>' : '';
+    const title = isPast ? 'Past Date (Read-Only Mode)' : '';
 
     html += `
-      <span class="mini-day-cell ${activeClass}" onclick="selectCalendarDate(${miniCalYear}, ${miniCalMonth}, ${d})">
+      <span class="mini-day-cell ${activeClass} ${pastClass}" title="${title}" onclick="selectCalendarDate(${miniCalYear}, ${miniCalMonth}, ${d})">
         ${d}${dotHtml}
       </span>
     `;
@@ -819,7 +890,10 @@ function renderMiniCalendar() {
   const nextDays = (7 - (totalCells % 7)) % 7;
   for (let n = 1; n <= nextDays; n++) {
     const nDate = new Date(miniCalYear, miniCalMonth + 1, n);
-    html += `<span class="mini-day-cell inactive-month" onclick="selectCalendarDate(${nDate.getFullYear()}, ${nDate.getMonth()}, ${n})">${n}</span>`;
+    const isPast = nDate < todayZero;
+    const pastClass = isPast ? 'past-day' : '';
+    const title = isPast ? 'Past Date (Read-Only Mode)' : '';
+    html += `<span class="mini-day-cell inactive-month ${pastClass}" title="${title}" onclick="selectCalendarDate(${nDate.getFullYear()}, ${nDate.getMonth()}, ${n})">${n}</span>`;
   }
 
   gridContainer.innerHTML = html;
@@ -1596,7 +1670,24 @@ async function openNewAppointmentModal() {
     `;
   }
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayIso = formatDateIso(now);
+  const maxDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const maxHorizonIso = formatDateIso(maxDate);
+
+  const timeSlotOptions = [
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+    '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+    '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
+  ].map(t => {
+    const [hStr, mStr] = t.split(':');
+    let h = parseInt(hStr, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 === 0 ? 12 : h % 12;
+    const label = `${String(displayH).padStart(2, '0')}:${mStr} ${ampm}`;
+    return `<option value="${t}">${label}</option>`;
+  }).join('');
 
   const bodyHtml = `
     <form id="newApptForm" onsubmit="event.preventDefault(); submitNewAppointment();" style="display:flex; flex-direction:column; gap:14px;">
@@ -1645,28 +1736,12 @@ async function openNewAppointmentModal() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Date *</label>
-          <input type="date" id="newApptDate" value="${todayIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+          <input type="date" id="newApptDate" value="${todayIso}" min="${todayIso}" max="${maxHorizonIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
         </div>
         <div>
-          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Time Slot *</label>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Time Slot (30 mins) *</label>
           <select id="newApptTime" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
-            <option value="09:00">09:00 AM</option>
-            <option value="09:30">09:30 AM</option>
-            <option value="10:00">10:00 AM</option>
-            <option value="10:30">10:30 AM</option>
-            <option value="11:00">11:00 AM</option>
-            <option value="11:30">11:30 AM</option>
-            <option value="12:00">12:00 PM</option>
-            <option value="12:30">12:30 PM</option>
-            <option value="13:00">01:00 PM</option>
-            <option value="13:30">01:30 PM</option>
-            <option value="14:00">02:00 PM</option>
-            <option value="14:30">02:30 PM</option>
-            <option value="15:00">03:00 PM</option>
-            <option value="15:30">03:30 PM</option>
-            <option value="16:00">04:00 PM</option>
-            <option value="16:30">04:30 PM</option>
-            <option value="17:00">05:00 PM</option>
+            ${timeSlotOptions}
           </select>
         </div>
       </div>
@@ -1710,23 +1785,189 @@ async function submitNewAppointment() {
     return;
   }
 
-  // Validate Clinic Closures & Friday Weekend
-  if (dateVal) {
-    const holidayCheck = (window.ClinicApi && typeof window.ClinicApi.isClinicHoliday === 'function')
-      ? window.ClinicApi.isClinicHoliday(dateVal)
-      : { isHoliday: false };
-    if (holidayCheck.isHoliday) {
+  const targetDate = parseApptDate(dateVal);
+  if (!targetDate) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Invalid Date', 'Please select a valid appointment date.', 'warning');
+    }
+    return;
+  }
+
+  const now = new Date();
+  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const selectedDateZero = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+
+  // Rule 1: No Past Booking
+  if (selectedDateZero < todayZero) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Past Date Booking Blocked',
+        'Cannot schedule appointments on a past date. Please choose today or an upcoming clinic date.',
+        'danger'
+      );
+    } else {
+      alert('Cannot schedule appointments in the past.');
+    }
+    return;
+  }
+
+  // Rule 2: Booking Horizon (Max 30 days) - BOOKING_TOO_FAR_AHEAD
+  const maxDate = new Date(todayZero.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (selectedDateZero > maxDate) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Booking Horizon Exceeded (BOOKING_TOO_FAR_AHEAD)',
+        'Appointments can only be scheduled up to 30 days in advance per clinic policy. Please select a date within the next 30 days.',
+        'warning'
+      );
+    } else {
+      alert('Appointments can only be scheduled up to 30 days ahead (BOOKING_TOO_FAR_AHEAD).');
+    }
+    return;
+  }
+
+  // Rule 3: 30-Minute Interval (:00 or :30) - INVALID_SLOT_TIME
+  const [slotH, slotM] = (time || '').split(':').map(Number);
+  if (![0, 30].includes(slotM)) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Invalid Slot Time (INVALID_SLOT_TIME)',
+        'Appointments must be booked in 30-minute intervals aligned on :00 or :30.',
+        'warning'
+      );
+    } else {
+      alert('Invalid slot time. Appointments must be 30-minute slots starting on :00 or :30.');
+    }
+    return;
+  }
+
+  // Rule 4: Minimum Lead Time (1 hour) - BOOKING_TOO_SOON
+  const slotDateTime = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), slotH, slotM);
+  const minLeadDateTime = new Date(now.getTime() + 60 * 60 * 1000);
+  if (slotDateTime < minLeadDateTime) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Booking Too Soon (BOOKING_TOO_SOON)',
+        'Appointments must be scheduled with at least 1 hour advance notice. Please select a later time slot.',
+        'warning'
+      );
+    } else {
+      alert('Appointments must be scheduled with at least 1 hour advance notice (BOOKING_TOO_SOON).');
+    }
+    return;
+  }
+
+  // Rule 5: Clinic Closures & Friday Weekend - CLINIC_CLOSED
+  const isoDay = getIsoWeekday(targetDate);
+  const holidayCheck = (window.ClinicApi && typeof window.ClinicApi.isClinicHoliday === 'function')
+    ? window.ClinicApi.isClinicHoliday(dateVal)
+    : { isHoliday: false };
+  if (isoDay === 5 || holidayCheck.isHoliday) {
+    const reason = holidayCheck.isHoliday ? `${holidayCheck.name_en} (${holidayCheck.name_ar || ''})` : 'Weekly Friday Weekend';
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Clinic Closed (CLINIC_CLOSED)',
+        `The clinic is closed on this date (${reason}). Regular doctor appointments cannot be scheduled on clinic holidays.`,
+        'warning'
+      );
+    } else {
+      alert(`The clinic is closed on this date (${reason}).`);
+    }
+    return;
+  }
+
+  // Rule 6: Doctor Availability & Shifts - DOCTOR_UNAVAILABLE
+  const selectedDocObj = liveDoctorsCache.find(d => (docId && d.id === docId) || d.name_en === doctor);
+  if (selectedDocObj) {
+    if (!isDoctorWorkingOnDate(selectedDocObj, targetDate)) {
       if (window.ClinicDialog) {
         await window.ClinicDialog.alert(
-          'Clinic Closed on Selected Date',
-          `The clinic is closed on this date (${holidayCheck.name_en} / ${holidayCheck.name_ar || ''}).<br>Please choose an open clinic date.`,
+          'Doctor Unavailable (DOCTOR_UNAVAILABLE)',
+          `${escapeHtml(selectedDocObj.name_en)} does not work on ${targetDate.toLocaleDateString('en-GB', { weekday: 'long' })}. Please choose another working day or a different doctor.`,
           'warning'
         );
       } else {
-        alert(`The clinic is closed on this date (${holidayCheck.name_en} / ${holidayCheck.name_ar || ''}). Please choose an open clinic date.`);
+        alert(`${selectedDocObj.name_en} is off-duty on this day.`);
       }
       return;
     }
+    const slot24 = `${String(slotH).padStart(2, '0')}:${String(slotM).padStart(2, '0')}`;
+    const startShift = (selectedDocObj.shift_start || '08:00').slice(0, 5);
+    const endShift = (selectedDocObj.shift_end || '17:00').slice(0, 5);
+    if (slot24 < startShift || slot24 >= endShift) {
+      if (window.ClinicDialog) {
+        await window.ClinicDialog.alert(
+          'Outside Working Hours (DOCTOR_UNAVAILABLE)',
+          `${escapeHtml(selectedDocObj.name_en)} working hours are ${startShift} – ${endShift}. Slot ${slot24} is outside their active shift.`,
+          'warning'
+        );
+      } else {
+        alert(`${selectedDocObj.name_en} working hours are ${startShift} – ${endShift}.`);
+      }
+      return;
+    }
+  }
+
+  // Active appointments for this patient
+  const patientActiveAppts = appointmentsData.filter(a => {
+    if ((a.status || '').toLowerCase() === 'cancelled') return false;
+    const patIdMatch = selectedPatientId && a.patient_id && String(a.patient_id) === String(selectedPatientId);
+    const phoneMatch = phone && a.patientPhone && a.patientPhone.replace(/\D/g, '') === phone.replace(/\D/g, '');
+    const nameMatch = name && a.patientName && a.patientName.trim().toLowerCase() === name.trim().toLowerCase();
+    return patIdMatch || phoneMatch || nameMatch;
+  });
+
+  // Rule 7: Duplicate Doctor Same Day - DUPLICATE_DOCTOR_SAME_DAY
+  const sameDayWithSameDoctor = patientActiveAppts.some(a => {
+    const aDate = parseApptDate(a.date);
+    if (!isSameDay(aDate, targetDate)) return false;
+    const dMatch = (docId && a.doctorId && Number(a.doctorId) === Number(docId)) ||
+                   (a.doctor && doctor && a.doctor.toLowerCase().includes(doctor.toLowerCase()));
+    return dMatch;
+  });
+  if (sameDayWithSameDoctor) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Duplicate Doctor Booking (DUPLICATE_DOCTOR_SAME_DAY)',
+        `This patient already has an active appointment with ${escapeHtml(doctor)} on ${dateVal}. Per safety policy, only 1 appointment per doctor per day is allowed.`,
+        'warning'
+      );
+    } else {
+      alert(`Already booked with this doctor that day (DUPLICATE_DOCTOR_SAME_DAY).`);
+    }
+    return;
+  }
+
+  // Rule 8: Max 2 Appointments per Day - DAILY_LIMIT_REACHED
+  const sameDayCount = patientActiveAppts.filter(a => {
+    const aDate = parseApptDate(a.date);
+    return isSameDay(aDate, targetDate);
+  }).length;
+  if (sameDayCount >= 2) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Daily Limit Reached (DAILY_LIMIT_REACHED)',
+        `This patient already has ${sameDayCount} appointments scheduled on ${dateVal}. The maximum allowed is 2 appointments per patient per day.`,
+        'warning'
+      );
+    } else {
+      alert('Daily appointment limit reached (DAILY_LIMIT_REACHED).');
+    }
+    return;
+  }
+
+  // Rule 9: Max 5 Active Appointments Overall - ACTIVE_LIMIT_REACHED
+  if (patientActiveAppts.length >= 5) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Active Limit Reached (ACTIVE_LIMIT_REACHED)',
+        `This patient already has ${patientActiveAppts.length} active scheduled appointments. The maximum allowed is 5 active appointments per patient account.`,
+        'warning'
+      );
+    } else {
+      alert('Active appointment limit reached (ACTIVE_LIMIT_REACHED).');
+    }
+    return;
   }
 
   const payload = {
@@ -1755,10 +1996,38 @@ async function submitNewAppointment() {
     }
   } catch (err) {
     console.error('[Appointments] Booking error:', err);
+    let title = 'Booking Error';
+    let msg = err.message || 'Database error';
+    if (err.code === 'BOOKING_TOO_SOON') {
+      title = 'Booking Too Soon (BOOKING_TOO_SOON)';
+      msg = 'Appointments must be scheduled with at least 1 hour advance notice.';
+    } else if (err.code === 'BOOKING_TOO_FAR_AHEAD') {
+      title = 'Booking Horizon Exceeded (BOOKING_TOO_FAR_AHEAD)';
+      msg = 'Appointments can only be scheduled up to 30 days ahead.';
+    } else if (err.code === 'DUPLICATE_DOCTOR_SAME_DAY') {
+      title = 'Duplicate Booking (DUPLICATE_DOCTOR_SAME_DAY)';
+      msg = 'Already booked with this doctor that day.';
+    } else if (err.code === 'DAILY_LIMIT_REACHED') {
+      title = 'Daily Limit Reached (DAILY_LIMIT_REACHED)';
+      msg = 'Patient has reached the 2 appointments per day limit.';
+    } else if (err.code === 'ACTIVE_LIMIT_REACHED') {
+      title = 'Active Limit Reached (ACTIVE_LIMIT_REACHED)';
+      msg = 'Patient has reached the 5 active appointments limit.';
+    } else if (err.code === 'CLINIC_CLOSED') {
+      title = 'Clinic Closed (CLINIC_CLOSED)';
+      msg = 'The clinic is closed on the selected date.';
+    } else if (err.code === 'DOCTOR_UNAVAILABLE') {
+      title = 'Doctor Unavailable (DOCTOR_UNAVAILABLE)';
+      msg = 'Doctor is unavailable or off-duty at this slot.';
+    } else if (err.code === 'SLOT_UNAVAILABLE') {
+      title = 'Slot Unavailable (SLOT_UNAVAILABLE)';
+      msg = 'This slot has just been booked by another patient. Please choose another slot.';
+    }
+
     if (window.ClinicDialog) {
-      await window.ClinicDialog.alert('Booking Error', 'Failed to schedule appointment: ' + (err.message || 'Database error'), 'danger');
+      await window.ClinicDialog.alert(title, msg, 'danger');
     } else {
-      alert('Failed to schedule appointment: ' + (err.message || 'Database error'));
+      alert(`${title}: ${msg}`);
     }
   }
 }
@@ -1767,37 +2036,56 @@ async function submitNewAppointment() {
 function openRescheduleModal() {
   if (!selectedAppointment) return;
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const apptDateTime = getApptDateTime(selectedAppointment);
+  const now = new Date();
+  if (apptDateTime) {
+    const hoursNotice = (apptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursNotice < 4) {
+      if (window.ClinicDialog) {
+        window.ClinicDialog.alert(
+          'Reschedule Window Closed (CHANGE_WINDOW_CLOSED)',
+          `Appointments cannot be rescheduled within 4 hours of scheduled time (currently ${hoursNotice.toFixed(1)} hours away). Per clinic policy, changes require four hours notice.`,
+          'warning'
+        );
+      } else {
+        alert('Appointments cannot be rescheduled within 4 hours of scheduled time (CHANGE_WINDOW_CLOSED).');
+      }
+      return;
+    }
+  }
+
+  const todayIso = formatDateIso(now);
+  const maxDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const maxHorizonIso = formatDateIso(maxDate);
+
+  const reschedTimeSlotOptions = [
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+    '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+    '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
+  ].map(t => {
+    const [hStr, mStr] = t.split(':');
+    let h = parseInt(hStr, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 === 0 ? 12 : h % 12;
+    const label = `${String(displayH).padStart(2, '0')}:${mStr} ${ampm}`;
+    return `<option value="${t}">${label}</option>`;
+  }).join('');
 
   const bodyHtml = `
     <div style="display:flex; flex-direction:column; gap:14px;">
       <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:8px; padding:12px;">
-        <div style="font-weight:700; color:var(--text-dark);">${selectedAppointment.patientName} (${selectedAppointment.patientCode})</div>
-        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Currently with ${selectedAppointment.doctor} at ${selectedAppointment.time}</div>
+        <div style="font-weight:700; color:var(--text-dark);">${escapeHtml(selectedAppointment.patientName)} (${escapeHtml(selectedAppointment.patientCode || '')})</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Currently with ${escapeHtml(selectedAppointment.doctor)} on ${escapeHtml(selectedAppointment.date)} at ${escapeHtml(selectedAppointment.time)}</div>
       </div>
       <div>
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Target Date</label>
-        <input type="date" id="reschedDate" value="${todayIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Target Date *</label>
+        <input type="date" id="reschedDate" value="${todayIso}" min="${todayIso}" max="${maxHorizonIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
       </div>
       <div>
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Time Slot</label>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Time Slot (30 mins) *</label>
         <select id="reschedTime" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
-          <option value="09:00">09:00 AM - 09:30 AM</option>
-          <option value="09:30">09:30 AM - 10:00 AM</option>
-          <option value="10:00">10:00 AM - 10:30 AM</option>
-          <option value="10:30">10:30 AM - 11:00 AM</option>
-          <option value="11:00">11:00 AM - 11:30 AM</option>
-          <option value="11:30">11:30 AM - 12:00 PM</option>
-          <option value="12:00">12:00 PM - 12:30 PM</option>
-          <option value="12:30">12:30 PM - 01:00 PM</option>
-          <option value="13:00">01:00 PM - 01:30 PM</option>
-          <option value="13:30">01:30 PM - 02:00 PM</option>
-          <option value="14:00">02:00 PM - 02:30 PM</option>
-          <option value="14:30">02:30 PM - 03:00 PM</option>
-          <option value="15:00">03:00 PM - 03:30 PM</option>
-          <option value="15:30">03:30 PM - 04:00 PM</option>
-          <option value="16:00">04:00 PM - 04:30 PM</option>
-          <option value="16:30">04:30 PM - 05:00 PM</option>
+          ${reschedTimeSlotOptions}
         </select>
       </div>
       <div>
@@ -1821,11 +2109,88 @@ function openRescheduleModal() {
 }
 
 async function confirmRescheduleAppointment() {
+  if (!selectedAppointment) return;
+
   const newDate = document.getElementById('reschedDate').value;
   const newTime = document.getElementById('reschedTime').value;
   const reason = document.getElementById('reschedReason').value;
 
-  if (!selectedAppointment) return;
+  const currentApptDateTime = getApptDateTime(selectedAppointment);
+  const now = new Date();
+  if (currentApptDateTime) {
+    const hoursNotice = (currentApptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursNotice < 4) {
+      if (window.ClinicDialog) {
+        await window.ClinicDialog.alert(
+          'Reschedule Window Closed (CHANGE_WINDOW_CLOSED)',
+          `Appointments cannot be rescheduled within 4 hours of scheduled time (currently ${hoursNotice.toFixed(1)} hours away). Per clinic policy, changes require four hours notice.`,
+          'warning'
+        );
+      } else {
+        alert('Appointments cannot be rescheduled within 4 hours of scheduled time (CHANGE_WINDOW_CLOSED).');
+      }
+      return;
+    }
+  }
+
+  const currentSlot24 = parseSlotTo24h(selectedAppointment.timeShort || selectedAppointment.time || '00:00');
+  const currentApptDate = formatDateIso(parseApptDate(selectedAppointment.date));
+  if (currentApptDate === newDate && currentSlot24 === newTime) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert(
+        'Same Slot (SAME_SLOT)',
+        'The selected slot is identical to the current appointment time. Please choose a different date or time.',
+        'warning'
+      );
+    } else {
+      alert('The selected slot is identical to the current appointment time.');
+    }
+    return;
+  }
+
+  // Validate new slot
+  const targetDate = parseApptDate(newDate);
+  if (!targetDate) return;
+  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetZero = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+
+  if (targetZero < todayZero) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Past Date Blocked', 'Cannot reschedule to a past date.', 'danger');
+    }
+    return;
+  }
+
+  const maxHorizon = new Date(todayZero.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (targetZero > maxHorizon) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Booking Horizon Exceeded', 'Appointments can only be scheduled up to 30 days ahead (BOOKING_TOO_FAR_AHEAD).', 'warning');
+    }
+    return;
+  }
+
+  const [reschedH, reschedM] = newTime.split(':').map(Number);
+  const targetDateTime = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), reschedH, reschedM);
+  const minLead = new Date(now.getTime() + 60 * 60 * 1000);
+  if (targetDateTime < minLead) {
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Booking Too Soon', 'Rescheduled appointments require at least 1 hour advance notice (BOOKING_TOO_SOON).', 'warning');
+    }
+    return;
+  }
+
+  // Clinic closure check
+  const isFriday = getIsoWeekday(targetDate) === 5;
+  const holidayCheck = (window.ClinicApi && typeof window.ClinicApi.isClinicHoliday === 'function')
+    ? window.ClinicApi.isClinicHoliday(newDate)
+    : { isHoliday: false };
+  if (isFriday || holidayCheck.isHoliday) {
+    const holidayName = holidayCheck.isHoliday ? `${holidayCheck.name_en} (${holidayCheck.name_ar || ''})` : 'Weekly Friday Weekend';
+    if (window.ClinicDialog) {
+      await window.ClinicDialog.alert('Clinic Closed (CLINIC_CLOSED)', `The clinic is closed on this date (${holidayName}). Please choose an open clinic date.`, 'warning');
+    }
+    return;
+  }
 
   try {
     if (window.ClinicApi) {
@@ -1840,10 +2205,29 @@ async function confirmRescheduleAppointment() {
     }
   } catch (err) {
     console.error('[Appointments] Reschedule error:', err);
+    let title = 'Reschedule Failed';
+    let msg = err.message || 'Database error';
+    if (err.code === 'CHANGE_WINDOW_CLOSED') {
+      title = 'Change Window Closed (CHANGE_WINDOW_CLOSED)';
+      msg = 'Changes require four hours notice.';
+    } else if (err.code === 'SAME_SLOT') {
+      title = 'Same Slot (SAME_SLOT)';
+      msg = 'Choose a different slot.';
+    } else if (err.code === 'BOOKING_TOO_SOON') {
+      title = 'Booking Too Soon (BOOKING_TOO_SOON)';
+      msg = 'Choose a later slot at least 1 hour in advance.';
+    } else if (err.code === 'BOOKING_TOO_FAR_AHEAD') {
+      title = 'Booking Too Far Ahead (BOOKING_TOO_FAR_AHEAD)';
+      msg = 'Choose a nearer slot within 30 days.';
+    } else if (err.code === 'SLOT_UNAVAILABLE') {
+      title = 'Slot Unavailable (SLOT_UNAVAILABLE)';
+      msg = 'This slot is already booked.';
+    }
+
     if (window.ClinicDialog) {
-      await window.ClinicDialog.alert('Reschedule Failed', 'Failed to reschedule appointment: ' + (err.message || 'Database error'), 'danger');
+      await window.ClinicDialog.alert(title, msg, 'danger');
     } else {
-      alert('Failed to reschedule appointment: ' + (err.message || 'Database error'));
+      alert(`${title}: ${msg}`);
     }
   }
 }
@@ -1851,6 +2235,24 @@ async function confirmRescheduleAppointment() {
 // Cancel Appointment
 async function handleCancelAppointment() {
   if (!selectedAppointment) return;
+
+  const apptDateTime = getApptDateTime(selectedAppointment);
+  const now = new Date();
+  if (apptDateTime) {
+    const hoursNotice = (apptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursNotice < 4) {
+      if (window.ClinicDialog) {
+        await window.ClinicDialog.alert(
+          'Cancellation Window Closed (CHANGE_WINDOW_CLOSED)',
+          `Appointments cannot be cancelled within 4 hours of scheduled time (currently ${hoursNotice.toFixed(1)} hours away). Per clinic policy, changes require four hours notice.`,
+          'warning'
+        );
+      } else {
+        alert('Appointments cannot be cancelled within 4 hours of scheduled time (CHANGE_WINDOW_CLOSED).');
+      }
+      return;
+    }
+  }
 
   const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
     title: 'Cancel Appointment?',
@@ -1868,7 +2270,6 @@ async function handleCancelAppointment() {
             reason: 'Cancelled by operator'
           });
         } catch (apiErr) {
-          // If the appointment ID was a legacy mock ID (e.g. 101, 102) from localStorage
           if (apiErr.status === 404 || apiErr.code === 'APPOINTMENT_NOT_FOUND') {
             console.warn('[Appointments] Legacy local appointment removed:', selectedAppointment.id);
           } else {
@@ -1894,10 +2295,16 @@ async function handleCancelAppointment() {
       }
     } catch (err) {
       console.error('[Appointments] Cancellation error:', err);
+      let title = 'Cancellation Error';
+      let msg = err.message || 'Database error';
+      if (err.code === 'CHANGE_WINDOW_CLOSED') {
+        title = 'Change Window Closed (CHANGE_WINDOW_CLOSED)';
+        msg = 'Appointments cannot be cancelled within 4 hours of scheduled time.';
+      }
       if (window.ClinicDialog) {
-        await window.ClinicDialog.alert('Cancellation Error', 'Failed to cancel appointment: ' + (err.message || 'Database error'), 'danger');
+        await window.ClinicDialog.alert(title, msg, 'danger');
       } else {
-        alert('Failed to cancel appointment: ' + (err.message || 'Database error'));
+        alert(`${title}: ${msg}`);
       }
     }
   }
