@@ -48,6 +48,7 @@
     RATE_LIMITED: ['Too many attempts. Wait before trying again.', 'محاولات كتير. استنى شوية وحاول تاني.'],
     REGISTRATION_REQUIRED: ['Your email is verified. Complete your clinic profile first.', 'بريدك متأكد. كمّل بيانات حساب العيادة الأول.'],
     unavailable: ['The service is unavailable. Please try again.', 'الخدمة مش متاحة دلوقتي. حاول تاني.'],
+    BACKEND_UNREACHABLE: ['Cannot connect to backend (ports 8000 & 8002). Make sure uvicorn or your tunnel is running.', 'مش قادرين نوصل للسيرفر (بورت 8000 و 8002). اتأكد إن سيرفر الـ backend أو الـ tunnel شغال.'],
     sent: ['Check your email for the verification code.', 'راجع بريدك علشان كود التأكيد.'],
     recovered: ['If this email has an account, a password-reset link will arrive shortly.', 'لو البريد ده ليه حساب، هيوصلك لينك تغيير كلمة السر.'],
     reset: ['Password updated. Sign in with your new password.', 'كلمة السر اتغيرت. سجّل دخولك بكلمة السر الجديدة.']

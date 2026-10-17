@@ -93,23 +93,61 @@
    */
   async function api(path, body) {
     const baseUrl = getApiBaseUrl();
-    const isCrossDomain = Boolean(baseUrl);
     const cleanPath = String(path || '').replace(/^\/+/, '');
-    const response = await fetch((baseUrl ? baseUrl : '') + '/api/v1/portal/' + cleanPath, {
-      method: body === undefined ? 'GET' : 'POST',
-      credentials: isCrossDomain ? 'include' : 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      cache: 'no-store',
-      redirect: 'error'
-    });
-    const result = response.status === 204 ? {} : await response.json();
-    if (!response.ok) {
-      const error = new Error(result.error?.code || 'unavailable');
-      error.details = result.error?.details;
-      throw error;
+
+    const candidates = [];
+    if (baseUrl) {
+      candidates.push(baseUrl);
+      if (baseUrl.includes(':8002')) {
+        candidates.push(baseUrl.replace(':8002', ':8000'));
+      } else if (baseUrl.includes(':8000')) {
+        candidates.push(baseUrl.replace(':8000', ':8002'));
+      }
+    } else {
+      candidates.push('');
     }
-    return result;
+
+    let lastError = null;
+    for (let i = 0; i < candidates.length; i++) {
+      const candidateBase = candidates[i];
+      const isCrossDomain = Boolean(candidateBase);
+      try {
+        const response = await fetch((candidateBase ? candidateBase : '') + '/api/v1/portal/' + cleanPath, {
+          method: body === undefined ? 'GET' : 'POST',
+          credentials: isCrossDomain ? 'include' : 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body),
+          cache: 'no-store',
+          redirect: 'error'
+        });
+        const result = response.status === 204 ? {} : await response.json();
+        if (!response.ok) {
+          const error = new Error(result.error?.code || 'unavailable');
+          error.details = result.error?.details;
+          throw error;
+        }
+        if (candidateBase && candidateBase !== baseUrl) {
+          try {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('clinic_portal_api_base_url', candidateBase);
+            }
+          } catch (_) {}
+        }
+        return result;
+      } catch (err) {
+        if (err && err.message && err.message !== 'Failed to fetch' && err.name !== 'TypeError' && err.message !== 'Load failed') {
+          throw err;
+        }
+        lastError = err;
+      }
+    }
+
+    if (lastError && (lastError.message === 'Failed to fetch' || lastError.name === 'TypeError' || lastError.message === 'Load failed')) {
+      const err = new Error('BACKEND_UNREACHABLE');
+      err.details = { checked: candidates };
+      throw err;
+    }
+    throw lastError || new Error('unavailable');
   }
 
   window.ClinicPortalAPI = {request: api, getBaseUrl: getApiBaseUrl};
