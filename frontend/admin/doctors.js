@@ -57,6 +57,20 @@
     container.innerHTML = single.repeat(6);
   }
 
+  function renderDoctorMetricsSkeletons() {
+    const totalEl = document.getElementById('metricTotalDoctors');
+    const activeEl = document.getElementById('metricActiveDoctors');
+    const specEl = document.getElementById('metricSpecialtiesCount');
+    const feeEl = document.getElementById('metricConsultationFee');
+    const filteredEl = document.getElementById('doctorsFilteredCount');
+    const skeletonPill = `<span class="skeleton-shimmer skeleton-pill" style="display:inline-block; width:38px; height:22px; vertical-align:middle; border-radius:6px;"></span>`;
+    if (totalEl) totalEl.innerHTML = skeletonPill;
+    if (activeEl) activeEl.innerHTML = skeletonPill;
+    if (specEl) specEl.innerHTML = skeletonPill;
+    if (feeEl) feeEl.innerHTML = skeletonPill;
+    if (filteredEl) filteredEl.innerHTML = `<span class="skeleton-shimmer skeleton-pill" style="display:inline-block; width:20px; height:12px; vertical-align:middle; border-radius:4px;"></span>`;
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initClock();
     initGlobalShortcuts();
@@ -174,6 +188,7 @@
       if (loadingState) loadingState.style.display = 'none';
     } else {
       // Instant Skeleton Loader - zero blank flash!
+      renderDoctorMetricsSkeletons();
       renderDoctorSkeletons();
       if (loadingState) loadingState.style.display = 'none';
     }
@@ -229,14 +244,29 @@
     const totalEl = document.getElementById('metricTotalDoctors');
     const activeEl = document.getElementById('metricActiveDoctors');
     const specEl = document.getElementById('metricSpecialtiesCount');
+    const feeEl = document.getElementById('metricConsultationFee');
     const badgeEl = document.getElementById('doctorsCountBadge');
 
     const total = doctors.length;
     const active = doctors.filter(d => d.is_active !== false).length;
 
+    let feeDisplay = '350';
+    if (doctors.length > 0) {
+      const fees = doctors.map(d => {
+        if (!d.consultation_fee) return 350;
+        if (typeof d.consultation_fee === 'object') return Number(d.consultation_fee.amount) || 350;
+        return Number(d.consultation_fee) || 350;
+      }).filter(f => !isNaN(f) && f > 0);
+      if (fees.length > 0) {
+        const avg = Math.round(fees.reduce((a, b) => a + b, 0) / fees.length);
+        feeDisplay = String(avg);
+      }
+    }
+
     if (totalEl) totalEl.textContent = total;
     if (activeEl) activeEl.textContent = active;
     if (specEl) specEl.textContent = specialties.length;
+    if (feeEl) feeEl.textContent = feeDisplay;
     if (badgeEl) badgeEl.textContent = total;
   }
 
