@@ -111,56 +111,20 @@ class BridgeHandler(BaseHTTPRequestHandler):
 def show_desktop_notification(sender: str, request_type: str, body: str):
     import platform
     import subprocess
-    import sys
 
-    # Detached subprocess to guarantee GUI alert and chime never block or crash HTTP server
-    gui_code = """
-import sys
-import platform
-
-def run():
-    try:
-        import winsound
-        winsound.MessageBeep(winsound.MB_ICONASTERISK)
-    except Exception:
-        pass
-
-    if platform.system() == "Windows":
-        try:
-            import ctypes
-            # MB_ICONINFORMATION (0x40) | MB_SYSTEMMODAL (0x1000) | MB_TOPMOST (0x40000) | MB_SETFOREGROUND (0x10000) = 0x51040
-            sender = sys.argv[1]
-            req_type = sys.argv[2]
-            msg_body = sys.argv[3][:350]
-            display_text = f"From: {sender}\\nType: {req_type}\\n\\nMessage:\\n{msg_body}"
-            title = f"Inter-Agent Relay [{req_type}] from {sender}"
-            ctypes.windll.user32.MessageBoxTimeoutW(
-                0,
-                display_text,
-                title,
-                0x51040,
-                0,
-                4500,
-            )
-        except Exception:
-            pass
-    elif platform.system() == "Darwin":
-        clean = sys.argv[3][:200].replace('"', "'").replace("\\n", " ")
-        subprocess.Popen(["osascript", "-e", f'display notification "{clean}" with title "Agent Relay [{sys.argv[2]}] from {sys.argv[1]}"'])
-    elif platform.system() == "Linux":
-        subprocess.Popen(["notify-send", f"Agent Relay [{sys.argv[2]}] from {sys.argv[1]}", sys.argv[3][:200]])
-
-if __name__ == "__main__":
-    run()
-"""
     try:
         if platform.system() == "Windows":
-            subprocess.Popen(
-                [sys.executable, "-c", gui_code, sender, request_type, body],
-                cwd=REPO_ROOT,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            # 1. Play alert chime
+            try:
+                import winsound
+                winsound.MessageBeep(winsound.MB_ICONASTERISK)
+            except Exception:
+                pass
+
+            # 2. Broadcast native alert dialog across active Windows sessions (auto-dismiss in 30s)
+            clean_body = body[:280].replace('"', "'")
+            msg_text = f"[INTER-AGENT RELAY]\nFrom: {sender}\nType: {request_type}\n\n{clean_body}"
+            subprocess.Popen(["msg.exe", "*", "/TIME:30", msg_text])
         elif platform.system() == "Darwin":
             clean = body[:200].replace('"', "'").replace("\n", " ")
             subprocess.Popen(["osascript", "-e", f'display notification "{clean}" with title "Agent Relay [{request_type}] from {sender}"'])
@@ -168,6 +132,7 @@ if __name__ == "__main__":
             subprocess.Popen(["notify-send", f"Agent Relay [{request_type}] from {sender}", body[:200]])
     except Exception:
         pass
+
 
 
 
