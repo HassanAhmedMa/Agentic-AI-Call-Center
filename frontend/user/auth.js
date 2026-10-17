@@ -210,9 +210,12 @@
 
         // 4. Default loopback development server detection (Live Server, Vite, etc.)
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          if (window.location && window.location.pathname && window.location.pathname.includes('/portal')) {
+            return '';
+          }
           const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-          if (port !== '8000' && port !== '8004') {
-            return `${window.location.protocol || 'http:'}//${hostname}:8000`;
+          if (port === '5500' || port === '5501' || port === '3000' || port === '5173') {
+            return `${window.location.protocol || 'http:'}//${hostname}:8002`;
           }
         }
       }
