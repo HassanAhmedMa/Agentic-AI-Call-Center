@@ -41,10 +41,25 @@ set SSH_KEY="C:\Users\hassa\Desktop\GraduationProject\ClinicServerKey\ssh-key-20
 if not exist %SSH_KEY% (
     if exist "%USERPROFILE%\.ssh\id_rsa" set SSH_KEY="%USERPROFILE%\.ssh\id_rsa"
     if exist "%USERPROFILE%\.ssh\clinic.key" set SSH_KEY="%USERPROFILE%\.ssh\clinic.key"
+    if exist "%~dp0KEY2.key" set SSH_KEY="%~dp0KEY2.key"
+)
+
+REM Detect Python executable (python, py launcher, or local installations)
+set PYTHON_CMD=python
+where python >nul 2>nul
+if errorlevel 1 (
+    where py >nul 2>nul
+    if not errorlevel 1 (
+        set PYTHON_CMD=py
+    ) else if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" (
+        set PYTHON_CMD="%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+    ) else if exist "%ProgramData%\anaconda3\python.exe" (
+        set PYTHON_CMD="%ProgramData%\anaconda3\python.exe"
+    )
 )
 
 echo [*] Starting Python Agent Bridge listener in background...
-start "Agent Bridge - %AGENT_NAME%" python -u scripts\agent_bridge.py --name %AGENT_NAME% --port %BRIDGE_PORT%
+start "Agent Bridge - %AGENT_NAME%" !PYTHON_CMD! -u scripts\agent_bridge.py --name %AGENT_NAME% --port %BRIDGE_PORT%
 
 echo [*] Establishing reverse SSH tunnel to Oracle Server (193.122.68.159)...
 echo     Tunnel: Server port %BRIDGE_PORT% -^> Localhost %BRIDGE_PORT%
