@@ -67,9 +67,10 @@ class RecoverySession(Input):
     access_token: SecretStr = Field(min_length=1, max_length=16384)
 
 
-class Reset(Email):
-    password: SecretStr = Field(min_length=12, max_length=128)
-    password_confirm: SecretStr = Field(min_length=12, max_length=128)
+class Reset(Input):
+    email: str = Field(default="", max_length=254)
+    password: SecretStr = Field(min_length=8, max_length=128)
+    password_confirm: SecretStr = Field(min_length=8, max_length=128)
 
     @model_validator(mode="after")
     def same_password(self) -> "Reset":

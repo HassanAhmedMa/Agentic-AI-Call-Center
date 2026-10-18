@@ -45,6 +45,8 @@
     SESSION_EXPIRED: ['Your session expired. Sign in again.', 'الجلسة انتهت. سجّل دخولك تاني.'],
     INVALID_CODE: ['Enter the correct verification code.', 'اكتب كود التأكيد الصحيح.'],
     VALIDATION_FAILED: ['Check your name, phone, date of birth, consent and matching passwords (at least 12 characters).', 'راجع الاسم والموبايل وتاريخ الميلاد والموافقة. كلمتا السر لازم يكونوا زي بعض ومن ١٢ حرف على الأقل.'],
+    PASSWORD_MISMATCH: ['Passwords do not match.', 'كلمتا السر غير متطابقتين.'],
+    PASSWORD_TOO_SHORT: ['Password must be at least 8 characters long.', 'يجب أن لا تقل كلمة السر عن ٨ أحرف.'],
     RATE_LIMITED: ['Too many attempts. Wait before trying again.', 'محاولات كتير. استنى شوية وحاول تاني.'],
     REGISTRATION_REQUIRED: ['Your email is verified. Complete your clinic profile first.', 'بريدك متأكد. كمّل بيانات حساب العيادة الأول.'],
     unavailable: ['The service is unavailable. Please try again.', 'الخدمة مش متاحة دلوقتي. حاول تاني.'],
@@ -612,15 +614,18 @@
     if (event?.preventDefault) event.preventDefault();
     return run(async () => {
       const emailEl = $('resetEmail') || $('forgotEmailInput') || $('recoveryEmail');
-      const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
-      const passEl = $('resetPassword') || $('resetNewPasswordInput');
-      const confirmEl = $('resetPasswordConfirm') || $('resetConfirmPasswordInput');
+      const email = emailEl && emailEl.value ? emailEl.value.trim().toLowerCase() : (window._recoveryEmail || '');
+      const passEl = $('resetNewPasswordInput') || $('resetPassword');
+      const confirmEl = $('resetConfirmPasswordInput') || $('resetPasswordConfirm');
 
       const password = passEl ? passEl.value : '';
       const password_confirm = confirmEl ? confirmEl.value : '';
 
-      if (password.length < 12 || password !== password_confirm) {
-        throw Error('VALIDATION_FAILED');
+      if (password.length < 8) {
+        throw Error('PASSWORD_TOO_SHORT');
+      }
+      if (password !== password_confirm) {
+        throw Error('PASSWORD_MISMATCH');
       }
 
       try {
@@ -773,7 +778,7 @@
         const upperRule = $('rule-uppercase');
         const lowerRule = $('rule-lowercase');
 
-        const hasLen = val.length >= 12;
+        const hasLen = val.length >= 8;
         const hasNum = /\d/.test(val);
         const hasUpper = /[A-Z]/.test(val);
         const hasLower = /[a-z]/.test(val);
@@ -819,7 +824,13 @@
         return;
       }
       await run(async () => {
-        await api('recovery-session', { access_token: callback.get('access_token') });
+        const res = await api('recovery-session', { access_token: callback.get('access_token') });
+        if (res && res.email) {
+          window._recoveryEmail = res.email;
+          if ($('resetEmail')) $('resetEmail').value = res.email;
+          if ($('recoveryEmail')) $('recoveryEmail').value = res.email;
+          if ($('forgotEmailInput')) $('forgotEmailInput').value = res.email;
+        }
         navigateToView('view-forgot-reset');
       });
       return;

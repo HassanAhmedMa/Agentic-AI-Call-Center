@@ -850,7 +850,7 @@ def portal_router(
         response.headers["Cache-Control"] = "no-store"
         return dto.Delivery()
 
-    @router.post("/recovery-session", status_code=204)
+    @router.post("/recovery-session")
     async def recovery_session(body: dto.RecoverySession, request: Request) -> Response:
         await limit(request, "recovery")
         token = body.access_token.get_secret_value()
@@ -860,13 +860,12 @@ def portal_router(
                 raise APIError(
                     401, "VERIFICATION_REQUIRED", "Request a new reset link."
                 )
-        response = Response(status_code=204)
+        response = JSONResponse(content={"email": user.email}, status_code=200)
         cookie(response, RECOVERY, token, 600, request=request)
         return response
 
     @router.post("/reset-password", status_code=204)
     async def reset(body: dto.Reset, request: Request) -> Response:
-        await limit(request, "reset", body.email)
         token = request.cookies.get(RECOVERY, "")
         user = await auth.verify_access_token(token)
         async with sessions() as session:
@@ -874,12 +873,14 @@ def portal_router(
                 raise APIError(
                     401, "VERIFICATION_REQUIRED", "Request a new reset link."
                 )
-        if user.email != body.email:
+        email = body.email.strip().lower() if body.email else user.email
+        if user.email and email != user.email:
             raise APIError(
                 401,
                 "VERIFICATION_REQUIRED",
                 "Use the email associated with this reset link.",
             )
+        await limit(request, "reset", email)
         await auth.request(
             "user",
             token=token,
