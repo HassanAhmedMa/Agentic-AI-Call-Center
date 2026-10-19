@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Centralized REST API Client
+ * Shiffaa Clinics - Centralized REST API Client
  * 
  * Communicates exclusively with the FastAPI clinic-backend (`/api/v1/*`).
  * Zero direct access to Supabase or PostgreSQL.

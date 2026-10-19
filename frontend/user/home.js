@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Home Page Controller
+ * Shiffaa Clinics - Home Page Controller
  * Fetches next upcoming appointment live from Supabase DB via REST API
  */
 

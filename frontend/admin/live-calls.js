@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Live Calls Monitoring Controller
+ * Shiffaa Clinics - Live Calls Monitoring Controller
  * Real-time active call streaming, handling, and agent take-over operations
  */
 
@@ -606,7 +606,7 @@ function handleBranchChange() {
 async function handleLogout() {
   const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
     title: 'Sign Out of Clinic Console?',
-    message: 'Are you sure you want to log out of Nile Clinics Admin Console?',
+    message: 'Are you sure you want to log out of Shiffaa Clinics Admin Console?',
     confirmText: 'Sign Out',
     cancelText: 'Stay Signed In',
     type: 'danger'

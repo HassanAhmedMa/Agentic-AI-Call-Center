@@ -1,5 +1,5 @@
 /**
- * Nile Clinics / SHIFFAA - Admin & Operator Role Session Manager
+ * Shiffaa Clinics / SHIFFAA - Admin & Operator Role Session Manager
  *
  * Handles:
  * - Session state: Current user, role ('admin' | 'operator'), email, name, avatar
@@ -65,7 +65,7 @@
   // Current session management
   const DEFAULT_ADMIN = {
     name: 'Ahmed Salah',
-    email: 'ahmed.salah@shifaa.app',
+    email: 'ahmed.salah@shiffaa.app',
     role: 'admin', // 'admin' | 'operator'
     avatar: 'A'
   };

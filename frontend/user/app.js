@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - AI Call Center Interaction Engine (User App)
+ * Shiffaa Clinics - AI Call Center Interaction Engine (User App)
  * Responsive across Desktop & Mobile (98+% Device Compatibility)
  * Strictly Zero Emojis - Vector SVG Icons & Clean Typography
  */
@@ -196,7 +196,7 @@ function generateBotResponse(userText) {
 
   if (lower.includes("working hours") || lower.includes("hours") || lower.includes("مواعيد")) {
     appendBotMessage(`
-      <p><strong>Nile Clinics Working Hours:</strong></p>
+      <p><strong>Shiffaa Clinics Working Hours:</strong></p>
       <ul style="margin: 6px 0 6px 14px; font-size: 12.5px; line-height: 1.5;">
         <li><strong>Saturday – Thursday:</strong> 9:00 AM – 10:00 PM</li>
         <li><strong>Friday:</strong> 1:00 PM – 9:00 PM</li>
@@ -566,7 +566,7 @@ window.switchTab = function(tabName) {
   } else if (tabName === "Home") {
     const el = document.getElementById("tabHome");
     if (el) el.classList.add("active-tab");
-    showToast("Nile Clinics Home", "info");
+    showToast("Shiffaa Clinics Home", "info");
   }
 };
 
@@ -592,10 +592,10 @@ window.downloadCalendarInvite = function() {
   const icsData = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Nile Clinics//AI Scheduling//EN",
+    "PRODID:-//Shiffaa Clinics//AI Scheduling//EN",
     "BEGIN:VEVENT",
     "SUMMARY:Cardiology Consultation - " + currentAppointment.doctor,
-    "DESCRIPTION:Medical appointment booked via Nile Clinics AI Assistant.",
+    "DESCRIPTION:Medical appointment booked via Shiffaa Clinics AI Assistant.",
     "LOCATION:" + currentAppointment.branch,
     "DTSTART:20241114T120000Z",
     "DTEND:20241114T123000Z",
@@ -607,7 +607,7 @@ window.downloadCalendarInvite = function() {
   const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
-  link.setAttribute("download", "nile_clinics_appointment.ics");
+  link.setAttribute("download", "shiffaa_clinics_appointment.ics");
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

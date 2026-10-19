@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - AI Assistant Chat Page Controller
+ * Shiffaa Clinics - AI Assistant Chat Page Controller
  * Interactive Conversational Interface with Egyptian Arabic (العامية المصرية) support
  */
 
@@ -99,7 +99,7 @@
       `);
     } else if (lower.includes('عنوان') || lower.includes('فرع') || lower.includes('location') || lower.includes('branch')) {
       appendChatBotMessage(`
-        <p><strong>${isAr ? 'فروع عيادات النيل:' : 'Nile Clinics Branches:'}</strong></p>
+        <p><strong>${isAr ? 'فروع عيادات النيل:' : 'Shiffaa Clinics Branches:'}</strong></p>
         <ul style="margin:6px 0 6px 14px; font-size:13px; line-height:1.5;">
           <li><strong>${isAr ? 'فرع مصر الجديدة:' : 'Heliopolis:'}</strong> 14 شارع الثورة، بجوار ميدان الكوربة.</li>
           <li><strong>${isAr ? 'فرع مدينة نصر:' : 'Nasr City:'}</strong> 22 شارع عباس العقاد.</li>
@@ -140,7 +140,7 @@
     const patientName = (window.ClinicSession && (window.ClinicSession.first_name || window.ClinicSession.full_name?.split(' ')[0])) || '';
     const greetingLead = patientName 
       ? (isAr ? `أهلاً بك يا ${patientName}!` : `Hello ${patientName}!`)
-      : (isAr ? 'أهلاً بك في عيادات النيل!' : 'Welcome to Nile Clinics!');
+      : (isAr ? 'أهلاً بك في عيادات النيل!' : 'Welcome to Shiffaa Clinics!');
 
     stream.innerHTML = `
       <div class="msg-bubble-row bot-row">
@@ -150,7 +150,7 @@
         <div class="msg-balloon-wrapper">
           <div class="balloon-card bot-balloon">
             <p class="greeting-lead">${greetingLead}</p>
-            <p class="sub-lead">${isAr ? 'أنا المساعد الذكي لعيادات النيل، أقدر أساعدك في إيه النهاردة؟' : "I'm the Nile Clinics AI Assistant. How can I assist you today?"}</p>
+            <p class="sub-lead">${isAr ? 'أنا المساعد الذكي لعيادات النيل، أقدر أساعدك في إيه النهاردة؟' : "I'm the Shiffaa Clinics AI Assistant. How can I assist you today?"}</p>
           </div>
           <div class="msg-timestamp">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
         </div>

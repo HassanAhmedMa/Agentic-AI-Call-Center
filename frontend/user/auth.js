@@ -67,19 +67,24 @@
     'Access your medical records': 'تابع بيانات حسابك',
     'Get instant help from our AI assistant': 'اسأل المساعد الذكي',
     'Log in to your account': 'سجّل دخولك لحسابك',
-    'Enter your email to continue to Nile Clinics.': 'اكتب بريدك وكلمة السر علشان تدخل لعيادات النيل.',
+    'Enter your email to continue to Shiffaa Clinics.': 'اكتب بريدك وكلمة السر علشان تدخل لعيادات شفاء.',
+    'Enter your email to continue to Nile Clinics.': 'اكتب بريدك وكلمة السر علشان تدخل لعيادات شفاء.',
     'Access your appointments, medical records, and 24/7 AI support.': 'ادخل لحساب العيادة وخدمات المساعد الذكي.',
     'or continue with': 'أو كمّل باستخدام',
     'Continue with Google': 'كمّل بجوجل',
     "Don't have an account?": 'لسه معندكش حساب؟',
-    'Join Nile Clinics': 'انضم لعيادات النيل',
+    'Join Shiffaa Clinics': 'انضم لعيادات شفاء',
+    'Join Nile Clinics': 'انضم لعيادات شفاء',
     'Create your account to start booking appointments, access your records, and get 24/7 support.': 'سجّل بياناتك علشان تبدأ تستخدم خدمات العيادة.',
     'Easy appointment booking': 'حجز مواعيد بسهولة',
     'Secure access to your medical records': 'دخول آمن لحسابك',
     'AI assistant for instant help': 'مساعد ذكي يجاوبك',
     'Create your account': 'اعمل حسابك',
     'Fill in your details to get started.': 'اكتب بياناتك علشان تبدأ.',
-    'Join Nile Clinics to book appointments, access your records, and get 24/7 support.': 'انضم لعيادات النيل واستعمل خدمات العيادة.',
+    'Join Shiffaa Clinics to book appointments, access your records, and get 24/7 support.': 'انضم لعيادات شفاء واستعمل خدمات العيادة.',
+    'Join Nile Clinics to book appointments, access your records, and get 24/7 support.': 'انضم لعيادات شفاء واستعمل خدمات العيادة.',
+    'Enter your password': 'ادخل كلمه السر',
+    'Confirm your new password': 'أعد إدخال كلمة السر الجديدة',
     'Terms of Service': 'شروط الاستخدام',
     'Privacy Policy': 'سياسة الخصوصية',
     'Already have an account?': 'عندك حساب بالفعل؟',
@@ -691,6 +696,14 @@
     }
     document.querySelectorAll('[data-en]').forEach(node => {
       node.textContent = language === 'ar' ? node.dataset.ar : node.dataset.en;
+    });
+    // Password input placeholders (ادخل كلمه السر in Arabic, Enter your password in English)
+    document.querySelectorAll('input[type="password"]').forEach(input => {
+      if (input.id.toLowerCase().includes('confirm')) {
+        input.placeholder = (language === 'ar' ? 'أعد إدخال كلمة السر' : 'Confirm your password');
+      } else {
+        input.placeholder = (language === 'ar' ? 'ادخل كلمه السر' : 'Enter your password');
+      }
     });
   }
   /**

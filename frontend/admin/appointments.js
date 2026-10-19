@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Appointments Management Controller
+ * Shiffaa Clinics - Appointments Management Controller
  * Handles Multi-doctor Schedule Grid, Mini-calendar, Agenda List, Filters, 
  * Appointment Details Drawer, and Modals (New Appointment, Reschedule, Cancel, Export).
  */
@@ -2350,7 +2350,7 @@ function handleExportAppointments() {
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `nile_clinics_appointments_${new Date().toISOString().slice(0, 10)}.csv`);
+  link.setAttribute("download", `shiffaa_clinics_appointments_${new Date().toISOString().slice(0, 10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -2629,7 +2629,7 @@ function handleBranchChange() {
 async function handleLogout() {
   const confirmed = window.ClinicDialog ? await window.ClinicDialog.confirm({
     title: 'Sign Out of Clinic Console?',
-    message: 'Are you sure you want to log out of Nile Clinics Admin Console?',
+    message: 'Are you sure you want to log out of Shiffaa Clinics Admin Console?',
     confirmText: 'Sign Out',
     cancelText: 'Stay Signed In',
     type: 'danger'

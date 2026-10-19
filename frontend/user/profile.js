@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - My Profile Page Controller
+ * Shiffaa Clinics - My Profile Page Controller
  * Strictly View-Only Personal Information & Account Settings
  */
 

@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Appointments Page Controller
+ * Shiffaa Clinics - Appointments Page Controller
  * Connected Live to Supabase DB via FastAPI endpoints:
  *   GET /api/v1/portal/appointments
  *   POST /api/v1/portal/appointments

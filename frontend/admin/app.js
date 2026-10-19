@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Admin Dashboard Interactive Controller
+ * Shiffaa Clinics - Admin Dashboard Interactive Controller
  * Enterprise AI Call Center & Clinic Management Console
  */
 

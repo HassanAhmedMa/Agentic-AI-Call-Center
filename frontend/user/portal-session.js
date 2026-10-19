@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Patient Portal Session Manager
+ * Shiffaa Clinics - Patient Portal Session Manager
  * Safely inspects session state with the backend using ClinicPortalAPI while updating the UI.
  */
 (function () {

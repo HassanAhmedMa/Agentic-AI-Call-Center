@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Patient Portal API Client
+ * Shiffaa Clinics - Patient Portal API Client
  * Connects directly to FastAPI backend (`http://127.0.0.1:8002/api/v1`) -> Supabase PostgreSQL
  */
 

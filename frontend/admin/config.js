@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Admin Dashboard Configuration Module
+ * Shiffaa Clinics - Admin Dashboard Configuration Module
  * 
  * Centralized environment configuration for backend API connectivity.
  * Normalizes API base URL so the `/api/v1` prefix is attached exactly once.

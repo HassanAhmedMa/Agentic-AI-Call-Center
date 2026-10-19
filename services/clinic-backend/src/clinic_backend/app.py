@@ -1747,6 +1747,8 @@ def create_app(
                 "api.js",
                 "common.js",
                 "home.js",
+                "logo.png",
+                "logo-combo.png",
             }
             if asset not in allowed or not (settings.portal_assets / asset).is_file():
                 raise APIError(404, "NOT_FOUND", "Page not found.")

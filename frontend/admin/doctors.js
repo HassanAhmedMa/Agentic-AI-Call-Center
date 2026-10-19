@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Doctors Management Controller
+ * Shiffaa Clinics - Doctors Management Controller
  * Fetches real doctors from FastAPI backend (`/api/v1/doctors` & `/api/v1/specialties`)
  * connected to the Supabase PostgreSQL `clinic` schema.
  */
@@ -505,7 +505,7 @@
           <div>
             <h5 style="margin:0 0 6px 0; font-size:12px; color:#64748B; text-transform:uppercase; font-weight:600;">Biography (EN)</h5>
             <p style="margin:0; font-size:13px; color:#334155; line-height:1.5; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
-              ${doc.bio_en || 'Consultant profile for Nile Clinics healthcare system.'}
+              ${doc.bio_en || 'Consultant profile for Shiffaa Clinics healthcare system.'}
             </p>
           </div>
 
@@ -735,7 +735,7 @@
     const titleAr = document.getElementById('newDocTitleAr')?.value.trim() || 'استشاري';
     const shiftStart = document.getElementById('newDocShiftStart')?.value || '09:00';
     const shiftEnd = document.getElementById('newDocShiftEnd')?.value || '17:00';
-    const bioEn = document.getElementById('newDocBioEn')?.value.trim() || `Experienced ${titleEn} at Nile Clinics.`;
+    const bioEn = document.getElementById('newDocBioEn')?.value.trim() || `Experienced ${titleEn} at Shiffaa Clinics.`;
 
     const checkedDays = Array.from(document.querySelectorAll('input[name="workDay"]:checked'))
       .map(el => parseInt(el.value, 10));
@@ -822,9 +822,9 @@
 
   window.handleBranchChange = function () {
     if (window.ClinicDialog) {
-      window.ClinicDialog.alert('Active Medical Facility', 'Nile Clinics - Heliopolis Branch (Active Branch)', 'info');
+      window.ClinicDialog.alert('Active Medical Facility', 'Shiffaa Clinics - Heliopolis Branch (Active Branch)', 'info');
     } else {
-      showToast('Nile Clinics - Heliopolis Branch (Active)', 'info');
+      showToast('Shiffaa Clinics - Heliopolis Branch (Active)', 'info');
     }
   };
 

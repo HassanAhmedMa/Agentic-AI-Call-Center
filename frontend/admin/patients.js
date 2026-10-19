@@ -1,5 +1,5 @@
 /**
- * Nile Clinics - Patients Directory & Profile Management Controller
+ * Shiffaa Clinics - Patients Directory & Profile Management Controller
  * Fully connected to FastAPI Backend REST API & PostgreSQL database.
  */
 
@@ -691,7 +691,7 @@
           </div>
           <div>
             <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Preferred Pharmacy</label>
-            <input type="text" id="newPatientPharmacy" placeholder="e.g. Nile Pharmacy" value="Nile Pharmacy" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+            <input type="text" id="newPatientPharmacy" placeholder="e.g. Shiffaa Pharmacy" value="Shiffaa Pharmacy" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
           </div>
         </div>
 
@@ -716,7 +716,7 @@
     const address = document.getElementById('newPatientAddress').value.trim() || 'Cairo, Egypt';
     const email = document.getElementById('newPatientEmail').value.trim() || `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`;
     const blood = document.getElementById('newPatientBlood').value;
-    const pharmacy = document.getElementById('newPatientPharmacy').value.trim() || 'Nile Pharmacy';
+    const pharmacy = document.getElementById('newPatientPharmacy').value.trim() || 'Shiffaa Pharmacy';
 
     const patientPayload = {
       name,
@@ -833,7 +833,7 @@
             </div>
             <div>
               <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Preferred Pharmacy</label>
-              <input type="text" id="editPharmacy" value="${escapeHtml(patient.pharmacy || 'Nile Pharmacy')}" placeholder="e.g. El Ezaby, Nile Pharmacy" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+              <input type="text" id="editPharmacy" value="${escapeHtml(patient.pharmacy || 'Shiffaa Pharmacy')}" placeholder="e.g. El Ezaby, Shiffaa Pharmacy" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
             </div>
           </div>
           <div>
@@ -906,7 +906,7 @@
             </div>
             <div>
               <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Preferred Pharmacy</label>
-              <input type="text" id="editPharmacy" value="${escapeHtml(patient.pharmacy || 'Nile Pharmacy')}" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
+              <input type="text" id="editPharmacy" value="${escapeHtml(patient.pharmacy || 'Shiffaa Pharmacy')}" style="width:100%; height:38px; border:1px solid #CBD5E1; border-radius:6px; padding:0 12px; font-size:13px;">
             </div>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -997,8 +997,8 @@
         payload.chronicConditions = chronicEl.value.trim() || 'None';
       }
       if (pharmacyEl) {
-        payload.pharmacy = pharmacyEl.value.trim() || 'Nile Pharmacy';
-        payload.preferred_pharmacy = pharmacyEl.value.trim() || 'Nile Pharmacy';
+        payload.pharmacy = pharmacyEl.value.trim() || 'Shiffaa Pharmacy';
+        payload.preferred_pharmacy = pharmacyEl.value.trim() || 'Shiffaa Pharmacy';
       }
     }
 
@@ -1079,7 +1079,7 @@
       const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(allPatients, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute('href', dataStr);
-      downloadAnchor.setAttribute('download', `Nile_Clinics_Patients_${new Date().toISOString().slice(0, 10)}.json`);
+      downloadAnchor.setAttribute('download', `Shiffaa_Clinics_Patients_${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1107,7 +1107,7 @@
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Nile_Clinics_Patients_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Shiffaa_Clinics_Patients_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();
