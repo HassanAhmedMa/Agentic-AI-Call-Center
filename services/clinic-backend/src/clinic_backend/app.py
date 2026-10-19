@@ -1396,6 +1396,26 @@ def create_app(
             end_dt = datetime.combine(appt_date, start_obj) + timedelta(minutes=30)
             end_obj = end_dt.time()
 
+            # 3b. Validate Doctor Working Days & Shift Hours
+            if doctor.working_days and appt_date.isoweekday() not in doctor.working_days:
+                days_str = ", ".join(
+                    [{1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 6: "Saturday", 7: "Sunday"}.get(d, str(d)) for d in doctor.working_days]
+                )
+                raise APIError(
+                    422,
+                    "DOCTOR_UNAVAILABLE",
+                    f"Dr. {doctor.name_en} is off-duty on {appt_date.strftime('%A')} ({appt_date}). Working days: {days_str}.",
+                )
+
+            if doctor.shift_start and doctor.shift_end:
+                if start_obj < doctor.shift_start or end_obj > doctor.shift_end:
+                    shift_str = f"{doctor.shift_start.strftime('%H:%M')} – {doctor.shift_end.strftime('%H:%M')}"
+                    raise APIError(
+                        422,
+                        "DOCTOR_UNAVAILABLE",
+                        f"Selected time {start_obj.strftime('%H:%M')} is outside Dr. {doctor.name_en}'s active shift ({shift_str}).",
+                    )
+
             # 4. Check slot conflict
             conflict = await session.scalar(
                 select(Appointment).where(
@@ -1596,6 +1616,26 @@ def create_app(
             new_end = (
                 datetime.combine(new_date, new_start) + timedelta(minutes=30)
             ).time()
+
+            doctor = await session.get(Doctor, appt.doctor_id)
+            if doctor:
+                if doctor.working_days and new_date.isoweekday() not in doctor.working_days:
+                    days_str = ", ".join(
+                        [{1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 6: "Saturday", 7: "Sunday"}.get(d, str(d)) for d in doctor.working_days]
+                    )
+                    raise APIError(
+                        422,
+                        "DOCTOR_UNAVAILABLE",
+                        f"Dr. {doctor.name_en} is off-duty on {new_date.strftime('%A')} ({new_date}). Working days: {days_str}.",
+                    )
+                if doctor.shift_start and doctor.shift_end:
+                    if new_start < doctor.shift_start or new_end > doctor.shift_end:
+                        shift_str = f"{doctor.shift_start.strftime('%H:%M')} – {doctor.shift_end.strftime('%H:%M')}"
+                        raise APIError(
+                            422,
+                            "DOCTOR_UNAVAILABLE",
+                            f"Selected time {new_start.strftime('%H:%M')} is outside Dr. {doctor.name_en}'s active shift ({shift_str}).",
+                        )
 
             conflict = await session.scalar(
                 select(Appointment).where(

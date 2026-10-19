@@ -13,6 +13,13 @@ def specialty_dto(item: models.Specialty) -> dto.Specialty:
 
 
 def doctor_dto(item: models.Doctor, specialty: models.Specialty) -> dto.Doctor:
+    s_start = item.shift_start.strftime("%H:%M") if item.shift_start else "09:00"
+    s_end = item.shift_end.strftime("%H:%M") if item.shift_end else "17:00"
+    days_list = (
+        [_DAYS[d - 1] for d in item.working_days]
+        if item.working_days
+        else ["saturday", "sunday", "monday", "tuesday", "wednesday", "thursday"]
+    )
     return dto.Doctor(
         id=item.id,
         name_en=item.name_en,
@@ -22,6 +29,10 @@ def doctor_dto(item: models.Doctor, specialty: models.Specialty) -> dto.Doctor:
         specialty=specialty_dto(specialty),
         languages=item.languages,
         consultation_fee=dto.Money(amount=float(item.consultation_fee)),
+        shift_start=s_start,
+        shift_end=s_end,
+        working_days=days_list,
+        working_hours=dto.WorkingHours(start=s_start, end=s_end),
     )
 
 

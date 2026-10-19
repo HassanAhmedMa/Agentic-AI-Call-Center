@@ -12,6 +12,15 @@ try {
 } catch (_) {}
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Synchronize doctors count badge from session cache if available
+  try {
+    const cachedDocCount = sessionStorage.getItem('shiffaa_doctors_count');
+    if (cachedDocCount) {
+      const badge = document.getElementById('doctorsCountBadge');
+      if (badge) badge.textContent = cachedDocCount;
+    }
+  } catch (_) {}
+
   initClock();
   initGlobalShortcuts();
   updateDateHeading();
@@ -203,9 +212,31 @@ function matchTimeSlot(appt, slotTime) {
   return false;
 }
 
+const DAY_NAME_TO_ISO = {
+  'monday': 1, 'mon': 1,
+  'tuesday': 2, 'tue': 2,
+  'wednesday': 3, 'wed': 3,
+  'thursday': 4, 'thu': 4,
+  'friday': 5, 'fri': 5,
+  'saturday': 6, 'sat': 6,
+  'sunday': 7, 'sun': 7
+};
+
 function getIsoWeekday(date) {
   const day = date.getDay();
   return day === 0 ? 7 : day; // 1=Mon ... 6=Sat, 7=Sun
+}
+
+function normalizeDoctorWorkingDays(workingDays) {
+  if (!Array.isArray(workingDays) || workingDays.length === 0) return [];
+  return workingDays.map(d => {
+    if (typeof d === 'number') return d;
+    if (typeof d === 'string') {
+      const clean = d.trim().toLowerCase();
+      return DAY_NAME_TO_ISO[clean] || null;
+    }
+    return null;
+  }).filter(d => d !== null);
 }
 
 function isDoctorWorkingOnDate(doc, date) {
@@ -213,17 +244,33 @@ function isDoctorWorkingOnDate(doc, date) {
   const isoDay = getIsoWeekday(date);
   if (isoDay === 5) return false; // Friday is clinic-wide off in Egyptian healthcare & database constraint ck_appointment_weekday!
   if (Array.isArray(doc.working_days) && doc.working_days.length > 0) {
-    return doc.working_days.includes(isoDay);
+    const normDays = normalizeDoctorWorkingDays(doc.working_days);
+    if (normDays.length > 0) {
+      return normDays.includes(isoDay);
+    }
   }
   return true;
+}
+
+function getDoctorShift(doc) {
+  if (!doc) return { start: '08:00', end: '17:00' };
+  const start = (doc.shift_start || doc.working_hours?.start || '08:00').slice(0, 5);
+  const end = (doc.shift_end || doc.working_hours?.end || '17:00').slice(0, 5);
+  return { start, end };
 }
 
 function isSlotWithinDoctorShift(doc, slotTime) {
   if (!doc) return true;
   const slot24 = parseSlotTo24h(slotTime);
-  const start = (doc.shift_start || doc.working_hours?.start || '08:00').slice(0, 5);
-  const end = (doc.shift_end || doc.working_hours?.end || '17:00').slice(0, 5);
+  const { start, end } = getDoctorShift(doc);
   return slot24 >= start && slot24 < end;
+}
+
+function formatDoctorWorkingDays(workingDays) {
+  const normDays = normalizeDoctorWorkingDays(workingDays);
+  if (normDays.length === 0) return 'Sat – Thu';
+  const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return normDays.map(d => names[d - 1]).join(', ');
 }
 
 function renderScheduleSkeletons() {
@@ -588,7 +635,6 @@ window.openNewAppointmentForSlot = function(doctorName, slotTime) {
   openNewAppointmentModal();
   setTimeout(() => {
     const docSelect = document.getElementById('newApptDoctor');
-    const timeSelect = document.getElementById('newApptTime');
     const dateInput = document.getElementById('newApptDate');
 
     if (dateInput) dateInput.value = formatDateIso(selectedDate);
@@ -600,15 +646,7 @@ window.openNewAppointmentForSlot = function(doctorName, slotTime) {
         }
       }
     }
-    if (timeSelect && slotTime) {
-      const time24 = parseSlotTo24h(slotTime);
-      for (let i = 0; i < timeSelect.options.length; i++) {
-        if (timeSelect.options[i].value === time24 || timeSelect.options[i].text.startsWith(slotTime.slice(0, 5))) {
-          timeSelect.selectedIndex = i;
-          break;
-        }
-      }
-    }
+    refreshNewApptTimeSlots(slotTime);
   }, 100);
 };
 
@@ -1373,6 +1411,13 @@ async function loadLiveCatalog() {
       liveDoctorsCache = docData.doctors;
       populateDoctorsFilter(docData.doctors);
       updateDoctorScheduleColumns(docData.doctors);
+      const doctorsBadge = document.getElementById('doctorsCountBadge');
+      if (doctorsBadge) {
+        doctorsBadge.textContent = String(docData.doctors.length);
+      }
+      try {
+        sessionStorage.setItem('shiffaa_doctors_count', String(docData.doctors.length));
+      } catch (_) {}
     }
 
     if (apptData && Array.isArray(apptData.appointments)) {
@@ -1725,7 +1770,7 @@ async function openNewAppointmentModal() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Doctor *</label>
-          <select id="newApptDoctor" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
+          <select id="newApptDoctor" onchange="refreshNewApptTimeSlots()" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
             ${doctorOptions}
           </select>
         </div>
@@ -1742,7 +1787,7 @@ async function openNewAppointmentModal() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Date *</label>
-          <input type="date" id="newApptDate" value="${todayIso}" min="${todayIso}" max="${maxHorizonIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+          <input type="date" id="newApptDate" value="${todayIso}" min="${todayIso}" max="${maxHorizonIso}" onchange="refreshNewApptTimeSlots()" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
         </div>
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Time Slot (30 mins) *</label>
@@ -1751,6 +1796,7 @@ async function openNewAppointmentModal() {
           </select>
         </div>
       </div>
+      <div id="newApptShiftInfo" style="margin-top:-6px;"></div>
       <div>
         <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Clinical Notes / Chief Complaint</label>
         <textarea id="newApptNotes" rows="2" placeholder="Brief clinical summary or reason for visit..." style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
@@ -1764,6 +1810,152 @@ async function openNewAppointmentModal() {
   `;
 
   openAdminModal('Schedule New Appointment', bodyHtml, footerHtml);
+  setTimeout(() => {
+    refreshNewApptTimeSlots();
+  }, 20);
+}
+
+function refreshNewApptTimeSlots(preferredSlot) {
+  const docSelect = document.getElementById('newApptDoctor');
+  const dateInput = document.getElementById('newApptDate');
+  const timeSelect = document.getElementById('newApptTime');
+  const infoContainer = document.getElementById('newApptShiftInfo');
+  const submitBtn = document.querySelector('.admin-modal-footer .modal-btn-primary');
+
+  if (!docSelect || !dateInput || !timeSelect) return;
+
+  const docValParts = (docSelect.value || '').split('|');
+  const doctorName = docValParts[0];
+  const docId = docValParts[2] ? parseInt(docValParts[2], 10) : null;
+  const docObj = liveDoctorsCache.find(d => (docId && d.id === docId) || d.name_en === doctorName);
+
+  const dateVal = dateInput.value;
+  const targetDate = parseApptDate(dateVal);
+
+  if (!targetDate) {
+    if (infoContainer) infoContainer.innerHTML = '';
+    return;
+  }
+
+  // 1. Check clinic closed / Friday
+  const isoDay = getIsoWeekday(targetDate);
+  const holidayCheck = (window.ClinicApi && typeof window.ClinicApi.isClinicHoliday === 'function')
+    ? window.ClinicApi.isClinicHoliday(dateVal)
+    : { isHoliday: false };
+
+  if (isoDay === 5 || holidayCheck.isHoliday) {
+    const reason = holidayCheck.isHoliday ? `${holidayCheck.name_en} (${holidayCheck.name_ar || ''})` : 'Weekly Friday Weekend';
+    if (infoContainer) {
+      infoContainer.innerHTML = `
+        <div style="padding: 7px 10px; background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span><strong>Clinic Closed:</strong> ${escapeHtml(reason)}. Doctor appointments cannot be scheduled on clinic holidays.</span>
+        </div>
+      `;
+    }
+    timeSelect.innerHTML = `<option value="" disabled selected>Clinic Closed on this date</option>`;
+    if (submitBtn) submitBtn.disabled = true;
+    return;
+  }
+
+  const shift = getDoctorShift(docObj);
+  const workingDaysFormatted = docObj ? formatDoctorWorkingDays(docObj.working_days) : 'Sat – Thu';
+
+  // 2. Check if doctor is off-duty on this date
+  if (docObj && !isDoctorWorkingOnDate(docObj, targetDate)) {
+    const dayName = targetDate.toLocaleDateString('en-GB', { weekday: 'long' });
+    if (infoContainer) {
+      infoContainer.innerHTML = `
+        <div style="padding: 7px 10px; background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; border-radius: 6px; font-size: 11.5px;">
+          <div style="display:flex; align-items:center; gap:6px; font-weight:600;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Doctor Off-Duty: ${escapeHtml(docObj.name_en)} is off on ${dayName}s</span>
+          </div>
+          <div style="margin-top: 3px; font-size: 11px; color: #B45309;">
+            Scheduled working days: <strong>${workingDaysFormatted}</strong> (Shift: ${shift.start} – ${shift.end})
+          </div>
+        </div>
+      `;
+    }
+    timeSelect.innerHTML = `<option value="" disabled selected>Doctor is off-duty on ${dayName}s</option>`;
+    if (submitBtn) submitBtn.disabled = true;
+    return;
+  }
+
+  // 3. Doctor is on duty! Enable submit button
+  if (submitBtn) submitBtn.disabled = false;
+
+  if (infoContainer) {
+    infoContainer.innerHTML = `
+      <div style="padding: 6px 10px; background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; border-radius: 6px; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+        <span>Active Shift: <strong>${shift.start} – ${shift.end}</strong></span>
+        <span style="color: #15803D;">Working days: ${workingDaysFormatted}</span>
+      </div>
+    `;
+  }
+
+  // Find appointments already booked for this doctor on this date
+  const bookedSlots = new Set();
+  if (Array.isArray(appointmentsData)) {
+    appointmentsData.forEach(a => {
+      if ((a.status || '').toLowerCase() === 'cancelled') return;
+      const aDate = parseApptDate(a.date);
+      if (!isSameDay(aDate, targetDate)) return;
+
+      const docIdMatch = docId && a.doctorId && Number(a.doctorId) === Number(docId);
+      const docNameMatch = doctorName && a.doctor && (
+        a.doctor.toLowerCase().includes(doctorName.toLowerCase()) ||
+        doctorName.toLowerCase().includes(a.doctor.toLowerCase())
+      );
+      if (docIdMatch || docNameMatch) {
+        const slot24 = parseSlotTo24h(a.timeShort || a.start_time || a.time || '');
+        if (slot24) bookedSlots.add(slot24);
+      }
+    });
+  }
+
+  // Generate 30-min slots strictly within [shift.start, shift.end)
+  const [startH, startM] = shift.start.split(':').map(Number);
+  const [endH, endM] = shift.end.split(':').map(Number);
+  const startMinutes = (startH || 8) * 60 + (startM || 0);
+  const endMinutes = (endH || 17) * 60 + (endM || 0);
+
+  const validSlots = [];
+  for (let m = startMinutes; m < endMinutes; m += 30) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    const time24 = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 === 0 ? 12 : h % 12;
+    const label = `${String(displayH).padStart(2, '0')}:${String(min).padStart(2, '0')} ${ampm}`;
+    const isBooked = bookedSlots.has(time24);
+    validSlots.push({ time24, label, isBooked });
+  }
+
+  if (validSlots.length === 0) {
+    timeSelect.innerHTML = `<option value="" disabled selected>No shift slots available</option>`;
+    if (submitBtn) submitBtn.disabled = true;
+    return;
+  }
+
+  const targetPreferred = preferredSlot ? (preferredSlot.includes(':') ? parseSlotTo24h(preferredSlot) : preferredSlot) : timeSelect.value;
+
+  let optionsHtml = '';
+  let selectedFound = false;
+
+  validSlots.forEach(slot => {
+    const isMatch = (!selectedFound && (slot.time24 === targetPreferred || (!targetPreferred && !slot.isBooked)));
+    if (isMatch && !slot.isBooked) {
+      selectedFound = true;
+    }
+    if (slot.isBooked) {
+      optionsHtml += `<option value="${slot.time24}" disabled style="color:#94A3B8;">${slot.label} (Booked)</option>`;
+    } else {
+      optionsHtml += `<option value="${slot.time24}" ${isMatch ? 'selected' : ''}>${slot.label}</option>`;
+    }
+  });
+
+  timeSelect.innerHTML = optionsHtml;
 }
 
 async function submitNewAppointment() {
@@ -2086,7 +2278,7 @@ function openRescheduleModal() {
       </div>
       <div>
         <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Target Date *</label>
-        <input type="date" id="reschedDate" value="${todayIso}" min="${todayIso}" max="${maxHorizonIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
+        <input type="date" id="reschedDate" onchange="refreshReschedTimeSlots()" value="${todayIso}" min="${todayIso}" max="${maxHorizonIso}" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit;">
       </div>
       <div>
         <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">New Time Slot (30 mins) *</label>
@@ -2094,6 +2286,7 @@ function openRescheduleModal() {
           ${reschedTimeSlotOptions}
         </select>
       </div>
+      <div id="reschedShiftInfo" style="margin-top:-6px;"></div>
       <div>
         <label style="display:block; font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:4px;">Reason for Rescheduling</label>
         <select id="reschedReason" style="width:100%; padding:9px 12px; border:1px solid var(--border-light); border-radius:8px; font-size:13px; font-family:inherit; background:#FFF;">
@@ -2112,6 +2305,149 @@ function openRescheduleModal() {
   `;
 
   openAdminModal('Reschedule Appointment', bodyHtml, footerHtml);
+  setTimeout(() => {
+    refreshReschedTimeSlots();
+  }, 20);
+}
+
+function refreshReschedTimeSlots() {
+  if (!selectedAppointment) return;
+  const dateInput = document.getElementById('reschedDate');
+  const timeSelect = document.getElementById('reschedTime');
+  const infoContainer = document.getElementById('reschedShiftInfo');
+  const submitBtn = document.querySelector('.admin-modal-footer .modal-btn-primary');
+
+  if (!dateInput || !timeSelect) return;
+
+  const dateVal = dateInput.value;
+  const targetDate = parseApptDate(dateVal);
+  if (!targetDate) return;
+
+  const selectedDocObj = liveDoctorsCache.find(d => {
+    if (selectedAppointment.doctorId && d.id === selectedAppointment.doctorId) return true;
+    if (selectedAppointment.doctor && (
+      d.name_en.toLowerCase().includes(selectedAppointment.doctor.toLowerCase()) ||
+      selectedAppointment.doctor.toLowerCase().includes(d.name_en.toLowerCase())
+    )) return true;
+    return false;
+  });
+
+  // 1. Check Friday / Holiday
+  const isoDay = getIsoWeekday(targetDate);
+  const holidayCheck = (window.ClinicApi && typeof window.ClinicApi.isClinicHoliday === 'function')
+    ? window.ClinicApi.isClinicHoliday(dateVal)
+    : { isHoliday: false };
+
+  if (isoDay === 5 || holidayCheck.isHoliday) {
+    const reason = holidayCheck.isHoliday ? `${holidayCheck.name_en} (${holidayCheck.name_ar || ''})` : 'Weekly Friday Weekend';
+    if (infoContainer) {
+      infoContainer.innerHTML = `
+        <div style="padding: 7px 10px; background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span><strong>Clinic Closed:</strong> ${escapeHtml(reason)}. Cannot reschedule to clinic holidays.</span>
+        </div>
+      `;
+    }
+    timeSelect.innerHTML = `<option value="" disabled selected>Clinic Closed on this date</option>`;
+    if (submitBtn) submitBtn.disabled = true;
+    return;
+  }
+
+  const shift = getDoctorShift(selectedDocObj);
+  const workingDaysFormatted = selectedDocObj ? formatDoctorWorkingDays(selectedDocObj.working_days) : 'Sat – Thu';
+
+  // 2. Doctor off-duty
+  if (selectedDocObj && !isDoctorWorkingOnDate(selectedDocObj, targetDate)) {
+    const dayName = targetDate.toLocaleDateString('en-GB', { weekday: 'long' });
+    if (infoContainer) {
+      infoContainer.innerHTML = `
+        <div style="padding: 7px 10px; background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; border-radius: 6px; font-size: 11.5px;">
+          <div style="display:flex; align-items:center; gap:6px; font-weight:600;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Doctor Off-Duty: ${escapeHtml(selectedDocObj.name_en)} is off on ${dayName}s</span>
+          </div>
+          <div style="margin-top: 3px; font-size: 11px; color: #B45309;">
+            Scheduled working days: <strong>${workingDaysFormatted}</strong> (Shift: ${shift.start} – ${shift.end})
+          </div>
+        </div>
+      `;
+    }
+    timeSelect.innerHTML = `<option value="" disabled selected>Doctor is off-duty on ${dayName}s</option>`;
+    if (submitBtn) submitBtn.disabled = true;
+    return;
+  }
+
+  if (submitBtn) submitBtn.disabled = false;
+
+  if (infoContainer) {
+    infoContainer.innerHTML = `
+      <div style="padding: 6px 10px; background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; border-radius: 6px; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+        <span>Active Shift: <strong>${shift.start} – ${shift.end}</strong></span>
+        <span style="color: #15803D;">Working days: ${workingDaysFormatted}</span>
+      </div>
+    `;
+  }
+
+  // Find booked slots for this doctor on targetDate (excluding this appointment itself)
+  const bookedSlots = new Set();
+  if (Array.isArray(appointmentsData)) {
+    appointmentsData.forEach(a => {
+      if (a.id === selectedAppointment.id) return;
+      if ((a.status || '').toLowerCase() === 'cancelled') return;
+      const aDate = parseApptDate(a.date);
+      if (!isSameDay(aDate, targetDate)) return;
+
+      const docIdMatch = selectedAppointment.doctorId && a.doctorId && Number(a.doctorId) === Number(selectedAppointment.doctorId);
+      const docNameMatch = selectedAppointment.doctor && a.doctor && (
+        a.doctor.toLowerCase().includes(selectedAppointment.doctor.toLowerCase()) ||
+        selectedAppointment.doctor.toLowerCase().includes(a.doctor.toLowerCase())
+      );
+      if (docIdMatch || docNameMatch) {
+        const slot24 = parseSlotTo24h(a.timeShort || a.start_time || a.time || '');
+        if (slot24) bookedSlots.add(slot24);
+      }
+    });
+  }
+
+  const [startH, startM] = shift.start.split(':').map(Number);
+  const [endH, endM] = shift.end.split(':').map(Number);
+  const startMinutes = (startH || 8) * 60 + (startM || 0);
+  const endMinutes = (endH || 17) * 60 + (endM || 0);
+
+  const validSlots = [];
+  for (let m = startMinutes; m < endMinutes; m += 30) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    const time24 = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 === 0 ? 12 : h % 12;
+    const label = `${String(displayH).padStart(2, '0')}:${String(min).padStart(2, '0')} ${ampm}`;
+    const isBooked = bookedSlots.has(time24);
+    validSlots.push({ time24, label, isBooked });
+  }
+
+  if (validSlots.length === 0) {
+    timeSelect.innerHTML = `<option value="" disabled selected>No shift slots available</option>`;
+    if (submitBtn) submitBtn.disabled = true;
+    return;
+  }
+
+  const currentSlot24 = parseSlotTo24h(selectedAppointment.timeShort || selectedAppointment.time || '');
+  let optionsHtml = '';
+  let selectedFound = false;
+
+  validSlots.forEach(slot => {
+    const isMatch = (!selectedFound && slot.time24 === currentSlot24 && !slot.isBooked);
+    if (isMatch) selectedFound = true;
+
+    if (slot.isBooked) {
+      optionsHtml += `<option value="${slot.time24}" disabled style="color:#94A3B8;">${slot.label} (Booked)</option>`;
+    } else {
+      optionsHtml += `<option value="${slot.time24}" ${isMatch ? 'selected' : ''}>${slot.label}</option>`;
+    }
+  });
+
+  timeSelect.innerHTML = optionsHtml;
 }
 
 async function confirmRescheduleAppointment() {
@@ -2198,6 +2534,46 @@ async function confirmRescheduleAppointment() {
     return;
   }
 
+  // Doctor availability & shift check
+  const selectedDocObj = liveDoctorsCache.find(d => {
+    if (selectedAppointment.doctorId && d.id === selectedAppointment.doctorId) return true;
+    if (selectedAppointment.doctor && (
+      d.name_en.toLowerCase().includes(selectedAppointment.doctor.toLowerCase()) ||
+      selectedAppointment.doctor.toLowerCase().includes(d.name_en.toLowerCase())
+    )) return true;
+    return false;
+  });
+
+  if (selectedDocObj) {
+    if (!isDoctorWorkingOnDate(selectedDocObj, targetDate)) {
+      const workingDaysFormatted = formatDoctorWorkingDays(selectedDocObj.working_days);
+      if (window.ClinicDialog) {
+        await window.ClinicDialog.alert(
+          'Doctor Unavailable (DOCTOR_UNAVAILABLE)',
+          `${escapeHtml(selectedDocObj.name_en)} does not work on ${targetDate.toLocaleDateString('en-GB', { weekday: 'long' })}s. Scheduled working days: ${workingDaysFormatted}.`,
+          'warning'
+        );
+      } else {
+        alert(`${selectedDocObj.name_en} is off-duty on this day.`);
+      }
+      return;
+    }
+    const slot24 = `${String(reschedH).padStart(2, '0')}:${String(reschedM).padStart(2, '0')}`;
+    const { start: startShift, end: endShift } = getDoctorShift(selectedDocObj);
+    if (slot24 < startShift || slot24 >= endShift) {
+      if (window.ClinicDialog) {
+        await window.ClinicDialog.alert(
+          'Outside Working Hours (DOCTOR_UNAVAILABLE)',
+          `${escapeHtml(selectedDocObj.name_en)} working shift is ${startShift} – ${endShift}. Slot ${slot24} is outside their active shift.`,
+          'warning'
+        );
+      } else {
+        alert(`${selectedDocObj.name_en} working shift is ${startShift} – ${endShift}.`);
+      }
+      return;
+    }
+  }
+
   try {
     if (window.ClinicApi) {
       await window.ClinicApi.rescheduleAppointment(selectedAppointment.id, {
@@ -2225,6 +2601,9 @@ async function confirmRescheduleAppointment() {
     } else if (err.code === 'BOOKING_TOO_FAR_AHEAD') {
       title = 'Booking Too Far Ahead (BOOKING_TOO_FAR_AHEAD)';
       msg = 'Choose a nearer slot within 30 days.';
+    } else if (err.code === 'DOCTOR_UNAVAILABLE') {
+      title = 'Doctor Unavailable (DOCTOR_UNAVAILABLE)';
+      msg = 'Doctor is unavailable or off-duty at this slot.';
     } else if (err.code === 'SLOT_UNAVAILABLE') {
       title = 'Slot Unavailable (SLOT_UNAVAILABLE)';
       msg = 'This slot is already booked.';

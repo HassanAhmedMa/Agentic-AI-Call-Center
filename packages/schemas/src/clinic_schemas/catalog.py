@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -20,6 +22,11 @@ class Specialty(DTO):
     name_ar: str
 
 
+class WorkingHours(DTO):
+    start: str
+    end: str
+
+
 class Doctor(DTO):
     id: int
     name_en: str
@@ -29,11 +36,10 @@ class Doctor(DTO):
     specialty: Specialty
     languages: list[str]
     consultation_fee: Money
-
-
-class WorkingHours(DTO):
-    start: str
-    end: str
+    shift_start: str | None = None
+    shift_end: str | None = None
+    working_days: list[str] | None = None
+    working_hours: WorkingHours | None = None
 
 
 class DoctorDetail(Doctor):
