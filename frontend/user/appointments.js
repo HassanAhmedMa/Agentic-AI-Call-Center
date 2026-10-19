@@ -468,7 +468,7 @@
         ${isAr ? 'إلغاء' : 'Cancel'}
       </button>
       <button class="btn-primary-action" id="btnConfirmBookingSubmit" onclick="submitBookAppointmentModal()">
-        ${isAr ? 'تأكيد الحجز وحفظه بالـ DB' : 'Confirm & Save Booking'}
+        ${isAr ? 'تأكيد الحجز' : 'Confirm Booking'}
       </button>
     `;
 
@@ -520,14 +520,14 @@
       });
 
       closeActiveModal();
-      showToast(isAr ? 'تم تأكيد حجزك بنجاح وحفظه في قاعدة البيانات!' : 'Appointment booked and saved in clinic database successfully!', 'success');
+      showToast(isAr ? 'تم تأكيد حجزك بنجاح!' : 'Appointment booked successfully!', 'success');
       await fetchAndRenderAppointments();
     } catch (err) {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = isAr ? 'تأكيد الحجز وحفظه بالـ DB' : 'Confirm & Save Booking';
+        submitBtn.textContent = isAr ? 'تأكيد الحجز' : 'Confirm Booking';
       }
-      showToast(err.message || (isAr ? 'فشل إتمام الحجز في قاعدة البيانات' : 'Failed to save appointment in database'), 'error');
+      showToast(err.message || (isAr ? 'فشل إتمام الحجز' : 'Failed to book appointment'), 'error');
     }
   };
 

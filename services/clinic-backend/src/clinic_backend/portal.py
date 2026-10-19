@@ -4,7 +4,7 @@ import base64
 import hashlib
 import re
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from urllib.parse import quote, urlencode, urlsplit
 
 from clinic_schemas import portal as dto
@@ -648,13 +648,63 @@ def portal_router(
                 raise APIError(401, "SESSION_EXPIRED", "Sign in again.")
 
             doctor_id = int(body.get("doctor_id") or body.get("doctorId") or 1)
+            doctor = await session.get(Doctor, doctor_id)
+            if not doctor:
+                raise APIError(404, "DOCTOR_NOT_FOUND", "Selected doctor was not found.")
+
             date_raw = str(body.get("appointment_date") or body.get("date") or "")[:10]
-            appt_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+            try:
+                appt_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+            except Exception:
+                raise APIError(400, "INVALID_DATE", "Invalid appointment date format. Use YYYY-MM-DD.")
+
+            if appt_date.isoweekday() == 5:
+                raise APIError(400, "CLINIC_CLOSED", "The clinic is closed on Fridays. / العيادة مغلقة أيام الجمعة.")
+
             time_raw = str(body.get("start_time") or body.get("time") or "10:00")[:5]
-            start_t = datetime.strptime(time_raw, "%H:%M").time()
+            try:
+                start_t = datetime.strptime(time_raw, "%H:%M").time()
+            except Exception:
+                raise APIError(400, "INVALID_TIME", "Invalid appointment time format. Use HH:MM.")
+
+            if start_t.minute not in (0, 30):
+                start_t = time(start_t.hour, 30 if start_t.minute > 15 else 0)
+
             start_dt = datetime.combine(appt_date, start_t)
             end_t = (start_dt + timedelta(minutes=30)).time()
-            visit_reason = str(body.get("visit_reason") or body.get("reason") or "Routine consultation via patient portal")
+            visit_reason = str(body.get("visit_reason") or body.get("reason") or "Routine consultation via patient portal")[:300]
+
+            # Check doctor conflict
+            conflict = await session.scalar(
+                select(Appointment).where(
+                    Appointment.doctor_id == doctor_id,
+                    Appointment.appointment_date == appt_date,
+                    Appointment.start_time == start_t,
+                    Appointment.status == "scheduled",
+                )
+            )
+            if conflict:
+                raise APIError(
+                    409,
+                    "SLOT_OCCUPIED",
+                    f"Dr. {doctor.name_en} already has a scheduled appointment at {start_t.strftime('%H:%M')} on {appt_date}."
+                )
+
+            # Check patient conflict
+            p_conflict = await session.scalar(
+                select(Appointment).where(
+                    Appointment.patient_id == binding.patient_id,
+                    Appointment.appointment_date == appt_date,
+                    Appointment.start_time == start_t,
+                    Appointment.status == "scheduled",
+                )
+            )
+            if p_conflict:
+                raise APIError(
+                    409,
+                    "PATIENT_SLOT_CONFLICT",
+                    f"You already have a scheduled appointment at {start_t.strftime('%H:%M')} on {appt_date}."
+                )
 
             new_appt = Appointment(
                 patient_id=binding.patient_id,
@@ -672,10 +722,10 @@ def portal_router(
             session.add(
                 AppointmentHistory(
                     appointment_id=created_id,
-                    changed_by="patient",
-                    from_status=None,
-                    to_status="scheduled",
-                    reason=visit_reason,
+                    event="created",
+                    new_date=appt_date,
+                    new_start_time=start_t,
+                    actor="patient",
                 )
             )
             await session.flush()
@@ -705,18 +755,19 @@ def portal_router(
             if appt is None or appt.patient_id != binding.patient_id:
                 raise APIError(404, "NOT_FOUND", "Appointment not found.")
 
-            old_status = appt.status
+            old_date = appt.appointment_date
+            old_time = appt.start_time
             appt.status = "cancelled"
             appt.cancelled_at = datetime.now(UTC)
             appt.cancelled_by = "patient"
-            appt.cancellation_reason = str(body.get("reason") or "Patient cancelled via portal")
+            appt.cancellation_reason = str(body.get("reason") or "Patient cancelled via portal")[:300]
             session.add(
                 AppointmentHistory(
                     appointment_id=appointment_id,
-                    changed_by="patient",
-                    from_status=old_status,
-                    to_status="cancelled",
-                    reason=appt.cancellation_reason,
+                    event="cancelled",
+                    previous_date=old_date,
+                    previous_start_time=old_time,
+                    actor="patient",
                 )
             )
             await session.flush()
@@ -745,12 +796,53 @@ def portal_router(
             if appt is None or appt.patient_id != binding.patient_id:
                 raise APIError(404, "NOT_FOUND", "Appointment not found.")
 
-            new_date = datetime.strptime(str(body.get("new_date")), "%Y-%m-%d").date()
-            new_time = datetime.strptime(str(body.get("new_start_time"))[:5], "%H:%M").time()
+            try:
+                new_date = datetime.strptime(str(body.get("new_date")), "%Y-%m-%d").date()
+            except Exception:
+                raise APIError(400, "INVALID_DATE", "Invalid new appointment date format.")
+
+            if new_date.isoweekday() == 5:
+                raise APIError(400, "CLINIC_CLOSED", "The clinic is closed on Fridays. / العيادة مغلقة أيام الجمعة.")
+
+            try:
+                new_time = datetime.strptime(str(body.get("new_start_time"))[:5], "%H:%M").time()
+            except Exception:
+                raise APIError(400, "INVALID_TIME", "Invalid new start time format.")
+
+            if new_time.minute not in (0, 30):
+                new_time = time(new_time.hour, 30 if new_time.minute > 15 else 0)
+
+            # Check doctor conflict
+            conflict = await session.scalar(
+                select(Appointment).where(
+                    Appointment.doctor_id == appt.doctor_id,
+                    Appointment.appointment_date == new_date,
+                    Appointment.start_time == new_time,
+                    Appointment.status == "scheduled",
+                    Appointment.id != appointment_id,
+                )
+            )
+            if conflict:
+                raise APIError(409, "SLOT_OCCUPIED", "The requested doctor time slot is already booked.")
+
+            # Check patient conflict
+            p_conflict = await session.scalar(
+                select(Appointment).where(
+                    Appointment.patient_id == binding.patient_id,
+                    Appointment.appointment_date == new_date,
+                    Appointment.start_time == new_time,
+                    Appointment.status == "scheduled",
+                    Appointment.id != appointment_id,
+                )
+            )
+            if p_conflict:
+                raise APIError(409, "PATIENT_SLOT_CONFLICT", "You already have another appointment scheduled at this time.")
+
             start_dt = datetime.combine(new_date, new_time)
             end_t = (start_dt + timedelta(minutes=30)).time()
 
-            old_status = appt.status
+            old_date = appt.appointment_date
+            old_time = appt.start_time
             appt.appointment_date = new_date
             appt.start_time = new_time
             appt.end_time = end_t
@@ -758,10 +850,12 @@ def portal_router(
             session.add(
                 AppointmentHistory(
                     appointment_id=appointment_id,
-                    changed_by="patient",
-                    from_status=old_status,
-                    to_status="scheduled",
-                    reason=str(body.get("reason") or "Patient rescheduled via portal"),
+                    event="time_changed",
+                    previous_date=old_date,
+                    previous_start_time=old_time,
+                    new_date=new_date,
+                    new_start_time=new_time,
+                    actor="patient",
                 )
             )
             await session.flush()

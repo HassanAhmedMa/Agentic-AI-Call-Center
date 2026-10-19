@@ -265,65 +265,34 @@
         ...payload
       };
 
-      try {
-        const result = await request('/portal/appointments', {
-          method: 'POST',
-          body: JSON.stringify(enriched)
-        });
-        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
-        return result;
-      } catch (err) {
-        const result = await request('/appointments', {
-          method: 'POST',
-          body: JSON.stringify(enriched)
-        });
-        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
-        return result;
-      }
+      const result = await request('/portal/appointments', {
+        method: 'POST',
+        body: JSON.stringify(enriched)
+      });
+      PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+      return result;
     },
 
     async rescheduleAppointment(appointmentId, newDate, newTime, reason = 'Patient requested reschedule via portal') {
-      try {
-        const result = await request(`/portal/appointments/${appointmentId}/reschedule`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            new_date: newDate,
-            new_start_time: newTime,
-            reason
-          })
-        });
-        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
-        return result;
-      } catch (_) {
-        const result = await request(`/appointments/${appointmentId}/reschedule`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            new_date: newDate,
-            new_start_time: newTime,
-            reason
-          })
-        });
-        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
-        return result;
-      }
+      const result = await request(`/portal/appointments/${appointmentId}/reschedule`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          new_date: newDate,
+          new_start_time: newTime,
+          reason
+        })
+      });
+      PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+      return result;
     },
 
     async cancelAppointment(appointmentId, reason = 'Patient cancelled via portal') {
-      try {
-        const result = await request(`/portal/appointments/${appointmentId}/cancel`, {
-          method: 'PATCH',
-          body: JSON.stringify({ reason })
-        });
-        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
-        return result;
-      } catch (_) {
-        const result = await request(`/appointments/${appointmentId}/cancel`, {
-          method: 'PATCH',
-          body: JSON.stringify({ reason })
-        });
-        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
-        return result;
-      }
+      const result = await request(`/portal/appointments/${appointmentId}/cancel`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reason })
+      });
+      PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+      return result;
     }
   };
 
