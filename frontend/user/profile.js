@@ -164,7 +164,7 @@
     const label = document.getElementById('profileActiveLangLabel');
     if (btnEn) btnEn.classList.toggle('active', !isAr);
     if (btnAr) btnAr.classList.toggle('active', isAr);
-    if (label) label.textContent = isAr ? 'العامية المصرية' : 'English';
+    if (label) label.textContent = isAr ? 'العربية' : 'English';
   }
 
   window.setPortalLanguage = function (lang) {

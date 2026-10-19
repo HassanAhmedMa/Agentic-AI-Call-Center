@@ -174,7 +174,7 @@
       setting_help_support: "المساعدة والدعم الطبي",
       logout_btn: "تسجيل الخروج",
       voice_caller_name: "فريق رعاية شفاء الصوتي",
-      voice_status: "متصل • محادثة صوتية فورية بالعامية المصرية",
+      voice_status: "متصل • محادثة صوتية فورية بالعربية",
       mute_btn: "كتم الصوت",
       end_call_btn: "إنهاء المكالمة",
       support_page_title: "الدعم والاستفسارات",
@@ -206,8 +206,8 @@
 
     const labelEl = document.getElementById('langLabelText');
     const profileLangEl = document.getElementById('profileActiveLangLabel');
-    if (labelEl) labelEl.textContent = isAr ? 'English' : 'العامية المصرية';
-    if (profileLangEl) profileLangEl.textContent = isAr ? 'العامية المصرية (Egyptian Arabic)' : 'English';
+    if (labelEl) labelEl.textContent = isAr ? 'English' : 'العربية';
+    if (profileLangEl) profileLangEl.textContent = isAr ? 'العربية (Arabic)' : 'English';
 
     const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
     document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -231,13 +231,13 @@
   window.toggleLanguage = function () {
     const next = currentLang === 'en' ? 'ar' : 'en';
     applyLanguage(next);
-    showToast(next === 'ar' ? 'تم تحويل الواجهة إلى العامية المصرية' : 'Switched to English successfully', 'info');
+    showToast(next === 'ar' ? 'تم تحويل الواجهة إلى العربية' : 'Switched to English successfully', 'info');
   };
 
   window.setLanguage = function (lang) {
     const target = lang === 'ar' ? 'ar' : 'en';
     applyLanguage(target);
-    showToast(target === 'ar' ? 'تم تحويل الواجهة إلى العامية المصرية' : 'Switched to English successfully', 'info');
+    showToast(target === 'ar' ? 'تم تحويل الواجهة إلى العربية' : 'Switched to English successfully', 'info');
   };
 
   window.getCurrentLang = function () {

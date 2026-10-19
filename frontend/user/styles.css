@@ -2035,11 +2035,10 @@ html[dir="rtl"] .toast-stack {
   .lang-pill-btn {
     padding: 4px 8px;
     font-size: 11px;
-    max-width: 82px;
+    max-width: 88px;
+    flex-shrink: 0;
   }
   .lang-pill-btn .lang-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
   .user-name-text {
@@ -2093,8 +2092,9 @@ html[dir="rtl"] .toast-stack {
     border-radius: var(--radius-full);
   }
   .lang-pill-btn {
-    max-width: 74px;
+    max-width: 82px;
     padding: 4px 6px;
+    flex-shrink: 0;
   }
 }
 
