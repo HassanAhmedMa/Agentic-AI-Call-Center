@@ -1749,6 +1749,7 @@ def create_app(
                 "home.js",
                 "logo.png",
                 "logo-combo.png",
+                "clinic-building.jpg",
             }
             if asset not in allowed or not (settings.portal_assets / asset).is_file():
                 raise APIError(404, "NOT_FOUND", "Page not found.")
