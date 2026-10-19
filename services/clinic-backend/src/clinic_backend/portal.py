@@ -23,6 +23,7 @@ from clinic_backend.scheduling_models import Appointment, AppointmentHistory
 from clinic_backend.settings import Settings
 from clinic_backend.supabase_auth import AuthClient, VerifiedAuthUser
 from clinic_backend.supabase_identity import SupabaseIdentity, active_auth_session
+from clinic_backend.websocket_manager import ws_manager
 
 PREFIX = "/api/v1/portal"
 GOOGLE = "clinic_portal_google"
@@ -728,7 +729,33 @@ def portal_router(
                     actor="patient",
                 )
             )
-            await session.flush()
+            patient = await session.get(Patient, binding.patient_id)
+            spec = await session.get(Specialty, doctor.specialty_id) if doctor else None
+
+            ws_payload = {
+                "id": created_id,
+                "patient_id": binding.patient_id,
+                "patient_name": patient.full_name if patient else "Patient",
+                "patientName": patient.full_name if patient else "Patient",
+                "patient_phone": patient.phone if patient else "",
+                "patientPhone": patient.phone if patient else "",
+                "doctor_id": doctor_id,
+                "doctor_name": doctor.name_en if doctor else "",
+                "doctor": f"Dr. {doctor.name_en}" if doctor else "",
+                "specialty": spec.name_en if spec else "General Medicine",
+                "appointment_date": appt_date.isoformat(),
+                "date": appt_date.isoformat(),
+                "start_time": start_t.strftime("%H:%M:%S"),
+                "end_time": end_t.strftime("%H:%M:%S"),
+                "time": f"{start_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}",
+                "timeShort": start_t.strftime("%I:%M %p"),
+                "status": "Confirmed",
+                "visit_reason": visit_reason,
+                "notes": visit_reason,
+                "type": "Consultation",
+            }
+
+        await ws_manager.broadcast("APPOINTMENT_BOOKED", ws_payload)
 
         json_resp = JSONResponse(
             {"id": created_id, "status": "scheduled", "message": "Appointment booked successfully"},
@@ -771,6 +798,16 @@ def portal_router(
                 )
             )
             await session.flush()
+
+            cancel_payload = {
+                "id": appointment_id,
+                "patient_id": appt.patient_id,
+                "doctor_id": appt.doctor_id,
+                "status": "Cancelled",
+                "cancellation_reason": appt.cancellation_reason,
+            }
+
+        await ws_manager.broadcast("APPOINTMENT_CANCELLED", cancel_payload)
 
         json_resp = JSONResponse(
             {"id": appointment_id, "status": "cancelled", "message": "Appointment cancelled successfully"}
@@ -859,6 +896,18 @@ def portal_router(
                 )
             )
             await session.flush()
+
+            update_payload = {
+                "id": appointment_id,
+                "patient_id": appt.patient_id,
+                "doctor_id": appt.doctor_id,
+                "appointment_date": new_date.isoformat(),
+                "date": new_date.isoformat(),
+                "start_time": new_time.strftime("%H:%M:%S"),
+                "status": "Confirmed",
+            }
+
+        await ws_manager.broadcast("APPOINTMENT_UPDATED", update_payload)
 
         json_resp = JSONResponse(
             {"id": appointment_id, "status": "scheduled", "message": "Appointment rescheduled successfully"}

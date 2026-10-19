@@ -218,7 +218,7 @@
             </span>
             ${!isCancelled ? `
               <div class="appt-btn-actions">
-                <button class="btn-reschedule-outline" onclick="openRescheduleModal(${a.id}, '${escapeJs(docName)}', '${a.appointment_date}', '${timeStr}')">
+                <button class="btn-reschedule-outline" onclick="openRescheduleModal(${a.id}, '${escapeJs(docName)}', '${a.appointment_date}', '${timeStr}', ${a.doctor_id || (a.doctor ? a.doctor.id : 'null')})">
                   ${isAr ? 'تعديل الميعاد' : 'Reschedule'}
                 </button>
                 <button class="btn-cancel-outline" onclick="openCancelModal(${a.id}, '${escapeJs(docName)}')">
@@ -271,10 +271,64 @@
     renderAppointmentsList();
   };
 
+  function formatTimeSlotLabel(hour, minute, isAr) {
+    const period = hour >= 12 ? (isAr ? 'م' : 'PM') : (isAr ? 'ص' : 'AM');
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    const padH = String(displayHour).padStart(2, '0');
+    const padM = String(minute).padStart(2, '0');
+    return `${padH}:${padM} ${period}`;
+  }
+
+  function generateDoctorTimeSlots(doc, isAr) {
+    const startStr = (doc && doc.shift_start) ? String(doc.shift_start) : '09:00:00';
+    const endStr = (doc && doc.shift_end) ? String(doc.shift_end) : '17:00:00';
+
+    const [sH, sM] = startStr.split(':').map(Number);
+    const [eH, eM] = endStr.split(':').map(Number);
+
+    const startMinutes = (isNaN(sH) ? 9 : sH) * 60 + (isNaN(sM) ? 0 : sM);
+    const endMinutes = (isNaN(eH) ? 17 : eH) * 60 + (isNaN(eM) ? 0 : eM);
+
+    const slots = [];
+    // 30-minute intervals that finish strictly at or before shift_end
+    for (let cur = startMinutes; cur + 30 <= endMinutes; cur += 30) {
+      const h = Math.floor(cur / 60);
+      const m = cur % 60;
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const value = `${hh}:${mm}:00`;
+      const label = formatTimeSlotLabel(h, m, isAr);
+      slots.push({ value, label });
+    }
+    return slots;
+  }
+
   // RESCHEDULE MODAL
-  window.openRescheduleModal = function (apptId, doctorName, currentDate, currentTime) {
+  window.openRescheduleModal = function (apptId, doctorName, currentDate, currentTime, doctorId) {
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
     const title = isAr ? `تعديل ميعاد: ${doctorName}` : `Reschedule: ${doctorName}`;
+
+    let doc = (allDoctors || []).find(d => String(d.id) === String(doctorId));
+    if (!doc && apptId) {
+      const a = (allAppointments || []).find(x => x.id === apptId);
+      if (a) doc = (allDoctors || []).find(d => String(d.id) === String(a.doctor_id || a.doctor?.id));
+    }
+
+    const slots = generateDoctorTimeSlots(doc, isAr);
+    const slotOptions = slots.length > 0 ? slots.map(s => `
+      <option value="${s.value}">${s.label}</option>
+    `).join('') : `
+      <option value="09:00:00">09:00 AM</option>
+      <option value="09:30:00">09:30 AM</option>
+      <option value="10:00:00">10:00 AM</option>
+      <option value="10:30:00">10:30 AM</option>
+      <option value="11:00:00">11:00 AM</option>
+      <option value="11:30:00">11:30 AM</option>
+      <option value="12:00:00">12:00 PM</option>
+      <option value="12:30:00">12:30 PM</option>
+      <option value="13:00:00">01:00 PM</option>
+      <option value="13:30:00">01:30 PM</option>
+    `;
 
     const body = `
       <div style="display:flex; flex-direction:column; gap:16px;">
@@ -292,12 +346,7 @@
             ${isAr ? 'اختر الوقت الجديد' : 'New Time Slot'}
           </label>
           <select id="modalReschedTime" class="filter-select">
-            <option value="10:00:00">10:00 AM</option>
-            <option value="11:30:00">11:30 AM</option>
-            <option value="14:00:00">02:00 PM</option>
-            <option value="15:30:00">03:30 PM</option>
-            <option value="17:00:00">05:00 PM</option>
-            <option value="18:30:00">06:30 PM</option>
+            ${slotOptions}
           </select>
         </div>
       </div>
@@ -375,6 +424,41 @@
     }
   };
 
+  // DYNAMIC TIME SLOTS UPDATER
+  window.updateBookingTimeSlots = function () {
+    const docSel = document.getElementById('modalBookDoctor');
+    const timeSel = document.getElementById('modalBookTime');
+    const shiftInfoEl = document.getElementById('modalDoctorShiftInfo');
+    if (!docSel || !timeSel) return;
+
+    const docId = docSel.value;
+    const doc = (allDoctors || []).find(d => String(d.id) === String(docId));
+    const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
+
+    if (!doc) {
+      timeSel.innerHTML = `<option value="">${isAr ? 'اختر طبيباً أولاً' : 'Select a doctor first'}</option>`;
+      if (shiftInfoEl) shiftInfoEl.textContent = '';
+      return;
+    }
+
+    const slots = generateDoctorTimeSlots(doc, isAr);
+    if (slots.length === 0) {
+      timeSel.innerHTML = `<option value="">${isAr ? 'لا تتوفر فترات حجز' : 'No available slots'}</option>`;
+    } else {
+      timeSel.innerHTML = slots.map((s, idx) => `
+        <option value="${s.value}" ${idx === 0 ? 'selected' : ''}>${s.label}</option>
+      `).join('');
+    }
+
+    if (shiftInfoEl) {
+      const sStart = doc.shift_start ? doc.shift_start.substring(0, 5) : '09:00';
+      const sEnd = doc.shift_end ? doc.shift_end.substring(0, 5) : '17:00';
+      shiftInfoEl.textContent = isAr 
+        ? `ساعات عمل الطبيب: من ${sStart} إلى ${sEnd} (فترات منتظمة كل 30 دقيقة)`
+        : `Doctor shift hours: ${sStart} - ${sEnd} (30 mins interval)`;
+    }
+  };
+
   // BOOK NEW APPOINTMENT MODAL (Connected Live to Supabase DB)
   window.openBookAppointmentModal = async function () {
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
@@ -426,9 +510,10 @@
           <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
             ${isAr ? 'اختر الطبيب المعالج *' : 'Select Doctor *'}
           </label>
-          <select id="modalBookDoctor" class="filter-select">
+          <select id="modalBookDoctor" class="filter-select" onchange="window.updateBookingTimeSlots()">
             ${docOptions || `<option value="1">${isAr ? 'د. أمل نور (أمراض القلب)' : 'Dr. Amal Nour (Cardiology)'}</option>`}
           </select>
+          <div id="modalDoctorShiftInfo" style="font-size:11.5px; color:#2563EB; margin-top:5px; font-weight:500;"></div>
         </div>
 
         <div>
@@ -440,17 +525,10 @@
 
         <div>
           <label style="display:block; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px;">
-            ${isAr ? 'الميعاد المناسب *' : 'Preferred Time Slot *'}
+            ${isAr ? 'الميعاد المناسب (حسب ساعات عمل الطبيب) *' : 'Preferred Time Slot (Doctor Shift Hours) *'}
           </label>
           <select id="modalBookTime" class="filter-select">
-            <option value="09:00:00">09:00 AM</option>
-            <option value="10:00:00" selected>10:00 AM</option>
-            <option value="11:30:00">11:30 AM</option>
-            <option value="13:00:00">01:00 PM</option>
-            <option value="14:00:00">02:00 PM</option>
-            <option value="15:30:00">03:30 PM</option>
-            <option value="17:00:00">05:00 PM</option>
-            <option value="18:30:00">06:30 PM</option>
+            <option value="">${isAr ? 'جاري تحميل المواعيد...' : 'Loading slots...'}</option>
           </select>
         </div>
 
@@ -473,6 +551,9 @@
     `;
 
     openModal(title, body, footer);
+    if (typeof window.updateBookingTimeSlots === 'function') {
+      window.updateBookingTimeSlots();
+    }
   };
 
   window.filterBookingDoctorsBySpecialty = function (specId) {
@@ -483,6 +564,7 @@
     
     if (!filtered || filtered.length === 0) {
       docSel.innerHTML = `<option value="">${isAr ? 'لا يوجد أطباء في هذا التخصص حالياً' : 'No doctors in this specialty'}</option>`;
+      window.updateBookingTimeSlots();
       return;
     }
 
@@ -491,6 +573,7 @@
       const spec = isAr ? (d.specialty?.name_ar || d.specialty_name_ar || '') : (d.specialty?.name_en || d.specialty_name_en || '');
       return `<option value="${d.id}">${dName} ${spec ? `(${spec})` : ''}</option>`;
     }).join('');
+    window.updateBookingTimeSlots();
   };
 
   window.submitBookAppointmentModal = async function () {

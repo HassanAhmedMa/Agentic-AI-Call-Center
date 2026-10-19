@@ -29,6 +29,22 @@ function initRealtimeDashboardSync() {
       showToast(`Incoming Call: ${data.caller || 'Patient'}`, 'info');
     }
   });
+  window.ClinicRealtime.on('APPOINTMENT_BOOKED', (data) => {
+    loadLiveOverviewCatalog();
+    if (typeof showToast === 'function') {
+      const pName = data?.patientName || data?.patient_name || 'Patient';
+      showToast(`Real-time: New appointment booked by ${pName}.`, 'success');
+    }
+  });
+  window.ClinicRealtime.on('APPOINTMENT_CANCELLED', (data) => {
+    loadLiveOverviewCatalog();
+    if (typeof showToast === 'function') {
+      showToast(`Real-time: Appointment #${data?.id || ''} was cancelled.`, 'warning');
+    }
+  });
+  window.ClinicRealtime.on('APPOINTMENT_UPDATED', () => {
+    loadLiveOverviewCatalog();
+  });
 }
 
 /* =============================================================================

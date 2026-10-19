@@ -2004,6 +2004,28 @@ html[dir="rtl"] .toast-stack {
     white-space: nowrap !important;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
   }
+  .toast-stack {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    bottom: 84px !important;
+    width: calc(100% - 32px) !important;
+    max-width: 380px !important;
+    align-items: center !important;
+  }
+  html[dir="rtl"] .toast-stack {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+  .toast-pill {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+  }
   .mobile-brand-tagline {
     display: none !important;
   }

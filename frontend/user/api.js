@@ -173,6 +173,9 @@
             full_name_ar: d.name_ar || d.full_name_ar,
             specialty_id: d.specialty_id || d.specialty?.id,
             specialty: d.specialty,
+            shift_start: d.shift_start ? String(d.shift_start).substring(0, 5) : '09:00',
+            shift_end: d.shift_end ? String(d.shift_end).substring(0, 5) : '17:00',
+            working_days: d.working_days || [6, 7, 1, 2, 3],
             consultation_fee: d.consultation_fee?.amount || d.consultation_fee || 350
           }));
         }
@@ -190,6 +193,9 @@
               full_name_ar: d.name_ar || d.full_name_ar,
               specialty_id: d.specialty_id || d.specialty?.id,
               specialty: d.specialty,
+              shift_start: d.shift_start ? String(d.shift_start).substring(0, 5) : '09:00',
+              shift_end: d.shift_end ? String(d.shift_end).substring(0, 5) : '17:00',
+              working_days: d.working_days || [6, 7, 1, 2, 3],
               consultation_fee: d.consultation_fee?.amount || d.consultation_fee || 350
             }));
           }
@@ -198,11 +204,11 @@
 
       if (!list || list.length === 0) {
         list = [
-          { id: 1, name_en: 'Dr. Amal Nour', name_ar: 'د. أمل نور', full_name_en: 'Dr. Amal Nour', full_name_ar: 'د. أمل نور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' } },
-          { id: 2, name_en: 'Dr. Tarek Mansour', name_ar: 'د. طارق منصور', full_name_en: 'Dr. Tarek Mansour', full_name_ar: 'د. طارق منصور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' } },
-          { id: 3, name_en: 'Dr. Mona Khalil', name_ar: 'د. منى خليل', full_name_en: 'Dr. Mona Khalil', full_name_ar: 'د. منى خليل', specialty_id: 2, specialty: { id: 2, name_en: 'Dermatology', name_ar: 'الأمراض الجلدية' } },
-          { id: 4, name_en: 'Dr. Youssef Fayed', name_ar: 'د. يوسف فايد', full_name_en: 'Dr. Youssef Fayed', full_name_ar: 'د. يوسف فايد', specialty_id: 3, specialty: { id: 3, name_en: 'Pediatrics', name_ar: 'طب الأطفال' } },
-          { id: 5, name_en: 'Dr. Nader El-Khatib', name_ar: 'د. نادر الخطيب', full_name_en: 'Dr. Nader El-Khatib', full_name_ar: 'د. نادر الخطيب', specialty_id: 4, specialty: { id: 4, name_en: 'Orthopedics', name_ar: 'جراحة العظام' } }
+          { id: 1, name_en: 'Dr. Amal Nour', name_ar: 'د. أمل نور', full_name_en: 'Dr. Amal Nour', full_name_ar: 'د. أمل نور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' }, shift_start: '09:00', shift_end: '14:00' },
+          { id: 2, name_en: 'Dr. Tarek Mansour', name_ar: 'د. طارق منصور', full_name_en: 'Dr. Tarek Mansour', full_name_ar: 'د. طارق منصور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' }, shift_start: '09:00', shift_end: '14:00' },
+          { id: 3, name_en: 'Dr. Mona Khalil', name_ar: 'د. منى خليل', full_name_en: 'Dr. Mona Khalil', full_name_ar: 'د. منى خليل', specialty_id: 2, specialty: { id: 2, name_en: 'Dermatology', name_ar: 'الأمراض الجلدية' }, shift_start: '09:00', shift_end: '14:00' },
+          { id: 4, name_en: 'Dr. Youssef Fayed', name_ar: 'د. يوسف فايد', full_name_en: 'Dr. Youssef Fayed', full_name_ar: 'د. يوسف فايد', specialty_id: 3, specialty: { id: 3, name_en: 'Pediatrics', name_ar: 'طب الأطفال' }, shift_start: '09:00', shift_end: '14:00' },
+          { id: 5, name_en: 'Dr. Nader El-Khatib', name_ar: 'د. نادر الخطيب', full_name_en: 'Dr. Nader El-Khatib', full_name_ar: 'د. نادر الخطيب', specialty_id: 4, specialty: { id: 4, name_en: 'Orthopedics', name_ar: 'جراحة العظام' }, shift_start: '09:00', shift_end: '14:00' }
         ];
       }
 
