@@ -472,6 +472,7 @@ class Identity:
                         phone=form["phone"],
                         date_of_birth=date.fromisoformat(form["date_of_birth"]),
                         preferred_language=form["preferred_language"],
+                        gender=form.get("gender"),
                         email_verified_at=now,
                     )
                     self.session.add(patient)

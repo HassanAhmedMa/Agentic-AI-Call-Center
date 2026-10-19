@@ -28,13 +28,6 @@
 
     <div class="header-action-area">
       <button type="button" id="authLanguage" class="portal-language">العربية</button>
-      <a href="#login" class="header-back-link" id="headerBackToLoginBtn" onclick="navigateToView('view-login')" style="display: none;">
-        <span>Back to Login</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
-          <line x1="19" y1="12" x2="5" y2="12"/>
-          <polyline points="12 19 5 12 12 5"/>
-        </svg>
-      </a>
     </div>
   </header>
 
@@ -320,6 +313,26 @@
                     <span class="country-dial-code">+20</span>
                   </div>
                   <input type="tel" id="signupPhoneInput" required class="form-input-text" placeholder="101 234 5678" autocomplete="tel">
+                </div>
+              </div>
+
+              <!-- Gender -->
+              <div class="form-field-group">
+                <label class="form-field-label" for="signupGenderSelect">Gender</label>
+                <div class="input-with-icon-wrapper">
+                  <span class="input-leading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <line x1="19" y1="8" x2="19" y2="14"/>
+                      <line x1="22" y1="11" x2="16" y2="11"/>
+                    </svg>
+                  </span>
+                  <select id="signupGenderSelect" required class="form-input-text form-select-custom">
+                    <option value="" disabled selected>Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
                 </div>
               </div>
 
@@ -614,29 +627,9 @@
               </svg>
             </button>
 
-            <!-- Blue Envelope with Letter + Paper Airplane Flying Out -->
-            <div class="auth-card-icon-bubble">
-              <svg viewBox="0 0 68 68" width="68" height="68" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Envelope Body -->
-                <rect x="10" y="24" width="44" height="32" rx="6" fill="#2563EB"/>
-                <!-- Popping Letter -->
-                <rect x="15" y="13" width="34" height="22" rx="4" fill="#FFFFFF" stroke="#DBEAFE" stroke-width="1.5"/>
-                <line x1="20" y1="20" x2="33" y2="20" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
-                <line x1="20" y1="26" x2="44" y2="26" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
-                <!-- Flap -->
-                <path d="M10 26L32 42L54 26" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>
-                <path d="M10 52L24 39" stroke="#1D4ED8" stroke-width="2"/>
-                <path d="M54 52L40 39" stroke="#1D4ED8" stroke-width="2"/>
-                <!-- Flying Paper Airplane (Blue) -->
-                <g transform="translate(42, 6) rotate(10)">
-                  <polygon points="0,15 19,0 8,19 7,13 15,6" fill="#3B82F6"/>
-                  <polygon points="7,13 8,19 11,14" fill="#1D4ED8"/>
-                </g>
-                <!-- Wind dash trail -->
-                <path d="M 36 20 Q 42 17 46 14" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round"/>
-                <!-- Sparkles -->
-                <path d="M8 15L9.5 12L11 15L14 16.5L11 18L9.5 21L8 18L5 16.5Z" fill="#FBBF24"/>
-              </svg>
+            <!-- Shiffaa Clinics Brand Icon Badge -->
+            <div class="auth-card-icon-bubble" style="width:68px; height:68px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; box-shadow:0 4px 14px rgba(37,99,235,0.08);">
+              <img src="logo.png" alt="Shiffaa Clinics" style="width:42px; height:42px; object-fit:contain;">
             </div>
 
             <h2 class="form-title">Send a magic link</h2>

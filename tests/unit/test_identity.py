@@ -26,6 +26,41 @@ def test_registration_normalizes_email_and_preserves_arabic_name():
     assert form.email == "ahmed@example.com" and form.full_name == "أحمد منصور"
 
 
+def test_registration_accepts_valid_gender_and_rejects_invalid():
+    form_male = Registration(
+        full_name="Synthetic Patient",
+        email="patient.male@example.com",
+        phone="+201012345678",
+        date_of_birth="1988-04-15",
+        gender="male",
+        preferred_language="en",
+        privacy_notice_accepted=True,
+    )
+    assert form_male.gender == "male"
+
+    form_female = Registration(
+        full_name="Synthetic Patient",
+        email="patient.female@example.com",
+        phone="+201012345678",
+        date_of_birth="1988-04-15",
+        gender="female",
+        preferred_language="ar",
+        privacy_notice_accepted=True,
+    )
+    assert form_female.gender == "female"
+
+    with pytest.raises(ValidationError):
+        Registration(
+            full_name="Synthetic Patient",
+            email="patient.invalid@example.com",
+            phone="+201012345678",
+            date_of_birth="1988-04-15",
+            gender="other",
+            preferred_language="en",
+            privacy_notice_accepted=True,
+        )
+
+
 @pytest.mark.parametrize(
     "field,value",
     [

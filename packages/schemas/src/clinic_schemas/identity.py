@@ -17,6 +17,7 @@ class Registration(Input):
     phone: str = Field(pattern=r"^\+[1-9][0-9]{7,14}$", strict=True)
     date_of_birth: date
     email: str = Field(max_length=254, strict=True)
+    gender: Literal["male", "female"] | None = None
     preferred_language: Literal["ar", "en"] = "ar"
     privacy_notice_accepted: StrictBool
 

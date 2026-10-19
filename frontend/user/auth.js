@@ -115,7 +115,13 @@
     'New password': 'كلمة السر الجديدة',
     'Save new password': 'احفظ كلمة السر الجديدة',
     'Save New Password': 'احفظ كلمة السر الجديدة',
-    'Back to login': 'ارجع لتسجيل الدخول',
+    'Send a magic link': 'اعادة تعيين كلمة السر',
+    "Enter your email address and we'll send you a secure link to reset your password.": 'ادخل بريدك الالكتروني و هنبعتلك لينك.',
+    "Enter your email address and we'll send you a secure magic link to reset your password.": 'ادخل بريدك الالكتروني و هنبعتلك لينك.',
+    'Gender': 'النوع',
+    'Select gender': 'اختر النوع',
+    'Male': 'ذكر',
+    'Female': 'أنثى',
     'I agree to use these details to create my clinic account.': 'موافق على استخدام البيانات دي لإنشاء حساب العيادة.'
   };
 
@@ -259,16 +265,9 @@
     });
 
     const isForgotFlow = cleanTarget.startsWith('view-forgot');
-    const headerBackToLoginBtn = $('headerBackToLoginBtn');
     const headerHelpBtn = $('headerHelpBtn');
-    if (headerBackToLoginBtn && headerHelpBtn) {
-      if (isForgotFlow) {
-        headerBackToLoginBtn.style.display = 'inline-flex';
-        headerHelpBtn.style.display = 'none';
-      } else {
-        headerBackToLoginBtn.style.display = 'none';
-        headerHelpBtn.style.display = 'inline-flex';
-      }
+    if (headerHelpBtn) {
+      headerHelpBtn.style.display = isForgotFlow ? 'none' : 'inline-flex';
     }
 
     if (updateHash) {
@@ -497,11 +496,14 @@
         throw Error('VALIDATION_FAILED');
       }
 
+      const genderVal = $('signupGenderSelect') ? $('signupGenderSelect').value : null;
+
       const registration = {
         full_name: $('signupNameInput').value.trim(),
         email: $('signupEmailInput').value.trim().toLowerCase(),
         phone: normalizePhone($('signupPhoneInput').value),
         date_of_birth: parseDOB($('signupDobInput').value),
+        gender: genderVal || null,
         preferred_language: language,
         privacy_notice_accepted: true
       };
@@ -684,8 +686,11 @@
   /**
    * Language Switcher
    */
-  function setLanguage() {
-    language = language === 'en' ? 'ar' : 'en';
+  function applyLanguage(lang) {
+    language = lang;
+    try {
+      localStorage.setItem('clinic_user_lang', lang);
+    } catch (_) {}
     if (document.documentElement) {
       document.documentElement.lang = language;
       document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
@@ -705,6 +710,24 @@
         input.placeholder = (language === 'ar' ? 'ادخل كلمه السر' : 'Enter your password');
       }
     });
+
+    const nameInput = $('signupNameInput');
+    if (nameInput) {
+      nameInput.placeholder = language === 'ar' ? 'مثال: أحمد محمد علي' : 'Your full name';
+    }
+
+    const genderSel = $('signupGenderSelect');
+    if (genderSel && genderSel.options && genderSel.options.length >= 3) {
+      const curVal = genderSel.value;
+      genderSel.options[0].text = language === 'ar' ? 'اختر النوع' : 'Select gender';
+      genderSel.options[1].text = language === 'ar' ? 'ذكر' : 'Male';
+      genderSel.options[2].text = language === 'ar' ? 'أنثى' : 'Female';
+      genderSel.value = curVal;
+    }
+  }
+
+  function setLanguage() {
+    applyLanguage(language === 'en' ? 'ar' : 'en');
   }
   /**
    * Expose public contract on window
@@ -754,6 +777,10 @@
         node.dataset.ar = translations[text];
       }
     });
+
+    const initialLang = (typeof localStorage !== 'undefined' && localStorage.getItem('clinic_user_lang') === 'ar') ? 'ar' : 'en';
+    applyLanguage(initialLang);
+
     const today = new Date();
     const isoDate = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const dobInput = $('signupDobInput');
