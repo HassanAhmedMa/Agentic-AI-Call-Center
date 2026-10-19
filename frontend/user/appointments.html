@@ -163,8 +163,8 @@
           </button>
 
           <div class="user-profile-badge" id="headerUserBadge" onclick="window.location.href='profile.html'" title="View My Profile" data-ctrl="header-user-badge">
-            <div class="user-avatar-circle" id="userBadgeAvatar">MA</div>
-            <div class="user-name-text" id="userBadgeName">Mona Ahmed</div>
+            <div class="user-avatar-circle" id="userBadgeAvatar"><span class="skeleton-shimmer skeleton-avatar" style="width:100%; height:100%; display:block;"></span></div>
+            <div class="user-name-text" id="userBadgeName"><span class="skeleton-shimmer skeleton-text" style="width:55px; height:12px; display:inline-block; vertical-align:middle;"></span></div>
           </div>
 
         </div>
@@ -233,9 +233,39 @@
 
         <!-- Live Appointments List (Connected to Supabase DB) -->
         <div class="appointments-cards-list" id="appointmentsCardsList" data-ctrl="appointments-list">
-          <div class="loading-state-box">
-            <div class="spinner-blue"></div>
-            <span data-i18n="loading_appointments">Loading appointments...</span>
+          <div class="appt-item-card" style="box-shadow:none;">
+            <div class="appt-left-col">
+              <div class="skeleton-shimmer" style="width:58px; height:58px; border-radius:10px;"></div>
+              <div class="appt-doctor-info">
+                <div class="skeleton-shimmer skeleton-avatar" style="width:48px; height:48px;"></div>
+                <div class="doc-text-meta">
+                  <div class="skeleton-shimmer skeleton-text" style="width:140px; height:15px; margin-bottom:6px;"></div>
+                  <div class="skeleton-shimmer skeleton-text" style="width:90px; height:12px; margin-bottom:6px;"></div>
+                  <div class="skeleton-shimmer skeleton-text" style="width:160px; height:11px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="appt-right-col">
+              <div class="skeleton-shimmer skeleton-pill" style="width:85px; height:24px;"></div>
+              <div class="skeleton-shimmer skeleton-text" style="width:70px; height:13px; margin-top:8px;"></div>
+            </div>
+          </div>
+          <div class="appt-item-card" style="box-shadow:none;">
+            <div class="appt-left-col">
+              <div class="skeleton-shimmer" style="width:58px; height:58px; border-radius:10px;"></div>
+              <div class="appt-doctor-info">
+                <div class="skeleton-shimmer skeleton-avatar" style="width:48px; height:48px;"></div>
+                <div class="doc-text-meta">
+                  <div class="skeleton-shimmer skeleton-text" style="width:130px; height:15px; margin-bottom:6px;"></div>
+                  <div class="skeleton-shimmer skeleton-text" style="width:95px; height:12px; margin-bottom:6px;"></div>
+                  <div class="skeleton-shimmer skeleton-text" style="width:150px; height:11px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="appt-right-col">
+              <div class="skeleton-shimmer skeleton-pill" style="width:85px; height:24px;"></div>
+              <div class="skeleton-shimmer skeleton-text" style="width:70px; height:13px; margin-top:8px;"></div>
+            </div>
           </div>
         </div>
 

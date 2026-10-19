@@ -38,6 +38,12 @@
       chatLead.textContent = isAr ? `أهلاً ${firstName}!` : `Hello ${firstName}!`;
     }
 
+    // Chat user avatar
+    const chatUserAvatars = document.querySelectorAll('.msg-avatar-user, #chatUserAvatar');
+    chatUserAvatars.forEach(av => {
+      av.textContent = initials;
+    });
+
     // Profile page elements if on profile page
     if (typeof window.populateProfileDetails === 'function') {
       window.populateProfileDetails(profile);

@@ -18,10 +18,10 @@ let currentAppointment = {
   room: "Clinic 304, Floor 3",
   status: "Confirmed",
   fee: "450 EGP",
-  patientName: "Mona Ahmed",
-  patientPhone: "+20 101 234 5678",
-  patientDOB: "14 March 2002",
-  patientEmail: "mona.ahmed@example.com",
+  patientName: "Patient User",
+  patientPhone: "—",
+  patientDOB: "—",
+  patientEmail: "—",
   insurance: "Not added"
 };
 
@@ -158,7 +158,7 @@ function appendUserMessage(text) {
         </svg>
       </div>
     </div>
-    <div class="user-avatar-small">MA</div>
+    <div class="user-avatar-small">P</div>
   `;
   chatMessages.appendChild(row);
   scrollToBottom();
@@ -365,7 +365,7 @@ window.openProfileModal = function() {
   modalTitle.textContent = "Patient Profile";
   modalBody.innerHTML = `
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-      <div style="width:46px; height:46px; border-radius:50%; background:#DBEAFE; color:#1D4ED8; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:14px;">MA</div>
+      <div style="width:46px; height:46px; border-radius:50%; background:#DBEAFE; color:#1D4ED8; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:14px;">P</div>
       <div>
         <div style="font-size:15px; font-weight:700; color:#0F172A;">${currentAppointment.patientName}</div>
         <div style="font-size:12px; color:#64748B;">${currentAppointment.patientPhone}</div>

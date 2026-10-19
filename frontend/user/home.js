@@ -34,10 +34,10 @@
         container.innerHTML = `
           <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:24px; text-align:center;">
             <p style="color:#64748B; font-size:13.5px; margin-bottom:12px;">
-              ${isAr ? 'معندكيش مواعيد كشف قادمة حالياً.' : 'No upcoming appointments scheduled.'}
+              ${isAr ? 'لا توجد مواعيد كشف قادمة حالياً.' : 'No upcoming appointments scheduled.'}
             </p>
             <a href="appointments.html" class="btn-primary-action" style="display:inline-flex; text-decoration:none; font-size:13px; padding:8px 16px;">
-              ${isAr ? '+ احجزي كشف الآن' : '+ Book Consultation Now'}
+              ${isAr ? '+ احجز كشف الآن' : '+ Book Consultation Now'}
             </a>
           </div>
         `;

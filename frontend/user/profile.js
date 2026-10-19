@@ -33,6 +33,13 @@
     const fGender = document.getElementById('profileFieldGender');
     const fAddress = document.getElementById('profileFieldAddress');
 
+    [fName, fEmail, fPhone, fDob, fGender, fAddress].forEach((el) => {
+      if (el) {
+        el.classList.remove('skeleton-input');
+        el.placeholder = '—';
+      }
+    });
+
     if (fName) fName.value = name;
     if (fEmail) fEmail.value = profile.email || '—';
     if (fPhone) fPhone.value = profile.phone || '—';

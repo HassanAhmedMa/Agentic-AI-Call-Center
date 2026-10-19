@@ -26,6 +26,10 @@
     if (!stream) return;
     const isAr = /[\u0600-\u06FF]/.test(text);
 
+    const initials = (window.ClinicSession && (window.ClinicSession.full_name || window.ClinicSession.first_name))
+      ? (window.ClinicSession.full_name || window.ClinicSession.first_name).split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase()
+      : 'U';
+
     const row = document.createElement('div');
     row.className = 'msg-bubble-row user-row';
     row.innerHTML = `
@@ -38,7 +42,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.3" width="14" height="14"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>
         </div>
       </div>
-      <div class="msg-avatar-user">MA</div>
+      <div class="msg-avatar-user">${initials}</div>
     `;
     stream.appendChild(row);
     scrollToBottom(true);
@@ -133,6 +137,11 @@
     const stream = document.getElementById('chatMessages');
     if (!stream) return;
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
+    const patientName = (window.ClinicSession && (window.ClinicSession.first_name || window.ClinicSession.full_name?.split(' ')[0])) || '';
+    const greetingLead = patientName 
+      ? (isAr ? `أهلاً بك يا ${patientName}!` : `Hello ${patientName}!`)
+      : (isAr ? 'أهلاً بك في عيادات النيل!' : 'Welcome to Nile Clinics!');
+
     stream.innerHTML = `
       <div class="msg-bubble-row bot-row">
         <div class="msg-avatar-bot">
@@ -140,7 +149,7 @@
         </div>
         <div class="msg-balloon-wrapper">
           <div class="balloon-card bot-balloon">
-            <p class="greeting-lead">${isAr ? 'أهلاً بيكي يا منى!' : 'Hello Mona!'}</p>
+            <p class="greeting-lead">${greetingLead}</p>
             <p class="sub-lead">${isAr ? 'أنا المساعد الذكي لعيادات النيل، أقدر أساعدك في إيه النهاردة؟' : "I'm the Nile Clinics AI Assistant. How can I assist you today?"}</p>
           </div>
           <div class="msg-timestamp">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
