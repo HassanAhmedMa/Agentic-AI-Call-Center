@@ -5,6 +5,28 @@
 (function () {
   'use strict';
 
+  function restoreSessionImmediately() {
+    try {
+      const raw = localStorage.getItem('shiffaa_patient_session') || localStorage.getItem('clinic_patient_session');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && (parsed.full_name || parsed.first_name || parsed.id)) {
+          window.ClinicSession = parsed;
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+              applySessionToUI(parsed);
+              initBadgeFromCache();
+            }, { once: true });
+          } else {
+            applySessionToUI(parsed);
+            initBadgeFromCache();
+          }
+        }
+      }
+    } catch (_) {}
+  }
+  restoreSessionImmediately();
+
   function applySessionToUI(profile) {
     if (!profile) return;
     const name = profile.full_name || profile.first_name || 'Patient';
@@ -59,7 +81,10 @@
         const list = Array.isArray(res?.appointments) ? res.appointments : [];
         const count = list.filter(a => a.status !== 'cancelled' && a.status !== 'canceled' && a.status !== 'completed').length;
         badge.textContent = String(count);
-        try { localStorage.setItem('clinic_upcoming_count', String(count)); } catch (_) {}
+        try {
+          localStorage.setItem('shiffaa_upcoming_count', String(count));
+          localStorage.setItem('clinic_upcoming_count', String(count));
+        } catch (_) {}
       }
     } catch (_) {}
   }
@@ -68,7 +93,7 @@
     const badge = document.getElementById('navApptBadge');
     if (!badge) return;
     try {
-      const cached = localStorage.getItem('clinic_upcoming_count');
+      const cached = localStorage.getItem('shiffaa_upcoming_count') || localStorage.getItem('clinic_upcoming_count');
       badge.textContent = cached !== null ? cached : '0';
     } catch (_) {
       badge.textContent = '0';
@@ -92,7 +117,12 @@
           session = await response.json();
         } else if (response.status === 401) {
           try {
+            if (window.PatientCache && typeof window.PatientCache.clearAll === 'function') {
+              window.PatientCache.clearAll();
+            }
+            localStorage.removeItem('shiffaa_patient_session');
             localStorage.removeItem('clinic_patient_session');
+            localStorage.removeItem('shiffaa_upcoming_count');
             localStorage.removeItem('clinic_upcoming_count');
           } catch (_) {}
           window.ClinicSession = null;
@@ -103,6 +133,7 @@
       if (session) {
         window.ClinicSession = session;
         try {
+          localStorage.setItem('shiffaa_patient_session', JSON.stringify(session));
           localStorage.setItem('clinic_patient_session', JSON.stringify(session));
         } catch (_) {}
         applySessionToUI(session);
@@ -126,7 +157,7 @@
 
     // Fallback to cached session from last successful login
     try {
-      const cached = localStorage.getItem('clinic_patient_session');
+      const cached = localStorage.getItem('shiffaa_patient_session') || localStorage.getItem('clinic_patient_session');
       if (cached) {
         window.ClinicSession = JSON.parse(cached);
         applySessionToUI(window.ClinicSession);
@@ -154,9 +185,11 @@
     } catch (_) {}
 
     try {
-      localStorage.removeItem('clinic_patient_session');
-      localStorage.removeItem('clinic_user_session');
-      localStorage.removeItem('clinic_upcoming_count');
+      if (window.PatientCache && typeof window.PatientCache.clearAll === 'function') {
+        window.PatientCache.clearAll();
+      }
+      localStorage.clear();
+      sessionStorage.clear();
     } catch (_) {}
 
     window.location.href = 'auth.html';
@@ -170,7 +203,10 @@
     setAppointmentBadgeCount: (count) => {
       const badge = document.getElementById('navApptBadge');
       if (badge) badge.textContent = String(count);
-      try { localStorage.setItem('clinic_upcoming_count', String(count)); } catch (_) {}
+      try {
+        localStorage.setItem('shiffaa_upcoming_count', String(count));
+        localStorage.setItem('clinic_upcoming_count', String(count));
+      } catch (_) {}
     },
     getDefaultProfile: () => ({
       first_name: 'Patient',

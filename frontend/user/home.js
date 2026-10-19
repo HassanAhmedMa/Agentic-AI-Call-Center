@@ -27,7 +27,10 @@
       const activeList = appointments.filter(a => a.status !== 'cancelled' && a.status !== 'canceled' && a.status !== 'completed');
       const bAppt = document.getElementById('navApptBadge');
       if (bAppt) bAppt.textContent = activeList.length;
-      try { localStorage.setItem('clinic_upcoming_count', String(activeList.length)); } catch (_) {}
+      try {
+        localStorage.setItem('shiffaa_upcoming_count', String(activeList.length));
+        localStorage.setItem('clinic_upcoming_count', String(activeList.length));
+      } catch (_) {}
 
       if (activeList.length === 0) {
         const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';

@@ -8,6 +8,72 @@
 
   const DEFAULT_API_BASE = 'http://127.0.0.1:8002/api/v1';
 
+  const PatientCache = {
+    getPatientId() {
+      try {
+        const s = JSON.parse(localStorage.getItem('shiffaa_patient_session') || localStorage.getItem('clinic_patient_session') || '{}');
+        return s.id || s.customer_number || s.email || 'anon';
+      } catch (_) {
+        return 'anon';
+      }
+    },
+    get(key) {
+      try {
+        const raw = sessionStorage.getItem(`shiffaa_cache_${key}`);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Date.now() > parsed.exp) {
+          sessionStorage.removeItem(`shiffaa_cache_${key}`);
+          return null;
+        }
+        return parsed.data;
+      } catch (_) {
+        return null;
+      }
+    },
+    set(key, data, ttlMs = 120000) { // default 2 minutes
+      try {
+        sessionStorage.setItem(`shiffaa_cache_${key}`, JSON.stringify({
+          exp: Date.now() + ttlMs,
+          data
+        }));
+      } catch (_) {}
+    },
+    invalidate(key) {
+      try {
+        if (key) {
+          sessionStorage.removeItem(`shiffaa_cache_${key}`);
+        } else {
+          const toRemove = [];
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
+            if (k && k.startsWith('shiffaa_cache_')) toRemove.push(k);
+          }
+          toRemove.forEach(k => sessionStorage.removeItem(k));
+        }
+      } catch (_) {}
+    },
+    clearAll() {
+      try {
+        const sKeys = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && (k.startsWith('shiffaa_') || k.startsWith('clinic_'))) sKeys.push(k);
+        }
+        sKeys.forEach(k => sessionStorage.removeItem(k));
+
+        const lKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('shiffaa_') || k.startsWith('clinic_'))) lKeys.push(k);
+        }
+        lKeys.forEach(k => localStorage.removeItem(k));
+      } catch (_) {}
+    }
+  };
+
+  window.PatientCache = PatientCache;
+
   function getApiBaseUrl() {
     if (window.ClinicPortalAPI && typeof window.ClinicPortalAPI.getBaseUrl === 'function') {
       const base = window.ClinicPortalAPI.getBaseUrl();
@@ -60,30 +126,46 @@
 
   const UserApi = {
     getApiBaseUrl,
+    PatientCache,
 
     async getSpecialties() {
+      const cached = PatientCache.get('specialties');
+      if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+
       try {
         const res = await request('/portal/specialties');
-        if (Array.isArray(res.specialties) && res.specialties.length > 0) return res.specialties;
+        if (Array.isArray(res.specialties) && res.specialties.length > 0) {
+          PatientCache.set('specialties', res.specialties, 3600000); // 1 hour TTL
+          return res.specialties;
+        }
       } catch (_) {}
       try {
         const res = await request('/specialties');
-        if (Array.isArray(res.specialties) && res.specialties.length > 0) return res.specialties;
+        if (Array.isArray(res.specialties) && res.specialties.length > 0) {
+          PatientCache.set('specialties', res.specialties, 3600000); // 1 hour TTL
+          return res.specialties;
+        }
       } catch (_) {}
-      return [
+      const fallback = [
         { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' },
         { id: 2, name_en: 'Dermatology', name_ar: 'الأمراض الجلدية' },
         { id: 3, name_en: 'Pediatrics', name_ar: 'طب الأطفال' },
         { id: 4, name_en: 'Orthopedics', name_ar: 'جراحة العظام' },
         { id: 5, name_en: 'Internal Medicine', name_ar: 'الباطنة' }
       ];
+      PatientCache.set('specialties', fallback, 3600000);
+      return fallback;
     },
 
     async getDoctors() {
+      const cached = PatientCache.get('doctors');
+      if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+
+      let list = null;
       try {
         const res = await request('/portal/doctors');
         if (Array.isArray(res.doctors) && res.doctors.length > 0) {
-          return res.doctors.map(d => ({
+          list = res.doctors.map(d => ({
             id: d.id,
             name_en: d.name_en || d.full_name_en,
             name_ar: d.name_ar || d.full_name_ar,
@@ -96,46 +178,71 @@
         }
       } catch (_) {}
 
-      try {
-        const res = await request('/doctors');
-        if (Array.isArray(res.doctors) && res.doctors.length > 0) {
-          return res.doctors.map(d => ({
-            id: d.id,
-            name_en: d.name_en || d.full_name_en,
-            name_ar: d.name_ar || d.full_name_ar,
-            full_name_en: d.name_en || d.full_name_en,
-            full_name_ar: d.name_ar || d.full_name_ar,
-            specialty_id: d.specialty_id || d.specialty?.id,
-            specialty: d.specialty,
-            consultation_fee: d.consultation_fee?.amount || d.consultation_fee || 350
-          }));
-        }
-      } catch (_) {}
+      if (!list) {
+        try {
+          const res = await request('/doctors');
+          if (Array.isArray(res.doctors) && res.doctors.length > 0) {
+            list = res.doctors.map(d => ({
+              id: d.id,
+              name_en: d.name_en || d.full_name_en,
+              name_ar: d.name_ar || d.full_name_ar,
+              full_name_en: d.name_en || d.full_name_en,
+              full_name_ar: d.name_ar || d.full_name_ar,
+              specialty_id: d.specialty_id || d.specialty?.id,
+              specialty: d.specialty,
+              consultation_fee: d.consultation_fee?.amount || d.consultation_fee || 350
+            }));
+          }
+        } catch (_) {}
+      }
 
-      return [
-        { id: 1, name_en: 'Dr. Amal Nour', name_ar: 'د. أمل نور', full_name_en: 'Dr. Amal Nour', full_name_ar: 'د. أمل نور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' } },
-        { id: 2, name_en: 'Dr. Tarek Mansour', name_ar: 'د. طارق منصور', full_name_en: 'Dr. Tarek Mansour', full_name_ar: 'د. طارق منصور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' } },
-        { id: 3, name_en: 'Dr. Mona Khalil', name_ar: 'د. منى خليل', full_name_en: 'Dr. Mona Khalil', full_name_ar: 'د. منى خليل', specialty_id: 2, specialty: { id: 2, name_en: 'Dermatology', name_ar: 'الأمراض الجلدية' } },
-        { id: 4, name_en: 'Dr. Youssef Fayed', name_ar: 'د. يوسف فايد', full_name_en: 'Dr. Youssef Fayed', full_name_ar: 'د. يوسف فايد', specialty_id: 3, specialty: { id: 3, name_en: 'Pediatrics', name_ar: 'طب الأطفال' } },
-        { id: 5, name_en: 'Dr. Nader El-Khatib', name_ar: 'د. نادر الخطيب', full_name_en: 'Dr. Nader El-Khatib', full_name_ar: 'د. نادر الخطيب', specialty_id: 4, specialty: { id: 4, name_en: 'Orthopedics', name_ar: 'جراحة العظام' } }
-      ];
+      if (!list || list.length === 0) {
+        list = [
+          { id: 1, name_en: 'Dr. Amal Nour', name_ar: 'د. أمل نور', full_name_en: 'Dr. Amal Nour', full_name_ar: 'د. أمل نور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' } },
+          { id: 2, name_en: 'Dr. Tarek Mansour', name_ar: 'د. طارق منصور', full_name_en: 'Dr. Tarek Mansour', full_name_ar: 'د. طارق منصور', specialty_id: 1, specialty: { id: 1, name_en: 'Cardiology', name_ar: 'أمراض القلب' } },
+          { id: 3, name_en: 'Dr. Mona Khalil', name_ar: 'د. منى خليل', full_name_en: 'Dr. Mona Khalil', full_name_ar: 'د. منى خليل', specialty_id: 2, specialty: { id: 2, name_en: 'Dermatology', name_ar: 'الأمراض الجلدية' } },
+          { id: 4, name_en: 'Dr. Youssef Fayed', name_ar: 'د. يوسف فايد', full_name_en: 'Dr. Youssef Fayed', full_name_ar: 'د. يوسف فايد', specialty_id: 3, specialty: { id: 3, name_en: 'Pediatrics', name_ar: 'طب الأطفال' } },
+          { id: 5, name_en: 'Dr. Nader El-Khatib', name_ar: 'د. نادر الخطيب', full_name_en: 'Dr. Nader El-Khatib', full_name_ar: 'د. نادر الخطيب', specialty_id: 4, specialty: { id: 4, name_en: 'Orthopedics', name_ar: 'جراحة العظام' } }
+        ];
+      }
+
+      PatientCache.set('doctors', list, 3600000); // 1 hour TTL
+      return list;
     },
 
-    async getAppointments() {
+    async getAppointments(forceRefresh = false) {
+      const patientId = PatientCache.getPatientId();
+      const cacheKey = `appt_${patientId}`;
+
+      if (!forceRefresh) {
+        const cached = PatientCache.get(cacheKey);
+        if (cached && Array.isArray(cached)) return cached;
+      }
+
+      let list = [];
       // 1. Try patient's own DB appointments via portal session
       try {
         const res = await request('/portal/appointments');
-        if (Array.isArray(res.appointments)) return res.appointments;
+        if (Array.isArray(res.appointments)) {
+          list = res.appointments;
+          PatientCache.set(cacheKey, list, 120000); // 2 minutes TTL
+          return list;
+        }
       } catch (_) {}
 
       // 2. Try admin appointments endpoint if configured
       try {
         const res = await request('/appointments');
-        const list = Array.isArray(res.appointments) ? res.appointments : (Array.isArray(res) ? res : []);
-        if (list.length > 0) return list;
+        const adminList = Array.isArray(res.appointments) ? res.appointments : (Array.isArray(res) ? res : []);
+        if (adminList.length > 0) {
+          list = adminList;
+          PatientCache.set(cacheKey, list, 120000); // 2 minutes TTL
+          return list;
+        }
       } catch (_) {}
 
-      // If user has no appointments in DB, return empty array (do NOT force fake appointments)
+      // If user has no appointments in DB, return empty array
+      PatientCache.set(cacheKey, [], 120000);
       return [];
     },
 
@@ -143,7 +250,7 @@
       let session = window.ClinicSession;
       if (!session) {
         try {
-          session = JSON.parse(localStorage.getItem('clinic_patient_session') || '{}');
+          session = JSON.parse(localStorage.getItem('shiffaa_patient_session') || localStorage.getItem('clinic_patient_session') || '{}');
         } catch (_) {
           session = {};
         }
@@ -159,21 +266,25 @@
       };
 
       try {
-        return await request('/portal/appointments', {
+        const result = await request('/portal/appointments', {
           method: 'POST',
           body: JSON.stringify(enriched)
         });
+        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+        return result;
       } catch (err) {
-        return await request('/appointments', {
+        const result = await request('/appointments', {
           method: 'POST',
           body: JSON.stringify(enriched)
         });
+        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+        return result;
       }
     },
 
     async rescheduleAppointment(appointmentId, newDate, newTime, reason = 'Patient requested reschedule via portal') {
       try {
-        return await request(`/portal/appointments/${appointmentId}/reschedule`, {
+        const result = await request(`/portal/appointments/${appointmentId}/reschedule`, {
           method: 'PATCH',
           body: JSON.stringify({
             new_date: newDate,
@@ -181,8 +292,10 @@
             reason
           })
         });
+        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+        return result;
       } catch (_) {
-        return await request(`/appointments/${appointmentId}/reschedule`, {
+        const result = await request(`/appointments/${appointmentId}/reschedule`, {
           method: 'PATCH',
           body: JSON.stringify({
             new_date: newDate,
@@ -190,20 +303,26 @@
             reason
           })
         });
+        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+        return result;
       }
     },
 
     async cancelAppointment(appointmentId, reason = 'Patient cancelled via portal') {
       try {
-        return await request(`/portal/appointments/${appointmentId}/cancel`, {
+        const result = await request(`/portal/appointments/${appointmentId}/cancel`, {
           method: 'PATCH',
           body: JSON.stringify({ reason })
         });
+        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+        return result;
       } catch (_) {
-        return await request(`/appointments/${appointmentId}/cancel`, {
+        const result = await request(`/appointments/${appointmentId}/cancel`, {
           method: 'PATCH',
           body: JSON.stringify({ reason })
         });
+        PatientCache.invalidate(`appt_${PatientCache.getPatientId()}`);
+        return result;
       }
     }
   };

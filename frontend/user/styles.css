@@ -604,6 +604,8 @@ html[dir="rtl"] .nav-badge-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap !important;
+  flex-shrink: 0;
   transition: all 0.15s ease;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
   text-decoration: none;
@@ -615,6 +617,7 @@ html[dir="rtl"] .nav-badge-pill {
 .btn-primary-hero svg, .btn-primary-action svg {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
 }
 
 /* Secondary Hero Button */
@@ -630,6 +633,8 @@ html[dir="rtl"] .nav-badge-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap !important;
+  flex-shrink: 0;
   transition: all 0.15s ease;
   text-decoration: none;
 }
@@ -1981,6 +1986,24 @@ html[dir="rtl"] .toast-stack {
 }
 
 @media (max-width: 640px) {
+  .page-top-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .page-top-heading > div {
+    width: 100%;
+  }
+  .page-top-heading .btn-primary-action {
+    width: 100%;
+    justify-content: center;
+    padding: 11px 18px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    white-space: nowrap !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  }
   .mobile-brand-tagline {
     display: none !important;
   }
