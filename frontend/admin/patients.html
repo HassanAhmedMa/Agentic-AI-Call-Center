@@ -514,10 +514,10 @@
 
             <!-- Patient Details Sub Tabs -->
             <div class="patient-sub-tabs" id="patientSubTabs" style="display:none;">
-              <button class="sub-tab-btn active" onclick="switchDetailSubTab('overview', this)">Overview</button>
-              <button class="sub-tab-btn" onclick="switchDetailSubTab('appointments', this)">Appointments</button>
-              <button class="sub-tab-btn" onclick="switchDetailSubTab('records', this)">Medical Records</button>
-              <button class="sub-tab-btn" onclick="switchDetailSubTab('history', this)">History</button>
+              <button class="sub-tab-btn active" data-tab="overview" onclick="switchDetailSubTab('overview', this)">Overview</button>
+              <button class="sub-tab-btn" data-tab="appointments" onclick="switchDetailSubTab('appointments', this)">Appointments <span class="tab-count-pill" id="patientApptsCountPill" style="display:none; font-size:10px; background:#EFF6FF; color:#2563EB; padding:1px 6px; border-radius:10px; margin-left:4px; font-weight:700;"></span></button>
+              <button class="sub-tab-btn" data-tab="records" onclick="switchDetailSubTab('records', this)">Medical Records</button>
+              <button class="sub-tab-btn" data-tab="history" onclick="switchDetailSubTab('history', this)">History</button>
             </div>
 
             <!-- Dynamic Tab Content: Overview -->

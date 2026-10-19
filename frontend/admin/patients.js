@@ -18,6 +18,7 @@
   let currentActiveTab = 'all';
   let filterDateFrom = null;
   let filterDateTo = null;
+  let currentDetailSubTab = 'overview';
 
   document.addEventListener('DOMContentLoaded', () => {
     initClock();
@@ -176,11 +177,10 @@
       } else {
         const heroRow = document.getElementById('patientHeroRow');
         const subTabs = document.getElementById('patientSubTabs');
-        const overviewContent = document.getElementById('subTabContentOverview');
         const emptyNotice = document.getElementById('patientDetailsEmptyNotice');
         if (heroRow) heroRow.style.display = 'none';
         if (subTabs) subTabs.style.display = 'none';
-        if (overviewContent) overviewContent.style.display = 'none';
+      hideAllSubTabContents();
         if (emptyNotice) {
           emptyNotice.style.display = 'flex';
           emptyNotice.innerHTML = `
@@ -363,7 +363,7 @@
     if (detailsCard) detailsCard.style.display = 'flex';
     if (heroRow) heroRow.style.display = 'flex';
     if (subTabs) subTabs.style.display = 'flex';
-    if (overviewContent) overviewContent.style.display = 'flex';
+
     if (emptyNotice) emptyNotice.style.display = 'none';
 
     // Hero section
@@ -448,6 +448,19 @@
         `;
       }
     }
+
+    // Synchronize the currently active sub-tab
+    switchDetailSubTab(currentDetailSubTab);
+
+    // Asynchronously prefetch & update appointments count pill
+    if (window.ClinicApi && typeof window.ClinicApi.getAppointments === 'function') {
+      window.ClinicApi.getAppointments({ patient_id: patient.id }).then(res => {
+        if (currentlySelectedPatientId === patient.id) {
+          const count = (res && Array.isArray(res.appointments)) ? res.appointments.length : (Array.isArray(res) ? res.length : 0);
+          updatePatientApptsPill(count);
+        }
+      }).catch(() => {});
+    }
   }
 
   function setFieldText(elId, val) {
@@ -461,12 +474,11 @@
 
     const heroRow = document.getElementById('patientHeroRow');
     const subTabs = document.getElementById('patientSubTabs');
-    const overviewContent = document.getElementById('subTabContentOverview');
     const emptyNotice = document.getElementById('patientDetailsEmptyNotice');
 
     if (heroRow) heroRow.style.display = 'none';
     if (subTabs) subTabs.style.display = 'none';
-    if (overviewContent) overviewContent.style.display = 'none';
+      hideAllSubTabContents();
     if (emptyNotice) {
       emptyNotice.style.display = 'flex';
       emptyNotice.innerHTML = `
@@ -557,11 +569,10 @@
     } else {
       const heroRow = document.getElementById('patientHeroRow');
       const subTabs = document.getElementById('patientSubTabs');
-      const overviewContent = document.getElementById('subTabContentOverview');
       const emptyNotice = document.getElementById('patientDetailsEmptyNotice');
       if (heroRow) heroRow.style.display = 'none';
       if (subTabs) subTabs.style.display = 'none';
-      if (overviewContent) overviewContent.style.display = 'none';
+      hideAllSubTabContents();
       if (emptyNotice) {
         emptyNotice.style.display = 'flex';
         emptyNotice.innerHTML = `
@@ -1205,25 +1216,39 @@
     showToast('Registration date filter cleared', 'info');
   }
 
+  function hideAllSubTabContents() {
+    ['subTabContentOverview', 'subTabContentAppointments', 'subTabContentRecords', 'subTabContentHistory'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  }
+
   function switchDetailSubTab(tabName, btnEl) {
+    currentDetailSubTab = tabName || 'overview';
+
+    // Synchronize tab button styles
     const tabs = document.querySelectorAll('.sub-tab-btn');
-    tabs.forEach(t => t.classList.remove('active'));
-    if (btnEl) btnEl.classList.add('active');
+    tabs.forEach(t => {
+      const isTarget = btnEl ? (t === btnEl) : (t.getAttribute('data-tab') === currentDetailSubTab);
+      t.classList.toggle('active', !!isTarget);
+    });
 
     const overviewEl = document.getElementById('subTabContentOverview');
     const apptsEl = document.getElementById('subTabContentAppointments');
     const recordsEl = document.getElementById('subTabContentRecords');
     const historyEl = document.getElementById('subTabContentHistory');
 
-    if (overviewEl) overviewEl.style.display = tabName === 'overview' ? 'flex' : 'none';
-    if (apptsEl) apptsEl.style.display = tabName === 'appointments' ? 'flex' : 'none';
-    if (recordsEl) recordsEl.style.display = tabName === 'records' ? 'flex' : 'none';
-    if (historyEl) historyEl.style.display = tabName === 'history' ? 'flex' : 'none';
+    if (overviewEl) overviewEl.style.display = currentDetailSubTab === 'overview' ? 'flex' : 'none';
+    if (apptsEl) apptsEl.style.display = currentDetailSubTab === 'appointments' ? 'flex' : 'none';
+    if (recordsEl) recordsEl.style.display = currentDetailSubTab === 'records' ? 'flex' : 'none';
+    if (historyEl) historyEl.style.display = currentDetailSubTab === 'history' ? 'flex' : 'none';
 
     const patient = allPatients.find(p => p.id === currentlySelectedPatientId);
     if (!patient) return;
 
-    if (tabName === 'records') {
+    if (currentDetailSubTab === 'appointments') {
+      loadPatientAppointments(patient);
+    } else if (currentDetailSubTab === 'records') {
       const bType = document.getElementById('fieldRecordsBloodType');
       const ins = document.getElementById('fieldRecordsInsurance');
       const allg = document.getElementById('fieldRecordsAllergies');
@@ -1232,7 +1257,7 @@
       if (ins) ins.textContent = patient.insurance_provider ? `${patient.insurance_provider} (${patient.insurance_policy_number || 'No Policy #'})` : 'Self-Pay / None';
       if (allg) allg.textContent = patient.allergies || 'None recorded';
       if (chr) chr.textContent = patient.chronicConditions || 'None recorded';
-    } else if (tabName === 'history') {
+    } else if (currentDetailSubTab === 'history') {
       const histList = document.getElementById('detailFullHistoryList');
       if (histList) {
         if (patient.activities && patient.activities.length) {
@@ -1256,6 +1281,155 @@
         }
       }
     }
+  }
+
+  async function loadPatientAppointments(patient) {
+    const container = document.getElementById('patientAppointmentsList');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div style="text-align:center; padding:32px 12px; color:#64748B;">
+        <div style="display:inline-block; width:22px; height:22px; border:2px solid #E2E8F0; border-top-color:#2563EB; border-radius:50%; animation: spin 0.8s linear infinite; margin-bottom:8px;"></div>
+        <div style="font-size:12px; font-weight:500;">Loading appointments...</div>
+      </div>
+    `;
+
+    try {
+      let appts = [];
+      if (window.ClinicApi && typeof window.ClinicApi.getAppointments === 'function') {
+        const res = await window.ClinicApi.getAppointments({ patient_id: patient.id });
+        if (res && Array.isArray(res.appointments)) {
+          appts = res.appointments;
+        } else if (Array.isArray(res)) {
+          appts = res;
+        }
+      }
+
+      // Fallback matching by phone if direct patient_id query yields nothing
+      if ((!appts || appts.length === 0) && window.ClinicApi && patient.phone) {
+        try {
+          const cleanPhone = String(patient.phone).replace(/\D/g, '').slice(-8);
+          if (cleanPhone) {
+            const allRes = await window.ClinicApi.getAppointments({ limit: 100 });
+            const all = (allRes && Array.isArray(allRes.appointments)) ? allRes.appointments : [];
+            appts = all.filter(a => {
+              const aPhone = String(a.patientPhone || a.patient_phone || '').replace(/\D/g, '');
+              return aPhone.endsWith(cleanPhone) || (a.patient_id && Number(a.patient_id) === Number(patient.id));
+            });
+          }
+        } catch (_) {}
+      }
+
+      // Check if user switched to another patient during the fetch
+      if (currentlySelectedPatientId !== patient.id) return;
+
+      updatePatientApptsPill(appts.length);
+      renderPatientAppointmentsList(patient, appts);
+    } catch (err) {
+      if (currentlySelectedPatientId !== patient.id) return;
+      console.error('[Patients] Error loading patient appointments:', err);
+      container.innerHTML = `
+        <div style="text-align:center; padding:24px 12px; color:#DC2626;">
+          <div style="font-size:13px; font-weight:600;">Failed to load appointments</div>
+          <div style="font-size:12px; margin-top:4px; color:#64748B;">${escapeHtml(err.message || 'Network error')}</div>
+          <button class="modal-btn-secondary" style="font-size:11.5px; height:28px; margin-top:10px; padding:0 12px;" onclick="switchDetailSubTab('appointments')">Try Again</button>
+        </div>
+      `;
+    }
+  }
+
+  function updatePatientApptsPill(count) {
+    const pill = document.getElementById('patientApptsCountPill');
+    if (pill) {
+      if (count > 0) {
+        pill.style.display = 'inline-block';
+        pill.textContent = count;
+      } else {
+        pill.style.display = 'none';
+        pill.textContent = '';
+      }
+    }
+  }
+
+  function renderPatientAppointmentsList(patient, appts) {
+    const container = document.getElementById('patientAppointmentsList');
+    if (!container) return;
+
+    if (!appts || appts.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:28px 12px; color:#64748B;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="28" height="28" style="margin-bottom:6px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+          <div style="font-size:13px; font-weight:600; color:#334155;">No Scheduled Appointments</div>
+          <div style="font-size:12px; margin-top:2px;">This patient has no appointments recorded in the system.</div>
+          <a href="appointments.html" class="modal-btn-primary" style="display:inline-block; margin-top:12px; padding:6px 14px; font-size:12px; text-decoration:none; color:#FFFFFF; border-radius:6px;">Schedule First Appointment</a>
+        </div>
+      `;
+      return;
+    }
+
+    const sorted = [...appts].sort((a, b) => {
+      const dateA = (a.date || a.appointment_date || '') + ' ' + (a.time || a.start_time || '');
+      const dateB = (b.date || b.appointment_date || '') + ' ' + (b.time || b.start_time || '');
+      return dateB.localeCompare(dateA);
+    });
+
+    container.innerHTML = sorted.map(appt => {
+      const statusRaw = (appt.status || 'Confirmed').toLowerCase();
+      let statusStyle = 'background:#F0FDF4; color:#16A34A; border:1px solid #BBF7D0;';
+      let statusText = 'Confirmed';
+
+      if (statusRaw === 'cancelled') {
+        statusStyle = 'background:#FEF2F2; color:#DC2626; border:1px solid #FECACA;';
+        statusText = 'Cancelled';
+      } else if (statusRaw === 'completed') {
+        statusStyle = 'background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;';
+        statusText = 'Completed';
+      } else if (statusRaw === 'rescheduled') {
+        statusStyle = 'background:#FFFBEB; color:#D97706; border:1px solid #FDE68A;';
+        statusText = 'Rescheduled';
+      }
+
+      const docName = appt.doctor || appt.doctor_name || 'Clinic Doctor';
+      const docDept = appt.doctorDept || appt.doctor_dept || 'General';
+      const apptDate = appt.date || appt.appointment_date || 'Date not set';
+      const apptTime = appt.timeShort || (appt.time ? appt.time.slice(0, 5) : (appt.start_time ? appt.start_time.slice(0, 5) : '—'));
+      const apptNote = appt.notes || appt.visit_reason || appt.type || 'Consultation';
+
+      return `
+        <div class="patient-appt-item-card" style="border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px; margin-bottom:10px; background:#FFFFFF; transition:border-color 0.15s ease;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <div>
+              <div style="font-weight:700; font-size:13px; color:#1E293B;">Dr. ${escapeHtml(docName.replace(/^Dr\.\s*/i, ''))}</div>
+              <div style="font-size:11.5px; color:#64748B; margin-top:1px;">${escapeHtml(docDept)} • Appt #${appt.id}</div>
+            </div>
+            <span style="display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:12px; ${statusStyle}">
+              ${escapeHtml(statusText)}
+            </span>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:16px; font-size:12px; color:#475569; padding:8px 0; border-top:1px dashed #F1F5F9; border-bottom:1px dashed #F1F5F9; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:5px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" width="13" height="13"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+              <span>${escapeHtml(apptDate)}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>${escapeHtml(apptTime)}</span>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748B;">
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;" title="${escapeHtml(apptNote)}">
+              ${escapeHtml(apptNote)}
+            </span>
+            <a href="appointments.html" style="color:#2563EB; font-weight:600; text-decoration:none; font-size:11.5px; display:inline-flex; align-items:center; gap:3px;">
+              Open in Calendar
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   function goToPage(page, btnEl) {
@@ -1497,6 +1671,7 @@
   window.applyDateFilterModal = applyDateFilterModal;
   window.clearDateFilter = clearDateFilter;
   window.switchDetailSubTab = switchDetailSubTab;
+  window.loadPatientAppointments = loadPatientAppointments;
   window.goToPage = goToPage;
   window.handleBranchChange = handleBranchChange;
   window.handleLogout = handleLogout;
