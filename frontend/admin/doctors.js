@@ -17,12 +17,23 @@
     1: 'Mon',
     2: 'Tue',
     3: 'Wed',
-    4: 'Thu'
+    4: 'Thu',
+    5: 'Fri',
+    'saturday': 'Sat', 'sat': 'Sat',
+    'sunday': 'Sun', 'sun': 'Sun',
+    'monday': 'Mon', 'mon': 'Mon',
+    'tuesday': 'Tue', 'tue': 'Tue',
+    'wednesday': 'Wed', 'wed': 'Wed',
+    'thursday': 'Thu', 'thu': 'Thu',
+    'friday': 'Fri', 'fri': 'Fri'
   };
 
   function formatWorkingDays(days) {
     if (!Array.isArray(days) || days.length === 0) return 'Sat – Wed';
-    return days.map(d => ISO_DAYS_MAP[d] || d).join(', ');
+    return days.map(d => {
+      const key = typeof d === 'string' ? d.trim().toLowerCase() : d;
+      return ISO_DAYS_MAP[key] || d;
+    }).join(', ');
   }
 
   function renderDoctorSkeletons() {

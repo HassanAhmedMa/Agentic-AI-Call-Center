@@ -240,27 +240,28 @@ function normalizeDoctorWorkingDays(workingDays) {
 }
 
 function isDoctorWorkingOnDate(doc, date) {
-  if (!doc) return true;
+  if (!doc) return false;
   const isoDay = getIsoWeekday(date);
-  if (isoDay === 5) return false; // Friday is clinic-wide off in Egyptian healthcare & database constraint ck_appointment_weekday!
+  if (isoDay === 5) return false; // Friday is strictly clinic-wide off in Egyptian healthcare & database constraint ck_appointment_weekday!
   if (Array.isArray(doc.working_days) && doc.working_days.length > 0) {
     const normDays = normalizeDoctorWorkingDays(doc.working_days);
     if (normDays.length > 0) {
       return normDays.includes(isoDay);
     }
   }
-  return true;
+  // Default Egyptian clinic working days if unspecified: Sat, Sun, Mon, Tue, Wed (1, 2, 3, 6, 7)
+  return [1, 2, 3, 6, 7].includes(isoDay);
 }
 
 function getDoctorShift(doc) {
-  if (!doc) return { start: '08:00', end: '17:00' };
-  const start = (doc.shift_start || doc.working_hours?.start || '08:00').slice(0, 5);
-  const end = (doc.shift_end || doc.working_hours?.end || '17:00').slice(0, 5);
+  if (!doc) return { start: '09:00', end: '14:00' };
+  const start = (doc.shift_start || doc.working_hours?.start || '09:00').slice(0, 5);
+  const end = (doc.shift_end || doc.working_hours?.end || '14:00').slice(0, 5);
   return { start, end };
 }
 
 function isSlotWithinDoctorShift(doc, slotTime) {
-  if (!doc) return true;
+  if (!doc) return false;
   const slot24 = parseSlotTo24h(slotTime);
   const { start, end } = getDoctorShift(doc);
   return slot24 >= start && slot24 < end;
@@ -268,7 +269,7 @@ function isSlotWithinDoctorShift(doc, slotTime) {
 
 function formatDoctorWorkingDays(workingDays) {
   const normDays = normalizeDoctorWorkingDays(workingDays);
-  if (normDays.length === 0) return 'Sat – Thu';
+  if (normDays.length === 0) return 'Sat – Wed';
   const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   return normDays.map(d => names[d - 1]).join(', ');
 }
@@ -444,11 +445,16 @@ function renderDaySchedule() {
   // Gather doctors to display
   let doctors = [];
   if (doctorFilterVal !== 'All Doctors') {
-    const foundDoc = liveDoctorsCache.find(d => d.name_en === doctorFilterVal);
+    const cleanFilter = doctorFilterVal.replace(/\s*\(.*\)$/, '').trim();
+    const foundDoc = liveDoctorsCache.find(d => 
+      d.name_en === doctorFilterVal || 
+      d.name_en === cleanFilter ||
+      (d.name_en && cleanFilter && d.name_en.toLowerCase() === cleanFilter.toLowerCase())
+    );
     if (foundDoc) {
       doctors = [foundDoc];
     } else {
-      doctors = [{ name_en: doctorFilterVal, specialty_id: 1, shift_start: '09:00', shift_end: '17:00' }];
+      doctors = [{ name_en: cleanFilter || doctorFilterVal, specialty_id: 1, shift_start: '09:00', shift_end: '14:00', working_days: [6, 7, 1, 2, 3] }];
     }
   } else {
     // Collect all doctors from live cache
@@ -519,7 +525,8 @@ function renderDaySchedule() {
           const cleanName = (doc.name_en || 'Doctor').replace(/Dr\.\s*/i, '');
           const initials = cleanName.split(' ').map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase() || 'DR';
           const onDutyToday = isDoctorWorkingOnDate(doc, selectedDate);
-          const shiftText = doc.shift_start && doc.shift_end ? `${doc.shift_start.slice(0, 5)} - ${doc.shift_end.slice(0, 5)}` : '09:00 - 17:00';
+          const shift = getDoctorShift(doc);
+          const shiftText = `${shift.start} - ${shift.end}`;
 
           return `
             <th style="min-width: 170px;">
@@ -549,13 +556,13 @@ function renderDaySchedule() {
           const onDutyToday = isDoctorWorkingOnDate(doc, selectedDate);
 
           if (!onDutyToday || isClinicClosed) {
-            cellsHtml += `<td class="off-duty-cell" title="${isClinicClosed ? (holidayCheck.name_en || 'Clinic Weekend') : 'Doctor Off-Duty'}"></td>`;
+            cellsHtml += `<td class="off-duty-cell" title="${isClinicClosed ? (holidayCheck.name_en || 'Clinic Weekend') : 'Doctor Off-Duty'}"><span class="off-duty-label">Off Duty</span></td>`;
             return;
           }
 
           const withinShift = isSlotWithinDoctorShift(doc, t);
           if (!withinShift) {
-            cellsHtml += `<td class="off-shift-cell"></td>`;
+            cellsHtml += `<td class="off-shift-cell" title="Outside Working Shift"><span class="off-shift-label">Off Shift</span></td>`;
             return;
           }
 
@@ -710,17 +717,17 @@ function renderWeekSchedule() {
           const isFriday = getIsoWeekday(d) === 5;
 
           if (isFriday) {
-            cellsHtml += `<td class="off-duty-cell ${cellClass}"></td>`;
+            cellsHtml += `<td class="off-duty-cell ${cellClass}" title="Clinic Weekend"><span class="off-duty-label">Off Duty</span></td>`;
             return;
           }
 
           if (filteredDoc) {
             if (!isDoctorWorkingOnDate(filteredDoc, d)) {
-              cellsHtml += `<td class="off-duty-cell ${cellClass}"></td>`;
+              cellsHtml += `<td class="off-duty-cell ${cellClass}" title="Doctor Off-Duty"><span class="off-duty-label">Off Duty</span></td>`;
               return;
             }
             if (!isSlotWithinDoctorShift(filteredDoc, t)) {
-              cellsHtml += `<td class="off-shift-cell ${cellClass}"></td>`;
+              cellsHtml += `<td class="off-shift-cell ${cellClass}" title="Outside Working Shift"><span class="off-shift-label">Off Shift</span></td>`;
               return;
             }
           }

@@ -4602,7 +4602,7 @@ html, body {
   justify-content: center !important;
 }
 
-.off-duty-cell::after {
+.off-duty-cell:empty::after {
   content: 'Off Duty';
   font-size: 10px;
   font-weight: 600;
@@ -4621,13 +4621,23 @@ html, body {
   justify-content: center !important;
 }
 
-.off-shift-cell::after {
+.off-shift-cell:empty::after {
   content: 'Off Shift';
   font-size: 9.5px;
   font-weight: 600;
   color: #94A3B8;
   letter-spacing: 0.3px;
   opacity: 0.6;
+}
+
+.off-duty-label,
+.off-shift-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: 0.3px;
+  opacity: 0.6;
+  text-transform: uppercase;
 }
 
 .doctor-off-badge {

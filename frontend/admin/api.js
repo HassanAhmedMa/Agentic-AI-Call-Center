@@ -122,73 +122,106 @@
   }
 
   async function request(endpoint, options = {}) {
-    const baseUrl = window.ClinicConfig ? window.ClinicConfig.getApiBaseUrl() : '/api/v1';
     let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     if (/^\/patients(?:\/|\?|$)/.test(cleanEndpoint)) cleanEndpoint = '/admin' + cleanEndpoint;
-    const url = `${baseUrl}${cleanEndpoint}`;
 
-    const headers = {
-      'Accept': 'application/json',
-      'Cache-Control': 'no-cache, no-store',
-      'Pragma': 'no-cache',
-      ...(options.headers || {})
-    };
+    const candidates = window.ClinicConfig && typeof window.ClinicConfig.getCandidateBaseUrls === 'function'
+      ? window.ClinicConfig.getCandidateBaseUrls()
+      : [window.ClinicConfig ? window.ClinicConfig.getApiBaseUrl() : '/api/v1'];
 
-    const privileged = /^\/(admin|appointments|ws)(?:\/|\?|$)/.test(cleanEndpoint) || (cleanEndpoint === '/doctors' && options.method === 'POST');
-    if (privileged && getAdminToken()) headers['X-Admin-Token'] = adminToken;
+    let lastError = null;
 
-    if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
-      options.body = JSON.stringify(options.body);
-    } else if (typeof options.body === 'string' && !headers['Content-Type']) {
-      headers['Content-Type'] = 'application/json';
-    }
+    for (let i = 0; i < candidates.length; i++) {
+      const candidateBase = candidates[i];
+      const url = `${candidateBase}${cleanEndpoint}`;
 
-    try {
-      const response = await fetch(url, {
-        cache: 'no-store',
-        ...options,
-        headers
-      });
+      const headers = {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache',
+        ...(options.headers || {})
+      };
 
-      if (!response.ok) {
-        let errorData = null;
-        try {
-          errorData = await response.json();
-        } catch (_) {
-          // Non-JSON error body
+      const privileged = /^\/(admin|appointments|ws)(?:\/|\?|$)/.test(cleanEndpoint) || (cleanEndpoint === '/doctors' && options.method === 'POST');
+      if (privileged && getAdminToken()) headers['X-Admin-Token'] = adminToken;
+
+      let body = options.body;
+      if (body && typeof body === 'object' && !(body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify(body);
+      } else if (typeof body === 'string' && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+
+      try {
+        const isCrossDomain = /^https?:\/\//i.test(candidateBase);
+        const response = await fetch(url, {
+          cache: 'no-store',
+          credentials: isCrossDomain ? 'include' : 'same-origin',
+          ...options,
+          body,
+          headers
+        });
+
+        if (!response.ok) {
+          let errorData = null;
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            try {
+              errorData = await response.json();
+            } catch (_) {}
+          }
+
+          // If static dev server (e.g. Live Server on 5500/5501) returned 404 HTML,
+          // or if /health or core catalog endpoint 404s, try the next candidate
+          const isStaticDev404 = response.status === 404 && (!errorData || !errorData.error);
+          if (isStaticDev404 && i < candidates.length - 1) {
+            continue;
+          }
+
+          const code = errorData?.error?.code || errorData?.code || response.statusText || 'HTTP_ERROR';
+          const message = errorData?.error?.message || errorData?.message || `Request failed with status ${response.status}`;
+          const details = errorData?.details || null;
+
+          if (!options.silent) {
+            if (response.status >= 500) {
+              updateConnectionState('error', { status: response.status, code, message });
+            } else {
+              updateConnectionState('connected', { url });
+            }
+          }
+          throw new ClinicApiError(response.status, code, message, details);
         }
 
-        const code = errorData?.error?.code || errorData?.code || response.statusText || 'HTTP_ERROR';
-        const message = errorData?.error?.message || errorData?.message || `Request failed with status ${response.status}`;
-        const details = errorData?.details || null;
-
-        // A 4xx response confirms the backend API server is reachable, online, and responding!
-        // Only 5xx indicates an internal server error or gateway breakdown.
-        if (!options.silent) {
-          if (response.status >= 500) {
-            updateConnectionState('error', { status: response.status, code, message });
-          } else {
-            updateConnectionState('connected', { url });
+        // Successfully reached working backend!
+        if (window.ClinicConfig && candidateBase) {
+          const currentBase = window.ClinicConfig.getApiBaseUrl();
+          if (candidateBase !== currentBase) {
+            const raw = candidateBase.replace(/\/api\/v1\/?$/, '');
+            window.ClinicConfig.setApiBaseUrl(raw, true);
           }
         }
-        throw new ClinicApiError(response.status, code, message, details);
-      }
 
-      if (!options.silent) {
-        updateConnectionState('connected', { url });
+        if (!options.silent) {
+          updateConnectionState('connected', { url });
+        }
+        return await response.json();
+      } catch (err) {
+        if (err instanceof ClinicApiError) {
+          throw err;
+        }
+        // Network error (e.g. localhost:8000 refused connection), try next candidate
+        lastError = err;
+        if (i < candidates.length - 1) {
+          continue;
+        }
       }
-      return await response.json();
-    } catch (err) {
-      if (err instanceof ClinicApiError) {
-        throw err;
-      }
-      // Actual network failure, CORS issue, or server offline
-      if (!options.silent) {
-        updateConnectionState('disconnected', { originalError: err.message });
-      }
-      throw new ClinicApiError(0, 'NETWORK_ERROR', `Unable to reach clinic backend at ${url}. (${err.message})`);
     }
+
+    if (!options.silent) {
+      updateConnectionState('disconnected', { originalError: lastError ? lastError.message : 'Unknown' });
+    }
+    throw new ClinicApiError(0, 'NETWORK_ERROR', `Unable to reach clinic backend. (${lastError ? lastError.message : 'All backend targets unreachable'})`);
   }
 
   const ClinicApi = {
@@ -253,7 +286,14 @@
         total: filtered.length,
         doctors: filtered
       };
-      if (isDefault) ClinicCache.set('doctors_all', res);
+      if (isDefault) {
+        ClinicCache.set('doctors_all', res);
+        try {
+          sessionStorage.setItem('shiffaa_doctors_count', String(filtered.length));
+          const badge = document.getElementById('doctorsCountBadge');
+          if (badge) badge.textContent = String(filtered.length);
+        } catch (_) {}
+      }
       return res;
     },
 
@@ -1544,11 +1584,28 @@
     }
   };
 
-  // Start WebSocket client on DOM readiness
+  function syncGlobalDoctorBadges() {
+    const badge = document.getElementById('doctorsCountBadge');
+    if (!badge) return;
+    try {
+      const cached = sessionStorage.getItem('shiffaa_doctors_count');
+      if (cached) {
+        badge.textContent = cached;
+      } else {
+        ClinicApi.getDoctors({ limit: 50 }).catch(() => {});
+      }
+    } catch (_) {}
+  }
+
+  // Start WebSocket client & sync badges on DOM readiness
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => ClinicRealtime.init());
+    document.addEventListener('DOMContentLoaded', () => {
+      ClinicRealtime.init();
+      syncGlobalDoctorBadges();
+    });
   } else {
     ClinicRealtime.init();
+    syncGlobalDoctorBadges();
   }
 
   window.ClinicRealtime = ClinicRealtime;

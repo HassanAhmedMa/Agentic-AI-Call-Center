@@ -1,10 +1,13 @@
 """
 Generate a clean, professional, black-and-white UML 2.5 Component Diagram PNG
-for the Shiffaa Clinic Architecture & Agentic Call Center.
+for the Shiffaa Clinic Architecture & Conversational AI Agent.
+Phase 2: Text-First AI Chat Agent Validation (Zero Telephony / No Twilio)
+Phase 3: WebSocket Real-Time Voice Streaming Extension
 Strictly zero-overlap, clear UML symbols, academic/engineering grade.
 """
 
 import os
+import shutil
 from playwright.sync_api import sync_playwright
 
 WIDTH = 2400
@@ -111,8 +114,8 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
   <!-- HEADER & DIAGRAM METADATA                                                 -->
   <!-- ========================================================================= -->
   <g transform="translate(50, 55)">
-    <text x="0" y="0" class="title">SHIFFAA CLINIC — SYSTEM ARCHITECTURE &amp; AI CALL CENTER</text>
-    <text x="0" y="24" class="subtitle">UML 2.5 Component Architecture Model • Implemented Core Services &amp; Planned Conversational Voice Integration</text>
+    <text x="0" y="0" class="title">SHIFFAA CLINIC — SYSTEM ARCHITECTURE &amp; CONVERSATIONAL AI AGENT</text>
+    <text x="0" y="24" class="subtitle">UML 2.5 Component Architecture Model • Phase 1 Core Services • Phase 2 Text AI Agent Validation • Phase 3 WebSocket Voice</text>
     
     <!-- Rule Callout Box -->
     <g transform="translate(1550, -20)">
@@ -137,9 +140,9 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
   <rect x="660" y="440" width="650" height="770" fill="none" stroke="#000000" stroke-width="1.2" rx="4"/>
   <text x="680" y="465" class="boundary-label">TIER 2 • DETERMINISTIC CLINIC BACKEND &amp; STORAGE (CURRENT)</text>
 
-  <!-- Boundary 3: AI Voice & Call Center (Right) -->
+  <!-- Boundary 3: Conversational AI Agent & WebSocket Voice (Right) -->
   <rect x="1350" y="130" width="1000" height="1080" fill="none" stroke="#666666" stroke-width="1.2" stroke-dasharray="8,5" rx="4"/>
-  <text x="1370" y="155" class="boundary-label">TIER 3 • AI AGENTIC CALL CENTER &amp; KNOWLEDGE RETRIEVAL (PLANNED)</text>
+  <text x="1370" y="155" class="boundary-label">TIER 3 • CONVERSATIONAL AI AGENT &amp; KNOWLEDGE RETRIEVAL (PHASE 2 &amp; 3)</text>
 
   <!-- ========================================================================= -->
   <!-- COLUMN 1: CLIENTS & INGRESS GATEWAY                                       -->
@@ -254,49 +257,50 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
   </g>
 
   <!-- ========================================================================= -->
-  <!-- COLUMN 3: AI CALL CENTER & VOICE AGENT (MIDDLE-RIGHT)                     -->
+  <!-- COLUMN 3: AI AGENT INTERFACE, VOICE EXTENSION & ORCHESTRATOR (MIDDLE-RIGHT) -->
   <!-- ========================================================================= -->
 
-  <!-- Component: Telephony & Voice Inbound -->
+  <!-- Component 1: Patient Web Chat & Voice Interface (Browser Client) -->
   <g transform="translate(1380, 180)">
-    <rect width="420" height="130" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" stroke-dasharray="6,4"/>
-    <use href="#uml-tab" x="392" y="10"/>
-    <text x="18" y="26" class="stereotype">«external actor / interface»</text>
-    <text x="18" y="46" class="comp-name">Inbound Telephony &amp; Callers</text>
-    <text x="290" y="26" font-size="10.5px" font-weight="600" fill="#555555">PHASE 2</text>
-    <line x1="0" y1="56" x2="420" y2="56" stroke="#000000" stroke-width="1"/>
-    <text x="18" y="76" class="item-text">• PSTN / SIP Trunk / Twilio Gateway</text>
-    <text x="18" y="94" class="item-text">• WebRTC Real-Time Audio Streaming Channels</text>
-    <text x="18" y="112" class="item-text">• Caller Identity (CLI / Caller ID Resolution)</text>
+    <rect width="430" height="135" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" stroke-dasharray="6,4"/>
+    <use href="#uml-tab" x="402" y="10"/>
+    <text x="18" y="26" class="stereotype">«client interface / browser»</text>
+    <text x="18" y="46" class="comp-name">Patient Web Chat &amp; Voice Interface</text>
+    <text x="390" text-anchor="end" y="26" font-size="9.5px" font-weight="700" fill="#1565C0">PHASE 2 (TEXT) • PHASE 3 (VOICE)</text>
+    <line x1="0" y1="56" x2="430" y2="56" stroke="#000000" stroke-width="1"/>
+    <text x="18" y="74" class="item-text">• <tspan font-weight="600">Phase 2 Text Agent:</tspan> Direct Web Chat Widget (Bidirectional Text Stream)</text>
+    <text x="18" y="92" class="item-text">• <tspan font-weight="600">Phase 3 Web Voice:</tspan> In-Browser Microphone &amp; Speaker via WebSocket (WSS)</text>
+    <text x="18" y="110" class="item-text">• <tspan font-weight="600">Zero Telephony Layer:</tspan> No PSTN, No SIP Trunks, No Twilio Gateways</text>
+    <text x="18" y="126" class="mono" font-size="10px" fill="#555555">• Validates agent intent accuracy, prompts, and tools in text first</text>
   </g>
 
-  <!-- Component: Voice Gateway Layer -->
-  <g transform="translate(1380, 360)">
-    <rect width="420" height="140" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" stroke-dasharray="6,4"/>
-    <use href="#uml-tab" x="392" y="10"/>
-    <text x="18" y="26" class="stereotype">«subsystem / adapter»</text>
-    <text x="18" y="46" class="comp-name">Voice Gateway Layer [Audio Adapter]</text>
-    <text x="290" y="26" font-size="10.5px" font-weight="600" fill="#555555">PHASE 2</text>
-    <line x1="0" y1="56" x2="420" y2="56" stroke="#000000" stroke-width="1"/>
-    <text x="18" y="76" class="item-text">• Speech-to-Text (STT): Whisper / FastConformer</text>
-    <text x="18" y="94" class="item-text">• Low-Latency Arabic &amp; Egyptian Dialect Support</text>
-    <text x="18" y="112" class="item-text">• Text-to-Speech (TTS): ElevenLabs / Edge Realtime</text>
-    <text x="18" y="130" class="item-text">• Voice Activity Detection (VAD) &amp; Barge-In Handling</text>
+  <!-- Component 2: WebSocket Voice Streaming Adapter (Middle-Left, Phase 3 Voice Extension) -->
+  <g transform="translate(1490, 365)">
+    <rect width="320" height="145" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" stroke-dasharray="6,4"/>
+    <use href="#uml-tab" x="292" y="10"/>
+    <text x="16" y="26" class="stereotype">«subsystem / adapter»</text>
+    <text x="16" y="46" class="comp-name">WebSocket Voice Adapter</text>
+    <text x="280" text-anchor="end" y="26" font-size="9.5px" font-weight="700" fill="#7B1FA2">PHASE 3 (VOICE)</text>
+    <line x1="0" y1="56" x2="320" y2="56" stroke="#000000" stroke-width="1"/>
+    <text x="16" y="74" class="item-text">• Browser WebSocket Audio Ingress (PCM Stream)</text>
+    <text x="16" y="92" class="item-text">• Speech-to-Text (STT): Streaming Whisper</text>
+    <text x="16" y="110" class="item-text">• Text-to-Speech (TTS): Streaming Synthesis</text>
+    <text x="16" y="128" class="item-text">• Real-Time VAD &amp; Barge-In Handling</text>
   </g>
 
-  <!-- Component: AI Agent Orchestrator -->
+  <!-- Component 3: AI Agent Orchestrator (Phase 2 Core Agent) -->
   <g transform="translate(1380, 560)">
-    <rect width="420" height="420" fill="#FFFFFF" stroke="#000000" stroke-width="2" stroke-dasharray="7,4"/>
-    <use href="#uml-tab" x="392" y="12"/>
+    <rect width="430" height="420" fill="#FFFFFF" stroke="#000000" stroke-width="2" stroke-dasharray="7,4"/>
+    <use href="#uml-tab" x="402" y="12"/>
     <text x="20" y="28" class="stereotype">«subsystem / intelligence»</text>
     <text x="20" y="50" class="comp-name">AI Agent Orchestrator [LangGraph]</text>
-    <text x="290" y="28" font-size="10.5px" font-weight="600" fill="#555555">PHASE 2</text>
-    <line x1="0" y1="64" x2="420" y2="64" stroke="#000000" stroke-width="1.2"/>
+    <text x="390" text-anchor="end" y="28" font-size="10px" font-weight="700" fill="#0D47A1">PHASE 2 (CORE AGENT)</text>
+    <line x1="0" y1="64" x2="430" y2="64" stroke="#000000" stroke-width="1.2"/>
 
-    <rect x="18" y="78" width="384" height="66" fill="#F9F9F9" stroke="#CCCCCC" stroke-width="1"/>
+    <rect x="18" y="78" width="394" height="66" fill="#F9F9F9" stroke="#CCCCCC" stroke-width="1"/>
     <text x="28" y="96" class="subcomp-title">Multi-Turn Conversation State Engine</text>
-    <text x="28" y="114" class="item-text">• Finite State Machine session management</text>
-    <text x="28" y="130" class="item-text">• Context memory &amp; caller slot confirmation bounds</text>
+    <text x="28" y="114" class="item-text">• Finite State Machine session management (Prompt/Chat)</text>
+    <text x="28" y="130" class="item-text">• Context memory &amp; patient slot confirmation bounds</text>
 
     <g transform="translate(20, 160)">
       <text x="0" y="0" font-weight="600" font-size="12px" fill="#000000">Intent &amp; Dialect Understanding:</text>
@@ -315,7 +319,7 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
       <text x="0" y="98" class="mono" font-size="11px">• escalate_to_human_agent()</text>
     </g>
 
-    <rect x="18" y="354" width="384" height="48" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/>
+    <rect x="18" y="354" width="394" height="48" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/>
     <text x="28" y="372" font-size="11px" font-weight="700" fill="#000000">ZERO DIRECT DB CONNECTION:</text>
     <text x="28" y="388" font-size="10.5px" font-weight="400" fill="#333333">All actions dispatched as REST calls to Clinic Backend</text>
   </g>
@@ -330,7 +334,7 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
     <use href="#uml-tab" x="402" y="10"/>
     <text x="18" y="26" class="stereotype">«subsystem / knowledge»</text>
     <text x="18" y="46" class="comp-name">RAG Knowledge Engine</text>
-    <text x="300" y="26" font-size="10.5px" font-weight="600" fill="#555555">PHASE 2</text>
+    <text x="390" text-anchor="end" y="26" font-size="10px" font-weight="700" fill="#0D47A1">PHASE 2 (AGENT)</text>
     <line x1="0" y1="56" x2="430" y2="56" stroke="#000000" stroke-width="1"/>
     <text x="18" y="76" class="item-text">• Clinic Working Hours &amp; Holiday Policies</text>
     <text x="18" y="94" class="item-text">• Doctor Bios, Qualifications &amp; Specialties</text>
@@ -345,9 +349,9 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
     <use href="#uml-db" x="400" y="10"/>
     <text x="18" y="26" class="stereotype">«database / vector»</text>
     <text x="18" y="46" class="comp-name">Vector Knowledge Store</text>
-    <text x="300" y="26" font-size="10.5px" font-weight="600" fill="#555555">PHASE 2</text>
+    <text x="390" text-anchor="end" y="26" font-size="10px" font-weight="700" fill="#0D47A1">PHASE 2 (AGENT)</text>
     <line x1="0" y1="56" x2="430" y2="56" stroke="#000000" stroke-width="1"/>
-    <text x="18" y="76" class="item-text">• Clinic Policy Chunk Embeddings (OpenAI / Cohere)</text>
+    <text x="18" y="76" class="item-text">• Clinic Policy Chunk Embeddings (OpenAI / FastEmbed)</text>
     <text x="18" y="94" class="item-text">• pgvector Extension on PostgreSQL / ChromaDB</text>
     <text x="18" y="112" class="item-text">• Cosine Distance / Hierarchical Semantic Retrieval</text>
     <text x="18" y="134" class="mono" font-size="11px" fill="#444444">• Indexed Document Knowledge Base</text>
@@ -359,7 +363,7 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
     <use href="#uml-tab" x="402" y="10"/>
     <text x="18" y="26" class="stereotype">«component / automation»</text>
     <text x="18" y="46" class="comp-name">Workflow Automation [n8n]</text>
-    <text x="270" y="26" font-size="10.5px" font-weight="600" fill="#2E7D32">STATUS: INTEGRATED</text>
+    <text x="390" text-anchor="end" y="26" font-size="10px" font-weight="600" fill="#2E7D32">STATUS: INTEGRATED</text>
     <line x1="0" y1="56" x2="430" y2="56" stroke="#000000" stroke-width="1"/>
     <text x="18" y="76" class="item-text">• WhatsApp / SMS Booking Confirmation Dispatch</text>
     <text x="18" y="94" class="item-text">• Human Staff Escalation Ticket Webhooks</text>
@@ -393,17 +397,25 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
   <rect x="895" y="948" width="180" height="24" fill="#FFFFFF" stroke="#000000" stroke-width="1"/>
   <text x="905" y="964" class="edge-label">SQL / Async Connection Pool</text>
 
-  <!-- Flow 5: Telephony Inbound -> Voice Gateway -->
-  <path d="M 1590 310 L 1590 360" fill="none" stroke="#000000" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
-  <rect x="1500" y="323" width="180" height="20" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
-  <text x="1508" y="337" class="edge-label">RTP / WebRTC Audio Stream</text>
+  <!-- Flow 5 (Phase 2): Direct Text Chat Stream (Patient Interface -> AI Agent Orchestrator) -->
+  <!-- Clean straight vertical path through the 110px clear left corridor (x=1435) with ZERO overlap! -->
+  <path d="M 1435 315 L 1435 560" fill="none" stroke="#000000" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <rect x="1382" y="415" width="106" height="46" fill="#FFFFFF" stroke="#000000" stroke-width="1"/>
+  <text x="1435" text-anchor="middle" y="430" font-size="10px" font-weight="700" fill="#000000">Phase 2: Text Chat</text>
+  <text x="1435" text-anchor="middle" y="443" font-size="9px" font-weight="600" fill="#333333">Stream (Direct WS)</text>
+  <text x="1435" text-anchor="middle" y="454" font-size="8px" fill="#666666">No Voice Overhead</text>
 
-  <!-- Flow 6: Voice Gateway -> AI Agent Orchestrator -->
-  <path d="M 1590 500 L 1590 560" fill="none" stroke="#000000" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
-  <rect x="1490" y="518" width="200" height="22" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
-  <text x="1498" y="533" class="edge-label">Transcribed Audio / Text Events</text>
+  <!-- Flow 6 (Phase 3): WebSocket PCM Audio Stream (Patient Interface -> Voice Adapter) -->
+  <path d="M 1650 315 L 1650 365" fill="none" stroke="#000000" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <rect x="1545" y="328" width="210" height="22" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
+  <text x="1552" y="343" class="edge-label">Phase 3: WebSocket Audio Stream</text>
 
-  <!-- Flow 7: AI Agent Orchestrator -> Clinic Backend Core (PRIMARY TOOL CALLING ARROW) -->
+  <!-- Flow 7 (Phase 3): Transcribed Audio Events (Voice Adapter -> AI Agent Orchestrator) -->
+  <path d="M 1650 510 L 1650 560" fill="none" stroke="#000000" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <rect x="1555" y="523" width="190" height="22" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
+  <text x="1562" y="538" class="edge-label">Transcribed Speech Events</text>
+
+  <!-- Flow 8: AI Agent Orchestrator -> Clinic Backend Core (PRIMARY TOOL CALLING ARROW) -->
   <path d="M 1380 700 L 1290 700" fill="none" stroke="#000000" stroke-width="2.4" marker-end="url(#arrow)"/>
   <rect x="1300" y="662" width="70" height="76" fill="#FFFFFF" stroke="#000000" stroke-width="1.4"/>
   <text x="1305" y="680" font-size="11px" font-weight="700" fill="#000000">TOOL</text>
@@ -411,25 +423,24 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
   <text x="1305" y="712" font-size="9px" font-weight="600" fill="#555555">REST API</text>
   <text x="1305" y="724" font-size="9px" font-weight="400" fill="#555555">(JSON)</text>
 
-  <!-- Flow 8: AI Agent Orchestrator -> RAG Knowledge Base -->
-  <path d="M 1800 645 L 1890 645" fill="none" stroke="#000000" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
-  <rect x="1812" y="630" width="65" height="30" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
-  <text x="1817" y="644" class="edge-label">Context</text>
-  <text x="1817" y="655" class="edge-sublabel">Queries</text>
+  <!-- Flow 9: AI Agent Orchestrator -> RAG Knowledge Base -->
+  <path d="M 1810 645 L 1890 645" fill="none" stroke="#000000" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+  <rect x="1817" y="630" width="65" height="30" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
+  <text x="1822" y="644" class="edge-label">Context</text>
+  <text x="1822" y="655" class="edge-sublabel">Queries</text>
 
-  <!-- Flow 9: RAG Knowledge Engine -> Vector Store (CLEAN VERTICAL DIRECT CONNECTION!) -->
+  <!-- Flow 10: RAG Knowledge Engine -> Vector Store (CLEAN VERTICAL DIRECT CONNECTION!) -->
   <path d="M 2105 735 L 2105 785" fill="none" stroke="#000000" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
   <rect x="2025" y="747" width="160" height="22" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
   <text x="2032" y="762" class="edge-label">Similarity Vector Search</text>
 
-  <!-- Flow 10: AI Agent Orchestrator -> n8n Workflow Automation (Escalations) -->
-  <path d="M 1800 930 L 1845 930 L 1845 1060 L 1890 1060" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow)"/>
-  <rect x="1808" y="980" width="74" height="30" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
-  <text x="1812" y="994" class="edge-label">Escalate</text>
-  <text x="1812" y="1005" class="edge-sublabel">Webhooks</text>
+  <!-- Flow 11: AI Agent Orchestrator -> n8n Workflow Automation (Escalations) -->
+  <path d="M 1810 930 L 1850 930 L 1850 1060 L 1890 1060" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="1812" y="980" width="76" height="30" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
+  <text x="1816" y="994" class="edge-label">Escalate</text>
+  <text x="1816" y="1005" class="edge-sublabel">Webhooks</text>
 
-  <!-- Flow 11: Clinic Backend -> n8n Workflow Automation (Notifications) -->
-  <!-- Direct horizontal-orthogonal path along bottom of diagram -->
+  <!-- Flow 12: Clinic Backend -> n8n Workflow Automation (Notifications) -->
   <path d="M 1290 890 L 1340 890 L 1340 1130 L 1890 1130" fill="none" stroke="#000000" stroke-width="1.4" marker-end="url(#arrow)"/>
   <rect x="1440" y="1118" width="190" height="22" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="0.8"/>
   <text x="1448" y="1133" class="edge-label">Booking Notifications &amp; Alerts</text>
@@ -448,33 +459,33 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {
       <text x="40" y="29" class="legend-text"><tspan font-weight="600">Solid Box:</tspan> Current Implemented Stack (Clinic Backend, Web Portal, DB, Ingress, n8n)</text>
       
       <rect x="0" y="44" width="30" height="16" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" stroke-dasharray="4,3"/>
-      <text x="40" y="57" class="legend-text"><tspan font-weight="600">Dashed Box:</tspan> Planned Conversational Voice Extension (Voice Gateway, LangGraph Orchestrator, RAG)</text>
+      <text x="40" y="57" class="legend-text"><tspan font-weight="600">Dashed Box:</tspan> Phase 2 Text AI Agent (Orchestrator, RAG, Vectors) &amp; Phase 3 WebSocket Voice</text>
 
       <line x1="0" y1="80" x2="30" y2="80" stroke="#000000" stroke-width="2" marker-end="url(#arrow)"/>
       <text x="40" y="84" class="legend-text"><tspan font-weight="600">Solid Arrow:</tspan> Synchronous REST API, WebSocket event feed, or SQL connection pool</text>
 
       <line x1="0" y1="108" x2="30" y2="108" stroke="#000000" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
-      <text x="40" y="112" class="legend-text"><tspan font-weight="600">Dashed Arrow:</tspan> Audio streaming events, RAG context queries, or async webhook notifications</text>
+      <text x="40" y="112" class="legend-text"><tspan font-weight="600">Dashed Arrow:</tspan> Text chat stream, WebSocket audio, RAG context queries, or async webhooks</text>
     </g>
 
     <!-- Legend Column 2: Architectural Invariants -->
     <g transform="translate(750, 25)">
       <text x="0" y="0" class="legend-title">GOVERNING ARCHITECTURAL INVARIANTS (ADRs)</text>
       <text x="0" y="24" class="legend-text"><tspan font-weight="600">1. Strict Decoupling:</tspan> The LLM functions strictly within an orchestration layer; it never directly accesses PostgreSQL.</text>
-      <text x="0" y="46" class="legend-text"><tspan font-weight="600">2. Deterministic Validation:</tspan> Backend REST services enforce all time conflicts, availability, and business rules.</text>
-      <text x="0" y="68" class="legend-text"><tspan font-weight="600">3. Typed Tool Contracts:</tspan> Tool definitions strictly mirror Pydantic schemas (documented in docs/architecture/tool-schemas.md).</text>
-      <text x="0" y="90" class="legend-text"><tspan font-weight="600">4. Zero Vendor Lock-in:</tspan> LLM models, STT/TTS engines, and vector stores sit behind pluggable abstract adapters.</text>
+      <text x="0" y="46" class="legend-text"><tspan font-weight="600">2. Phase 2 Text-First Strategy:</tspan> AI Agent validation executed via pure text chat first; voice applied later over WebSockets.</text>
+      <text x="0" y="68" class="legend-text"><tspan font-weight="600">3. No Telephony / No Twilio:</tspan> In-browser WebSockets replace traditional PSTN/SIP telephony and hardware trunks.</text>
+      <text x="0" y="90" class="legend-text"><tspan font-weight="600">4. Typed Tool Contracts:</tspan> Tool definitions strictly mirror Pydantic schemas (documented in docs/architecture/tool-schemas.md).</text>
       <text x="0" y="112" class="legend-text"><tspan font-weight="600">5. Multi-Dialect Healthcare:</tspan> First-class natural language understanding for Egyptian Arabic, MSA, and English.</text>
     </g>
 
     <!-- Legend Column 3: Tech Stack Matrix -->
     <g transform="translate(1620, 25)">
-      <text x="0" y="0" class="legend-title">DEPLOYED TECHNOLOGY STACK</text>
+      <text x="0" y="0" class="legend-title">DEPLOYED &amp; PLANNED TECHNOLOGY STACK</text>
       <text x="0" y="24" class="legend-text"><tspan font-weight="600">• Core API:</tspan> Python 3.11, FastAPI, SQLAlchemy 2.0 Async, Pydantic v2</text>
       <text x="0" y="46" class="legend-text"><tspan font-weight="600">• Persistence:</tspan> PostgreSQL 17 (Supabase Stack, PostgREST, Realtime CDC)</text>
       <text x="0" y="68" class="legend-text"><tspan font-weight="600">• Ingress &amp; Proxy:</tspan> Caddy v2 Reverse Proxy (Automated TLS, HTTP/2, HTTP/3, WSS)</text>
-      <text x="0" y="90" class="legend-text"><tspan font-weight="600">• Frontend:</tspan> Vanilla JS / HTML5 / CSS3, Real-Time WebSockets, RTL Support</text>
-      <text x="0" y="112" class="legend-text"><tspan font-weight="600">• Automation &amp; Relay:</tspan> n8n Community Server, OpenWA WhatsApp Adapter</text>
+      <text x="0" y="90" class="legend-text"><tspan font-weight="600">• Conversational AI (Phase 2):</tspan> LangGraph / LangChain, RAG Knowledge Retrieval</text>
+      <text x="0" y="112" class="legend-text"><tspan font-weight="600">• Web Voice (Phase 3):</tspan> Browser Web Audio API &amp; AudioWorklet over Secure WebSockets (WSS)</text>
     </g>
   </g>
 </svg>
@@ -484,6 +495,8 @@ os.makedirs("docs/architecture", exist_ok=True)
 svg_path = "docs/architecture/system-architecture.svg"
 png_path = "docs/architecture/system-architecture.png"
 root_png_path = "system-architecture.png"
+artifact_dir = r"C:\Users\hassa\.gemini\antigravity\brain\f3108404-1fee-452c-a1e2-9de8ad7affb3"
+artifact_png_path = os.path.join(artifact_dir, "system-architecture.png")
 
 with open(svg_path, "w", encoding="utf-8") as f:
     f.write(svg_content)
@@ -501,6 +514,8 @@ with sync_playwright() as p:
     page.wait_for_timeout(1000)
     page.screenshot(path=png_path, full_page=True)
     page.screenshot(path=root_png_path, full_page=True)
+    if os.path.exists(artifact_dir):
+        page.screenshot(path=artifact_png_path, full_page=True)
     browser.close()
 
-print(f"Generated high-resolution PNG: {png_path} and {root_png_path}")
+print(f"Generated high-resolution PNG: {png_path}, {root_png_path}, and {artifact_png_path}")
