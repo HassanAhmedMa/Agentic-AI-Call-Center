@@ -36,7 +36,7 @@
         cancelBtn.title = 'Requires Administrator privileges';
         cancelBtn.onclick = (e) => {
           e.preventDefault();
-          AdminAuth.showAdminPrivilegeWarning('Cancelling / removing a patient');
+          AdminAuth.showAdminPrivilegeWarning('Removing a patient');
         };
       }
     }
@@ -1144,12 +1144,12 @@
         ${(typeof AdminAuth === 'undefined' || AdminAuth.checkPermission('delete_patient')) ? `
           <button class="action-tile-btn" style="width:100%; border:none; background:#FEF2F2;" onclick="confirmCancelPatient(${id}, '${escapeJs(name)}'); closeAdminModal();">
             <div class="tile-icon-box" style="background:#FEE2E2; color:#DC2626;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg></div>
-            <div class="tile-text-col"><h4 class="tile-title" style="color:#DC2626;">Cancel / Remove Patient</h4><span class="tile-subtext" style="color:#991B1B;">Cancel record & appointments</span></div>
+            <div class="tile-text-col"><h4 class="tile-title" style="color:#DC2626;">Remove Patient</h4><span class="tile-subtext" style="color:#991B1B;">Remove record & appointments</span></div>
           </button>
         ` : `
-          <button class="action-tile-btn" style="width:100%; border:none; background:#F8FAFC; opacity:0.6;" onclick="AdminAuth.showAdminPrivilegeWarning('Cancelling / removing a patient')">
+          <button class="action-tile-btn" style="width:100%; border:none; background:#F8FAFC; opacity:0.6;" onclick="AdminAuth.showAdminPrivilegeWarning('Removing a patient')">
             <div class="tile-icon-box" style="background:#F1F5F9; color:#94A3B8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg></div>
-            <div class="tile-text-col"><h4 class="tile-title" style="color:#64748B;">Cancel / Remove Patient</h4><span class="tile-subtext">Admin privileges required</span></div>
+            <div class="tile-text-col"><h4 class="tile-title" style="color:#64748B;">Remove Patient</h4><span class="tile-subtext">Admin privileges required</span></div>
           </button>
         `}
       </div>
@@ -1595,8 +1595,9 @@
   }
 
   function confirmCancelPatient(patientId, patientName) {
+    const cleanName = String(patientName || 'Patient').replace(/^(\s*\[Cancelled\]\s*)+/gi, '').trim();
     if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_patient')) {
-      AdminAuth.showAdminPrivilegeWarning('Cancelling / removing a patient');
+      AdminAuth.showAdminPrivilegeWarning('Removing a patient');
       return;
     }
 
@@ -1612,7 +1613,7 @@
         </div>
         <h4 style="margin:0 0 8px 0; font-size:16px; font-weight:700; color:#1E293B;">Cancel Patient Record for ${escapeHtml(patientName)}?</h4>
         <p style="margin:0 0 16px 0; font-size:13px; color:#64748B; line-height:1.5;">
-          This action will cancel all upcoming scheduled appointments and deactivate the patient profile in the clinic database.
+          This action will permanently delete the patient profile and all associated appointments from the clinic database.
         </p>
         <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px; font-size:12px; color:#92400E; text-align:left;">
           This patient will no longer be able to sign in or book appointments unless re-registered.
@@ -1620,7 +1621,7 @@
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
           <button class="modal-btn-secondary" onclick="closeAdminModal()">Keep Patient</button>
           <button class="modal-btn-primary" style="background:#DC2626; border-color:#DC2626;" onclick="executeCancelPatient(${patientId}, '${escapeJs(patientName)}')">
-            Yes, Cancel Patient
+            Yes, Remove Patient
           </button>
         </div>
       </div>
@@ -1630,8 +1631,9 @@
   }
 
   async function executeCancelPatient(patientId, patientName) {
+    const cleanName = String(patientName || 'Patient').replace(/^(\s*\[Cancelled\]\s*)+/gi, '').trim();
     if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_patient')) {
-      AdminAuth.showAdminPrivilegeWarning('Cancelling / removing a patient');
+      AdminAuth.showAdminPrivilegeWarning('Removing a patient');
       return;
     }
     try {

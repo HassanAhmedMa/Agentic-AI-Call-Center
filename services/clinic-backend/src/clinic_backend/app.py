@@ -1029,6 +1029,7 @@ def create_app(
             }
 
     @app.delete("/api/v1/admin/patients/{patient_id}", tags=["Patients"])
+    @app.delete("/api/v1/patients/{patient_id}", tags=["Patients"])
     async def delete_patient(patient_id: str) -> dict[str, Any]:
         async with sessions() as session:
             stmt = select(Patient)
@@ -1046,17 +1047,19 @@ def create_app(
                 raise APIError(404, "PATIENT_NOT_FOUND", "Patient not found.")
 
             pid = patient.id
+            supabase_uid = patient.supabase_user_id
+
+            # 1. Cleanly delete appointments associated with this patient
+            # (appointment_history cascades automatically via FK ondelete CASCADE)
             try:
                 await session.execute(
-                    text(
-                        "UPDATE clinic.appointments SET status = 'cancelled' "
-                        "WHERE patient_id = :pid"
-                    ),
+                    text("DELETE FROM clinic.appointments WHERE patient_id = :pid"),
                     {"pid": pid},
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed deleting appointments for patient %s: %s", pid, e)
 
+            # 2. Delete verification challenges
             try:
                 await session.execute(
                     text(
@@ -1065,31 +1068,41 @@ def create_app(
                     ),
                     {"pid": pid},
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed deleting challenges for patient %s: %s", pid, e)
 
+            # 3. Delete patient sessions
             try:
                 await session.execute(
                     text("DELETE FROM clinic.patient_sessions WHERE patient_id = :pid"),
                     {"pid": pid},
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed deleting sessions for patient %s: %s", pid, e)
 
+            # 4. Delete idempotency keys
             try:
-                await session.delete(patient)
-                await session.commit()
-            except Exception:
-                await session.rollback()
-                async with sessions() as s2:
-                    p = await s2.get(Patient, pid)
-                    if p:
-                        p.full_name = f"[Cancelled] {p.full_name}"
-                        await s2.commit()
+                await session.execute(
+                    text("DELETE FROM clinic.idempotency_keys WHERE patient_id = :pid"),
+                    {"pid": pid},
+                )
+            except Exception as e:
+                logger.warning("Failed deleting idempotency keys for patient %s: %s", pid, e)
+
+            # 5. Delete patient record
+            await session.delete(patient)
+            await session.commit()
+
+            # 6. Delete Supabase user if present
+            if supabase_uid and auth_client:
+                try:
+                    await auth_client.delete_user(str(supabase_uid))
+                except Exception as e:
+                    logger.warning("Failed deleting supabase user %s: %s", supabase_uid, e)
 
             return {
                 "success": True,
-                "message": "Patient record cancelled successfully.",
+                "message": "Patient record removed successfully.",
                 "id": pid,
             }
 

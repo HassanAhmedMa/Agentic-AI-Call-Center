@@ -602,30 +602,25 @@
      */
     deletePatient: async function (patientId) {
       if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_patient')) {
-        AdminAuth.showAdminPrivilegeWarning('Cancelling / removing a patient');
+        AdminAuth.showAdminPrivilegeWarning('Removing a patient');
         throw new Error('Operation not permitted. Requires Administrator privileges.');
       }
       try {
-        const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
+        const res = await request(`/admin/patients/${encodeURIComponent(patientId)}`, {
           method: 'DELETE'
         });
         ClinicCache.invalidate('patients');
         return res;
       } catch (err) {
-        if (err.status === 405 || err.status === 404 || (err.message && (err.message.includes('405') || err.message.includes('404')))) {
-          const removed = JSON.parse(localStorage.getItem('clinic_removed_patients') || '[]');
-          if (!removed.includes(String(patientId))) {
-            removed.push(String(patientId));
-            localStorage.setItem('clinic_removed_patients', JSON.stringify(removed));
-          }
+        try {
+          const res = await request(`/patients/${encodeURIComponent(patientId)}`, {
+            method: 'DELETE'
+          });
           ClinicCache.invalidate('patients');
-          return {
-            success: true,
-            message: 'Patient record cancelled successfully.',
-            id: patientId
-          };
+          return res;
+        } catch (err2) {
+          throw err2;
         }
-        throw err;
       }
     },
 
@@ -634,7 +629,8 @@
      */
     normalizePatient: function (raw) {
       if (!raw) return null;
-      const name = raw.full_name || raw.name || 'Unnamed Patient';
+      let rawName = raw.full_name || raw.name || 'Unnamed Patient';
+      const name = rawName.replace(/^(\s*\[Cancelled\]\s*)+/gi, '').trim();
       const custNum = raw.customer_number || raw.patientCode || String(raw.id || '');
 
       let age = raw.age;
