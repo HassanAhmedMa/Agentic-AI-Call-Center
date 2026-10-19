@@ -851,7 +851,6 @@
       await run(async () => {
         if (!oauth.get('code') || !oauth.get('oauth_state') || oauth.has('error')) throw Error('VERIFICATION_REQUIRED');
         success(await api('google/exchange', { code: oauth.get('code'), state: oauth.get('oauth_state') }));
-        window.location.assign('index.html');
       });
       return;
     }
