@@ -6,6 +6,21 @@
 (function () {
   'use strict';
 
+  function scrollToBottom(smooth = false) {
+    const stream = document.getElementById('chatMessages');
+    if (!stream) return;
+    try {
+      if (smooth && typeof stream.scrollTo === 'function') {
+        stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
+      } else {
+        stream.scrollTop = stream.scrollHeight;
+      }
+    } catch (_) {
+      stream.scrollTop = stream.scrollHeight;
+    }
+  }
+  window.scrollChatToBottom = scrollToBottom;
+
   function appendChatUserMessage(text) {
     const stream = document.getElementById('chatMessages');
     if (!stream) return;
@@ -26,7 +41,7 @@
       <div class="msg-avatar-user">MA</div>
     `;
     stream.appendChild(row);
-    stream.scrollTop = stream.scrollHeight;
+    scrollToBottom(true);
   }
 
   function appendChatBotMessage(html) {
@@ -47,7 +62,7 @@
       </div>
     `;
     stream.appendChild(row);
-    stream.scrollTop = stream.scrollHeight;
+    scrollToBottom(true);
   }
 
   window.sendChatMessage = function () {
@@ -162,5 +177,13 @@
         }
       });
     }
+
+    // Auto-scroll to latest message on page entry
+    scrollToBottom(false);
+    setTimeout(() => scrollToBottom(false), 60);
+    setTimeout(() => scrollToBottom(false), 250);
   });
+
+  window.addEventListener('load', () => scrollToBottom(false));
+  window.addEventListener('pageshow', () => scrollToBottom(false));
 })();

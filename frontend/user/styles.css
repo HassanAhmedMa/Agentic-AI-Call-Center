@@ -299,44 +299,56 @@ html[dir="rtl"] .nav-badge-pill {
 }
 
 .top-app-header {
-  height: 64px;
-  min-height: 64px;
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
   background-color: var(--bg-surface);
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  padding: 0 24px;
   z-index: 20;
+  overflow: hidden;
 }
 
 .mobile-brand-box {
   display: none;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
+  min-width: 0;
+  flex-shrink: 1;
 }
 .mobile-brand-logo {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-full);
   background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .mobile-brand-logo svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
+}
+.mobile-brand-titles {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 .mobile-brand-name {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--text-main);
+  white-space: nowrap;
 }
 .mobile-brand-tagline {
   font-size: 10px;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* Header Search Box */
@@ -386,7 +398,8 @@ html[dir="rtl"] .nav-badge-pill {
 .header-actions-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .lang-pill-btn {
@@ -395,13 +408,15 @@ html[dir="rtl"] .nav-badge-pill {
   gap: 6px;
   background: #F1F5F9;
   border: 1px solid var(--border-light);
-  padding: 6px 12px;
+  padding: 6px 11px;
   border-radius: var(--radius-full);
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-body);
   transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .lang-pill-btn:hover {
   background: #E2E8F0;
@@ -409,8 +424,8 @@ html[dir="rtl"] .nav-badge-pill {
 }
 
 .icon-tool-btn, .header-icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-full);
   background: #F8FAFC;
   border: 1px solid var(--border-light);
@@ -421,6 +436,7 @@ html[dir="rtl"] .nav-badge-pill {
   position: relative;
   color: var(--text-muted);
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 .icon-tool-btn:hover, .header-icon-btn:hover {
   background-color: #F1F5F9;
@@ -428,8 +444,8 @@ html[dir="rtl"] .nav-badge-pill {
   border-color: var(--primary-border);
 }
 .icon-tool-btn svg, .header-icon-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 .notification-dot {
@@ -446,35 +462,42 @@ html[dir="rtl"] .nav-badge-pill {
 .user-profile-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px 4px 4px;
+  gap: 7px;
+  padding: 3px 9px 3px 3px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-light);
   background: #FFFFFF;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
+  flex-shrink: 0;
+  max-width: 140px;
 }
 .user-profile-badge:hover {
   border-color: var(--primary);
   box-shadow: var(--shadow-subtle);
 }
 .user-avatar-circle {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-full);
   background: #DBEAFE;
   color: #1D4ED8;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .user-name-text {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 85px;
 }
 
 /* ==========================================================================
@@ -1154,13 +1177,29 @@ html[dir="rtl"] .action-arrow {
   height: 17px;
 }
 
+#view-ai-chat,
+.chat-view-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  height: calc(100vh - 58px) !important;
+  max-height: calc(100dvh - 58px) !important;
+  padding: 16px 28px 20px 28px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
 .chat-messages-stream, .chat-messages-scroll {
   background: #F8FAFC;
   border-left: 1px solid var(--border-light);
   border-right: 1px solid var(--border-light);
   padding: 24px 28px;
-  height: calc(100vh - 250px);
-  overflow-y: auto;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1572,28 +1611,38 @@ html[dir="rtl"] .user-balloon {
   padding-top: 18px;
   border-top: 1px solid var(--border-light);
 }
+.btn-logout-danger,
 .btn-logout-action {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #FFFFFF;
-  border: 1px solid var(--red-border);
-  color: var(--red-text);
-  padding: 10px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  margin-top: 24px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.05);
 }
+.btn-logout-danger:hover,
 .btn-logout-action:hover {
-  background: var(--red-subtle);
+  background: #FEE2E2;
+  border-color: #F87171;
+  color: #B91C1C;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.12);
 }
+.btn-logout-danger svg,
 .btn-logout-action svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -1842,11 +1891,23 @@ html[dir="rtl"] .toast-stack {
     display: flex !important;
   }
   .top-app-header {
-    padding: 0 16px;
-    height: 58px;
+    padding: 0 12px;
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+  }
+  #headerVisibilityBtn {
+    display: none !important;
   }
   .view-panel {
     padding: 16px 16px 84px 16px;
+  }
+  #view-ai-chat,
+  .chat-view-panel {
+    height: calc(100dvh - 56px - 64px) !important;
+    max-height: calc(100dvh - 56px - 64px) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
   .hero-welcome-card {
     flex-direction: column;
@@ -1873,18 +1934,57 @@ html[dir="rtl"] .toast-stack {
     grid-template-columns: 1fr;
   }
   .chat-messages-stream {
-    height: calc(100vh - 200px);
-    padding: 16px;
+    height: auto !important;
+    max-height: none !important;
+    padding: 14px 14px !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    border-left: none;
+    border-right: none;
   }
   .chat-header-bar {
     border-radius: 0;
+    border-left: none;
+    border-right: none;
+    height: 54px;
+    padding: 0 14px;
   }
   .chat-input-toolbar {
     border-radius: 0;
+    border-left: none;
+    border-right: none;
+    padding: 10px 14px;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
   }
 }
 
 @media (max-width: 640px) {
+  .mobile-brand-tagline {
+    display: none !important;
+  }
+  .mobile-brand-name {
+    font-size: 13.5px;
+  }
+  .lang-pill-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    max-width: 82px;
+  }
+  .lang-pill-btn .lang-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-name-text {
+    max-width: 65px;
+    font-size: 12px;
+  }
+  .user-profile-badge {
+    padding: 3px 8px 3px 3px;
+    gap: 6px;
+  }
   .appt-item-card, .upcoming-appt-card {
     flex-direction: column;
     align-items: flex-start;
@@ -1916,6 +2016,20 @@ html[dir="rtl"] .toast-stack {
   .filter-select, .filter-date-input {
     width: 100%;
     min-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .user-name-text {
+    display: none !important;
+  }
+  .user-profile-badge {
+    padding: 3px;
+    border-radius: var(--radius-full);
+  }
+  .lang-pill-btn {
+    max-width: 74px;
+    padding: 4px 6px;
   }
 }
 

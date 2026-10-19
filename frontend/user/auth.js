@@ -441,7 +441,7 @@
   /**
    * Successful Auth Handler
    */
-  function success(profile) {
+  function success(profile, isSignup = false) {
     authenticated = true;
     pending = null;
     verifiedIdentity = false;
@@ -450,7 +450,11 @@
     if (customerEl && profile?.customer_number) {
       customerEl.textContent = profile.customer_number;
     }
-    navigateToView('view-success');
+    if (isSignup) {
+      navigateToView('view-success');
+    } else {
+      window.location.assign('index.html');
+    }
   }
 
   /**
@@ -463,11 +467,10 @@
         ? normalizePhone($('loginPhoneInput').value)
         : $('loginEmailInput').value.trim().toLowerCase();
       try {
-        const res = await api('login', {
+        await api('login', {
           identifier,
           password: $('loginPasswordInput').value
         });
-        success(res);
         window.location.assign('index.html');
       } finally {
         if ($('loginPasswordInput')) $('loginPasswordInput').value = '';
@@ -509,7 +512,7 @@
 
       try {
         if (verifiedIdentity) {
-          success(await api('verify', { email: pending.email, code: '000000', registration: pending }));
+          success(await api('verify', { email: pending.email, code: '000000', registration: pending }), true);
           return;
         }
 
@@ -542,7 +545,7 @@
       const code = boxes.map(input => digits(input.value)).join('');
       clearCode();
       if (!/^\d{6}$/.test(code)) throw Error('INVALID_CODE');
-      success(await api('verify', { email: pending.email, code, registration: pending }));
+      success(await api('verify', { email: pending.email, code, registration: pending }), true);
     });
   }
 
