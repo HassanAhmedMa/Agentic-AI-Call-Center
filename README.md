@@ -93,6 +93,7 @@ See [identity review notes](docs/development/phase1-identity-changes.md).
 - ✅ Shared Oracle/Supabase registration with n8n verification email tested.
 - ⏳ Appointment writes, agent tools, RAG and voice remain planned.
 - ❌ No production speech recognition or voice pipelines are hooked up.
+- 🔔 **Public Chat "Coming Soon" Feature Flag:** On public server domains, the Patient Portal Chat tab displays a clean "Feature Coming Soon..." placeholder while Phase 2 AI is in progress. Local dev (`localhost`/`127.0.0.1`) is immune and interactive. Controlled via Admin Dashboard Settings and real-time WebSockets. See [Public Chat Feature Flag Guide](docs/development/public-chat-feature-flag.md).
 - ✅ All architectural boundaries, REST contracts, AI tool schemas, and database entity relationships are formalized and documented.
 - ✅ The monorepo layout, Git conventions, CI pipeline foundation, and AI agent constitutions are in place.
 

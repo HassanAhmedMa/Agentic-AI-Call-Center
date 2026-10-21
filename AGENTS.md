@@ -134,6 +134,7 @@ All AI coding agents operate as **pair-programming assistants**, not autonomous 
 - **Localhost-First Compatibility:** Every feature, authentication flow, and API endpoint MUST be runnable and testable locally on `localhost` and `127.0.0.1` (on ports such as 5500, 5501, 8000, 8002, 3000) without requiring a remote cloud deployment.
 - **Detailed Backend & Container Commit Logs:** Any commit that modifies backend business logic, authentication origins, environment variables, or Docker container configurations MUST include a detailed body in the commit message explaining: (1) exact files and endpoints modified, (2) container runtime impact, and (3) port, origin, or tunnel implications for teammates (Hassan, Ziad, Ali, Omar).
 - **Shared Server Non-Interference:** Never break shared server ports, reverse proxy rules (Caddy/Envoy), or container settings. Production security constraints (e.g., Caddy SSL, `Secure` cookies) must always coexist gracefully with local loopback testing.
+- **Public Chat "Coming Soon" Mode Reminder:** The Patient Portal chat (`frontend/user/chat.html`) displays a "Feature Coming Soon..." overlay on public server URLs to prevent visitor confusion while Phase 2 AI is being linked. Local dev (`localhost`/`127.0.0.1`) is **immune** and remains fully interactive. It can be toggled in real time via Admin Dashboard Settings or managed as documented in `docs/development/public-chat-feature-flag.md`.
 
 ### What AI Agents MUST NOT Do:
 - ❌ **NEVER commit secrets, tokens, private keys, or credentials.**

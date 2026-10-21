@@ -600,6 +600,23 @@
      * Cancel / delete patient record from database
      * DELETE /api/v1/admin/patients/{id}
      */
+    getChatComingSoonMode: async function () {
+      try {
+        const res = await request('/public/settings');
+        return res && typeof res.chat_public_coming_soon === 'boolean' ? res.chat_public_coming_soon : true;
+      } catch (_) {
+        return true;
+      }
+    },
+
+    setChatComingSoonMode: async function (enabled) {
+      const res = await request('/admin/settings/chat-feature', {
+        method: 'PUT',
+        body: { chat_public_coming_soon: !!enabled }
+      });
+      return res;
+    },
+
     deletePatient: async function (patientId) {
       if (typeof AdminAuth !== 'undefined' && !AdminAuth.checkPermission('delete_patient')) {
         AdminAuth.showAdminPrivilegeWarning('Removing a patient');
@@ -1100,15 +1117,21 @@
       statePill = '<span class="status-pill status-cancelled">• Error</span>';
     }
 
-    const isSchedule = window.activeSettingsTab === 'schedule';
+    const activeTab = window.activeSettingsTab || 'schedule';
+    const isSchedule = activeTab === 'schedule';
+    const isFeatures = activeTab === 'ai_features';
+    const isConn = activeTab === 'connection';
 
     const tabNavHtml = `
-      <div style="display:flex; border-bottom:1px solid #E2E8F0; margin-bottom:16px; gap:8px;">
-        <button type="button" onclick="switchSettingsTab('schedule')" style="padding:8px 14px; border:none; background:none; font-weight:${isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${isSchedule ? '#2563EB' : 'transparent'}; color:${isSchedule ? '#2563EB' : '#64748B'};">
-          📅 Clinic Schedule & Holidays (المواعيد والعطلات)
+      <div style="display:flex; border-bottom:1px solid #E2E8F0; margin-bottom:16px; gap:4px; overflow-x:auto;">
+        <button type="button" onclick="switchSettingsTab('schedule')" style="padding:8px 12px; border:none; background:none; font-weight:${isSchedule ? '700' : '500'}; font-size:12.5px; cursor:pointer; border-bottom:2px solid ${isSchedule ? '#2563EB' : 'transparent'}; color:${isSchedule ? '#2563EB' : '#64748B'}; white-space:nowrap;">
+          📅 Clinic Schedule & Holidays
         </button>
-        <button type="button" onclick="switchSettingsTab('connection')" style="padding:8px 14px; border:none; background:none; font-weight:${!isSchedule ? '700' : '500'}; font-size:13px; cursor:pointer; border-bottom:2px solid ${!isSchedule ? '#2563EB' : 'transparent'}; color:${!isSchedule ? '#2563EB' : '#64748B'};">
-          🔌 API & Server Connection (اتصال الخادم)
+        <button type="button" onclick="switchSettingsTab('ai_features')" style="padding:8px 12px; border:none; background:none; font-weight:${isFeatures ? '700' : '500'}; font-size:12.5px; cursor:pointer; border-bottom:2px solid ${isFeatures ? '#2563EB' : 'transparent'}; color:${isFeatures ? '#2563EB' : '#64748B'}; white-space:nowrap;">
+          🤖 AI & Feature Flags (التحكم في الشات)
+        </button>
+        <button type="button" onclick="switchSettingsTab('connection')" style="padding:8px 12px; border:none; background:none; font-weight:${isConn ? '700' : '500'}; font-size:12.5px; cursor:pointer; border-bottom:2px solid ${isConn ? '#2563EB' : 'transparent'}; color:${isConn ? '#2563EB' : '#64748B'}; white-space:nowrap;">
+          🔌 API & Connection
         </button>
       </div>
     `;
@@ -1268,6 +1291,45 @@
       }
     }
   };
+
+  window.loadChatComingSoonToggleState = async function () {
+    try {
+      const mode = await ClinicApi.getChatComingSoonMode();
+      const sw = document.getElementById('chatComingSoonSwitch');
+      if (sw) sw.checked = mode;
+      updateChatToggleUI(mode);
+    } catch (_) {}
+  };
+
+  window.togglePublicChatComingSoon = async function (checked) {
+    updateChatToggleUI(checked);
+    try {
+      await ClinicApi.setChatComingSoonMode(checked);
+      showToast(checked 
+        ? 'Public Chat "Coming Soon" mode enabled (Broadcasted via WebSockets)' 
+        : 'Public Chat unlocked (Live Chat visible on public URL)', 'success');
+    } catch (err) {
+      showToast(`Failed to update setting: ${err.message}`, 'error');
+      loadChatComingSoonToggleState();
+    }
+  };
+
+  function updateChatToggleUI(mode) {
+    const badge = document.getElementById('chatComingSoonStatusBadge');
+    const label = document.getElementById('chatSwitchLabel');
+    const slider = document.querySelector('.switch-slider');
+    if (badge) {
+      badge.style.backgroundColor = mode ? '#EFF6FF' : '#F1F5F9';
+      badge.style.color = mode ? '#1D4ED8' : '#64748B';
+      badge.textContent = mode ? '• Active (Coming Soon Displayed)' : '• Disabled (Full Chat Live)';
+    }
+    if (label) {
+      label.textContent = mode ? 'Coming Soon Mode: Enabled' : 'Coming Soon Mode: Disabled';
+    }
+    if (slider) {
+      slider.style.backgroundColor = mode ? '#2563EB' : '#CBD5E1';
+    }
+  }
 
   window.renderHolidaysList = function () {
     const listEl = document.getElementById('clinicHolidaysListContainer');
@@ -1553,6 +1615,11 @@
     },
 
     handleIncomingEvent: function (event, data) {
+      if (event === 'CHAT_FEATURE_STATUS_CHANGED') {
+        if (typeof window.loadChatComingSoonToggleState === 'function') {
+          window.loadChatComingSoonToggleState();
+        }
+      }
       if (event === 'CONNECTED') {
         this.isConnected = true;
         this.reconnectAttempts = 0;

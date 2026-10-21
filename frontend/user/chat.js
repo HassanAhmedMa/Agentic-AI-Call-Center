@@ -176,7 +176,102 @@
     btn.querySelector('span').textContent = isMuted ? (isAr ? 'صامت' : 'Muted') : (isAr ? 'كتم الصوت' : 'Mute');
   };
 
+  
+  /* =============================================================================
+     FEATURE FLAG: COMING SOON OVERLAY & REAL-TIME WEBSOCKET SYNC
+     ============================================================================= */
+  function isLocalDevEnvironment() {
+    const host = window.location.hostname;
+    return (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '0.0.0.0' ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.') ||
+      host.endsWith('.local')
+    );
+  }
+
+  function setComingSoonOverlay(active) {
+    const overlay = document.getElementById('chatComingSoonOverlay');
+    if (!overlay) return;
+    overlay.style.display = active ? 'flex' : 'none';
+  }
+
+  async function initChatFeatureAvailability() {
+    const params = new URLSearchParams(window.location.search);
+    const forcePreview = params.get('preview_coming_soon') === '1';
+
+    // Local dev always has full interactive access unless preview is explicitly requested
+    if (isLocalDevEnvironment() && !forcePreview) {
+      console.info('[Chat] Local dev environment detected; bypass Coming Soon overlay.');
+      setComingSoonOverlay(false);
+      return;
+    }
+
+    // On public URL: fetch the live status from backend
+    try {
+      const baseUrl = (typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '/api/v1');
+      const res = await fetch(`${baseUrl}/public/settings`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        const comingSoon = data && data.chat_public_coming_soon !== false;
+        setComingSoonOverlay(comingSoon);
+      } else {
+        setComingSoonOverlay(true);
+      }
+    } catch (_) {
+      setComingSoonOverlay(true);
+    }
+
+    // Connect to Public WebSocket for real-time live push updates
+    initPublicChatWebSocket();
+  }
+
+  function initPublicChatWebSocket() {
+    if (isLocalDevEnvironment()) return;
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${proto}//${host}/api/v1/public/ws`;
+
+    try {
+      const socket = new WebSocket(wsUrl);
+
+      socket.onmessage = (event) => {
+        try {
+          if (event.data === 'pong') return;
+          const msg = JSON.parse(event.data);
+          if (msg.event === 'CHAT_FEATURE_STATUS_CHANGED' && msg.data) {
+            setComingSoonOverlay(Boolean(msg.data.chat_public_coming_soon));
+          } else if (msg.event === 'CONNECTED' && msg.data) {
+            if (typeof msg.data.chat_public_coming_soon === 'boolean') {
+              setComingSoonOverlay(msg.data.chat_public_coming_soon);
+            }
+          }
+        } catch (_) {}
+      };
+
+      const timer = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send('ping');
+        }
+      }, 25000);
+
+      socket.onclose = () => {
+        clearInterval(timer);
+        setTimeout(initPublicChatWebSocket, 5000);
+      };
+
+      socket.onerror = () => {
+        try { socket.close(); } catch (_) {}
+      };
+    } catch (e) {
+      console.warn('[Chat WS] Public websocket init error:', e);
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    initChatFeatureAvailability();
     const input = document.getElementById('chatTextInput');
     if (input) {
       input.addEventListener('keydown', (e) => {

@@ -44,6 +44,7 @@ from clinic_backend.mail import Delivery, make_delivery
 from clinic_backend.settings import Settings
 from clinic_backend.supabase_auth import AuthClient
 from clinic_backend.websocket_manager import ws_manager
+from clinic_backend.runtime_config import runtime_config
 
 logger = logging.getLogger("clinic_backend")
 
@@ -1159,6 +1160,61 @@ def create_app(
             "status": "broadcasted",
             "active_clients": len(ws_manager.active_connections),
         }
+
+    @app.get("/api/v1/public/settings", tags=["Settings"])
+    async def get_public_settings() -> dict[str, Any]:
+        return {
+            "chat_public_coming_soon": bool(
+                runtime_config.get("chat_public_coming_soon", True)
+            ),
+            "server_time": datetime.now(UTC).isoformat(),
+        }
+
+    @app.put("/api/v1/admin/settings/chat-feature", tags=["Settings"])
+    @app.post("/api/v1/admin/settings/chat-feature", tags=["Settings"])
+    async def update_chat_feature_setting(
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        coming_soon = bool(payload.get("chat_public_coming_soon", True))
+        runtime_config.set("chat_public_coming_soon", coming_soon)
+        logger.info("Admin updated chat_public_coming_soon to %s", coming_soon)
+        await ws_manager.broadcast(
+            "CHAT_FEATURE_STATUS_CHANGED",
+            {
+                "chat_public_coming_soon": coming_soon,
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
+        )
+        return {
+            "status": "ok",
+            "chat_public_coming_soon": coming_soon,
+        }
+
+    @app.websocket("/api/v1/public/ws")
+    async def websocket_public_endpoint(websocket: WebSocket) -> None:
+        await websocket.accept()
+        await ws_manager.connect(websocket, accepted=True)
+        try:
+            await websocket.send_json(
+                {
+                    "event": "CONNECTED",
+                    "data": {
+                        "status": "ready",
+                        "chat_public_coming_soon": bool(
+                            runtime_config.get("chat_public_coming_soon", True)
+                        ),
+                        "server_time": datetime.now(UTC).isoformat(),
+                    },
+                }
+            )
+            while True:
+                data = await websocket.receive_text()
+                if data == "ping":
+                    await websocket.send_text("pong")
+                elif data == "heartbeat":
+                    await websocket.send_json({"event": "PONG"})
+        except (WebSocketDisconnect, Exception):
+            await ws_manager.disconnect(websocket)
 
     # =========================================================================
     # APPOINTMENTS REST API (LIVE SUPABASE / POSTGRESQL ONLY)

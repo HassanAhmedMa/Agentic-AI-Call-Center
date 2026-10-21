@@ -156,7 +156,25 @@
       </header>
 
       <!-- AI CHAT VIEWPORT -->
-      <section class="view-panel active chat-view-panel" id="view-ai-chat">
+      <section class="view-panel active chat-view-panel" id="view-ai-chat" style="position:relative;">
+        
+        <!-- Feature Coming Soon Overlay (Controlled via Admin Setting & WebSockets) -->
+        <div id="chatComingSoonOverlay" class="chat-coming-soon-overlay" style="display:none;">
+          <div class="coming-soon-content">
+            <div class="coming-soon-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" width="30" height="30">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                <path d="M8 10h.01M12 10h.01M16 10h.01"/>
+              </svg>
+            </div>
+            <h2 class="coming-soon-title" data-i18n="chat_coming_soon_title">Feature Coming Soon...</h2>
+            <p class="coming-soon-desc" data-i18n="chat_coming_soon_desc">Our AI conversational assistant is currently in preparation for Phase 2 and will be available shortly.</p>
+            <div class="coming-soon-pill">
+              <span class="pill-dot"></span>
+              <span data-i18n="chat_coming_soon_badge">Phase 2 — In Progress</span>
+            </div>
+          </div>
+        </div>
         
         <!-- Assistant Top Sub-Header -->
         <header class="chat-header-bar" data-ctrl="chat-header">
