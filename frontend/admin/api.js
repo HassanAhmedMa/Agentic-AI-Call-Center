@@ -1236,6 +1236,62 @@
       }
 
       renderHolidaysList();
+    } else if (isFeatures) {
+      bodyEl.innerHTML = `
+        ${tabNavHtml}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div>
+                <h4 style="margin:0; font-size:14px; font-weight:700; color:#1E293B;">Public Chat "Coming Soon" Overlay</h4>
+                <span style="font-size:12px; color:#64748B;">حاجز شاشة "الميزة قادمة قريباً" في بوابة المرضى العامة</span>
+              </div>
+              <span id="chatComingSoonStatusBadge" class="status-pill status-pending">• Checking...</span>
+            </div>
+            
+            <p style="font-size:12.5px; color:#475569; margin:0 0 16px 0; line-height:1.5;">
+              Controls whether public visitors to the Patient Portal (<code style="font-size:11.5px; background:#E2E8F0; padding:1px 5px; border-radius:4px;">chat.html</code>) see the <em>"Feature Coming Soon... / الميزة قادمة قريباً"</em> placeholder while Phase 2 AI is being integrated.
+            </p>
+
+            <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <label class="switch-toggle" style="position:relative; display:inline-block; width:48px; height:26px; margin:0; flex-shrink:0;">
+                  <input type="checkbox" id="chatComingSoonSwitch" onchange="togglePublicChatComingSoon(this.checked)">
+                  <span class="switch-slider"></span>
+                </label>
+                <div>
+                  <div id="chatSwitchLabel" style="font-weight:700; font-size:13px; color:#1E293B;">Coming Soon Overlay</div>
+                  <div style="font-size:11.5px; color:#64748B;">Instant real-time sync across all connected clients via WebSockets</div>
+                </div>
+              </div>
+              <div>
+                <button type="button" class="modal-btn-secondary" onclick="loadChatComingSoonToggleState()" style="padding:6px 12px; font-size:11.5px;">Refresh Status</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:14px;">
+            <div style="font-weight:700; font-size:12.5px; color:#1E40AF; margin-bottom:6px;">
+              💡 Local Development Immunity (الحصانة للمطورين)
+            </div>
+            <div style="font-size:12px; color:#1E3A8A; line-height:1.5;">
+              Local development (<code style="font-size:11px;">localhost:5500</code> / <code style="font-size:11px;">127.0.0.1</code>) is <strong>immune</strong> and can interact with the chat normally.
+              To preview this overlay locally on localhost, append <code style="font-size:11px; font-weight:700;">?preview_coming_soon=1</code> to the URL in your browser.
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (footerEl) {
+        footerEl.innerHTML = `
+          <button type="button" class="modal-btn-secondary" onclick="closeAdminModal()">Close</button>
+          <a href="../user/chat.html" target="_blank" class="modal-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+            Open Patient Chat ↗
+          </a>
+        `;
+      }
+
+      loadChatComingSoonToggleState();
     } else {
       // Connection tab
       bodyEl.innerHTML = `
