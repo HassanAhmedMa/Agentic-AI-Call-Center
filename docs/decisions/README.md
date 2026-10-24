@@ -31,3 +31,6 @@ All ADRs follow the standard format:
 | :--- | :--- | :--- | :--- |
 | [ADR-001](ADR-001-monorepo.md) | Adoption of a Modular Monorepo Architecture | Accepted | 2026-10-04 |
 | [ADR-002](ADR-002-technology-candidates-and-scope-simplification.md) | Technology Candidates, Scope Simplification & Feasibility | Accepted | 2026-10-05 |
+| [ADR-003](ADR-003-patient-identity-booking-rules-and-channel.md) | Patient Identity Verification, Booking Rules, Bilingual Catalog & Browser Call Channel | Proposed | 2026-10-09 |
+
+| [ADR-005](ADR-005-patient-portal-password-auth.md) | Patient portal password authentication | Accepted | 2026-10-17 |

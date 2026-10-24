@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Shiffaa Clinics - Patients Management</title>
+  <script>
+    // Self-healing cache buster: Ensures live database version loads immediately without manual force-refresh
+    (function() {
+      try {
+        localStorage.removeItem('clinic_admin_patients_store');
+        localStorage.removeItem('clinic_patients_cache');
+      } catch(e) {}
+      var p = new URLSearchParams(window.location.search);
+      if (p.get('v') !== 'live_v3') {
+        p.set('v', 'live_v3');
+        p.set('_t', String(Date.now()));
+        window.location.replace(window.location.pathname + '?' + p.toString());
+      }
+    })();
+  </script>
+
+  <!-- Typography: Inter for UI & Cairo for Arabic details -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css?v=live_v3">
+</head>
+<body>
+
+  <!-- Admin Main Layout Grid -->
+  <div class="admin-layout">
+
+    <!-- =========================================================================
+         LEFT SIDEBAR NAVIGATION
+         ========================================================================= -->
+    <aside class="admin-sidebar">
+      
+      <!-- Top Brand Header -->
+      <div class="sidebar-brand-box">
+        <img src="logo.png" alt="Shiffaa" class="brand-logo-img" style="width:34px; height:34px; object-fit:contain; flex-shrink:0;">
+        <div class="brand-text-col">
+          <h2 class="brand-title">Shiffaa Clinics</h2>
+          <span class="brand-subtitle">AI Call Center</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <!-- 1. Dashboard -->
+        <a href="index.html" class="nav-link" id="nav-dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22" fill="#FFFFFF"/>
+          </svg>
+          <span class="nav-text">Dashboard</span>
+        </a>
+
+        <!-- 2. Live Calls -->
+        <a href="live-calls.html" class="nav-link" id="nav-live-calls">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="nav-text">Live Calls</span>
+          <span class="nav-badge-red" id="liveCallsCountBadge" style="display: none;">0</span>
+        </a>
+
+        <!-- 3. Appointments -->
+        <a href="appointments.html" class="nav-link" id="nav-appointments">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="nav-text">Appointments</span>
+        </a>
+
+        <!-- 4. Doctors (Live Supabase Catalog) -->
+        <a href="doctors.html" class="nav-link" id="nav-doctors">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M3 11h6"/>
+            <path d="M6 8v6"/>
+          </svg>
+          <span class="nav-text">Doctors</span>
+          <span class="nav-badge-blue" id="doctorsCountBadge">12</span>
+        </a>
+
+        <!-- 5. Patients (Active) -->
+        <a href="patients.html?v=live_v3" class="nav-link active" id="nav-patients">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="nav-text">Patients</span>
+        </a>
+
+        <!-- 5. Knowledge Base -->
+        <a href="index.html#knowledge" class="nav-link" id="nav-knowledge">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+          <span class="nav-text">Knowledge Base</span>
+        </a>
+
+        <!-- 6. Documents -->
+        <a href="index.html#documents" class="nav-link" id="nav-documents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          <span class="nav-text">Documents</span>
+        </a>
+
+        <!-- 7. Analytics -->
+        <a href="index.html#analytics" class="nav-link" id="nav-analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <!-- 8. Operators (Above Settings) -->
+        <a href="operators.html" class="nav-link" id="nav-operators">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-text">Operators</span>
+          <span class="nav-badge-blue" id="operatorsCountBadge">2</span>
+        </a>
+
+        <!-- 9. Settings -->
+        <a href="index.html#settings" class="nav-link" id="nav-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom Cluster -->
+      <div class="sidebar-bottom-cluster">
+        <!-- Branch Switcher Card -->
+        <div class="branch-switcher-pill" onclick="handleBranchChange()">
+          <div class="branch-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="branch-name" id="currentBranchName">Main Clinic</span>
+          <svg class="branch-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </div>
+
+        <!-- Admin Profile -->
+        <div class="admin-profile-pill">
+          <div class="admin-avatar-circle">A</div>
+          <div class="admin-profile-meta">
+            <span class="admin-user-name">Ahmed Salah</span>
+            <span class="admin-user-role">Administrator</span>
+          </div>
+        </div>
+
+        <!-- Logout Action -->
+        <button class="logout-btn" onclick="handleLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================================
+         MAIN ADMIN CONTENT WORKSPACE
+         ========================================================================= -->
+    <div class="admin-main-viewport">
+      
+      <!-- Top Search & Status Bar -->
+      <header class="admin-top-bar">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="patientsGlobalSearch" placeholder="Search patients, phone numbers, national ID, or more..." autocomplete="off">
+          <span class="shortcut-tag">Ctrl K</span>
+        </div>
+
+        <div class="top-bar-right">
+          <!-- Notification Bell -->
+          <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="bell-red-badge"></span>
+          </button>
+
+          <!-- Current Date & Time -->
+          <div class="live-clock-box">
+            <span class="live-date" id="liveDateText">Tue, 12 Nov 2024</span>
+            <span class="live-time" id="liveTimeText">10:24 AM</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Patients Workspace Body -->
+      <main class="dashboard-scroll-body">
+
+        <!-- SECTION 1: TOP 4 METRICS CARDS (Exact match to Patients Screen) -->
+        <section class="metrics-grid">
+          
+          <!-- Metric 1: Total Patients -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-purple-subtle text-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Total Patients</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricTotalPatients">0</span>
+                <span class="metric-trend text-green">
+                  <span>Live</span>
+                  <span class="trend-sub">database</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 2: New Patients -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-green-subtle text-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <line x1="20" y1="8" x2="20" y2="14"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">New Patients</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricNewPatients">0</span>
+                <span class="metric-trend text-green">
+                  <span>Recent</span>
+                  <span class="trend-sub">this month</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 3: Active Patients -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-blue-subtle text-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Active Patients</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricActivePatients">0</span>
+                <span class="metric-trend text-green">
+                  <span>Active</span>
+                  <span class="trend-sub">status</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric 4: Inactive Patients -->
+          <div class="metric-card">
+            <div class="metric-icon-box bg-red-subtle text-red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+            </div>
+            <div class="metric-data-col">
+              <span class="metric-label">Inactive Patients</span>
+              <div class="metric-value-row">
+                <span class="metric-number" id="metricInactivePatients">0</span>
+                <span class="metric-trend text-red">
+                  <span>Archived</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- SECTION 2: PATIENTS MAIN SPLIT (DIRECTORY TABLE & PATIENT DETAILS) -->
+        <section class="patients-main-split">
+          
+          <!-- LEFT CARD: PATIENTS DIRECTORY TABLE -->
+          <div class="patients-directory-panel" id="patientsDirectoryCard">
+            
+            <!-- Panel Header Row -->
+            <div class="patients-panel-header">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <h2 class="patients-panel-title">Patients</h2>
+                <span class="live-status-pill" style="display:inline-flex; align-items:center; gap:5px; background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:12px; border:1px solid #BBF7D0;" title="Live Patient Directory connected to backend database">
+                  <span style="width:7px; height:7px; border-radius:50%; background:#16A34A; display:inline-block;"></span>
+                  <span>Live Database Synced</span>
+                </span>
+              </div>
+              <div class="patients-header-actions">
+                <button class="btn-add-patient" onclick="openAddPatientModal()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span>Add Patient</span>
+                </button>
+                <button class="btn-export" onclick="handleExportPatients()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span>Export</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Segmented Filter Tabs -->
+            <div class="patients-nav-tabs">
+              <button class="patient-tab-item active" onclick="filterPatientTab('all', this)">All Patients (<span id="tabCountAll">0</span>)</button>
+              <button class="patient-tab-item" onclick="filterPatientTab('active', this)">Active (<span id="tabCountActive">0</span>)</button>
+              <button class="patient-tab-item" onclick="filterPatientTab('new', this)">New (<span id="tabCountNew">0</span>)</button>
+              <button class="patient-tab-item" onclick="filterPatientTab('inactive', this)">Inactive (<span id="tabCountInactive">0</span>)</button>
+            </div>
+
+            <!-- Search and Filter Funnel Bar -->
+            <div class="patients-search-row">
+              <div class="patients-search-input-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="patientTableSearchInput" placeholder="Search by name, phone, national ID..." oninput="handleTableSearch(this.value)">
+              </div>
+              <button class="btn-filter-funnel" onclick="toggleAdvancedFilters()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                <span>Filter</span>
+              </button>
+            </div>
+
+            <!-- Filter Dropdowns Row -->
+            <div class="filter-pills-row" id="filterPillsRow">
+              <select class="filter-pill-select" id="deptFilterSelect" onchange="applyFilters()">
+                <option value="">All Departments</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Dermatology">Dermatology</option>
+                <option value="Orthopedics">Orthopedics</option>
+                <option value="General Medicine">General Medicine</option>
+                <option value="ENT">ENT</option>
+              </select>
+
+              <select class="filter-pill-select" id="statusFilterSelect" onchange="applyFilters()">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+
+              <select class="filter-pill-select" id="genderFilterSelect" onchange="applyFilters()">
+                <option value="">All Genders</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+              </select>
+
+              <button class="filter-pill-btn" onclick="openDateFilterModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>Registration Date</span>
+              </button>
+            </div>
+
+            <!-- Patients Table Container -->
+            <div class="patients-table-container">
+              <table class="patients-table" id="patientsMainTable">
+                <thead>
+                  <tr>
+                    <th class="th-checkbox">
+                      <input type="checkbox" class="custom-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th>Patient</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Patient ID</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Registration Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="patientsTableBody">
+                  <tr id="patientsLoadingRow">
+                    <td colspan="10" style="text-align:center; padding:40px 20px; color:#64748B;">
+                      <div style="display:inline-flex; align-items:center; gap:10px;">
+                        <span class="status-indicator-dot dot-connecting" style="width:10px; height:10px;"></span>
+                        <span style="font-size:13.5px; font-weight:500;">Loading live patients from database...</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Empty state if search returns no records -->
+              <div class="empty-state-card" id="patientsEmptyState" style="display: none; padding: 40px 20px;">
+                <div class="empty-state-icon text-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <h4 class="empty-state-title">No Patients Found</h4>
+                <p class="empty-state-desc">No patient profiles match your current search and filter criteria.</p>
+                <button class="simulate-call-btn" onclick="resetPatientFilters()">Reset Filters</button>
+              </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="patients-pagination-footer">
+              <span id="paginationText">Showing 0 patients</span>
+              <div class="pagination-controls" id="patientsPaginationControls" style="display: none;">
+                <button class="page-arrow-btn" onclick="goToPage('prev')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <div id="paginationPageNumbers" style="display:inline-flex; gap:4px;">
+                  <button class="page-num-btn active" onclick="goToPage(1, this)">1</button>
+                </div>
+                <button class="page-arrow-btn" onclick="goToPage('next')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT CARD: PATIENT DETAILS PANEL -->
+          <div class="patient-details-panel" id="patientDetailsCard">
+            
+            <!-- Panel Header Row -->
+            <div class="patient-details-header">
+              <h3 class="patient-details-title">Patient Details</h3>
+              <div class="details-header-actions">
+                <button class="btn-details-edit" onclick="openEditPatientModal()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                  </svg>
+                  <span>Edit</span>
+                </button>
+                <button class="btn-details-close" title="Close Panel" onclick="closePatientDetailsPanel()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Patient Hero Row -->
+            <div class="patient-hero-row" id="patientHeroRow" style="display:none;">
+              <div class="patient-hero-left">
+                <div class="patient-hero-avatar" id="detailAvatar">—</div>
+                <div class="patient-hero-info">
+                  <h3 class="patient-hero-name" id="detailName">—</h3>
+                  <span class="patient-hero-id" id="detailId">—</span>
+                </div>
+              </div>
+              <div class="badge-active-patient-pill" id="detailStatusBadge">
+                <span class="dot"></span>
+                <span id="detailStatusText">Active</span>
+              </div>
+            </div>
+
+            <!-- Patient Details Sub Tabs -->
+            <div class="patient-sub-tabs" id="patientSubTabs" style="display:none;">
+              <button class="sub-tab-btn active" data-tab="overview" onclick="switchDetailSubTab('overview', this)">Overview</button>
+              <button class="sub-tab-btn" data-tab="appointments" onclick="switchDetailSubTab('appointments', this)">Appointments <span class="tab-count-pill" id="patientApptsCountPill" style="display:none; font-size:10px; background:#EFF6FF; color:#2563EB; padding:1px 6px; border-radius:10px; margin-left:4px; font-weight:700;"></span></button>
+              <button class="sub-tab-btn" data-tab="records" onclick="switchDetailSubTab('records', this)">Medical Records</button>
+              <button class="sub-tab-btn" data-tab="history" onclick="switchDetailSubTab('history', this)">History</button>
+            </div>
+
+            <!-- Dynamic Tab Content: Overview -->
+            <div id="subTabContentOverview" style="display:none; flex-direction:column; gap:14px;">
+              
+              <!-- SECTION A: Personal Information -->
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Personal Information</span>
+                  </div>
+                  <button class="section-link-action" onclick="openEditPatientModal('personal')">Edit</button>
+                </div>
+
+                <div class="details-fields-grid">
+                  <div class="details-field-item">
+                    <span class="field-label">Full Name</span>
+                    <span class="field-value" id="fieldFullName">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Phone Number</span>
+                    <span class="field-value" id="fieldPhone">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Patient ID (رقم المريض)</span>
+                    <span class="field-value" id="fieldNationalId">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Date of Birth</span>
+                    <span class="field-value" id="fieldDob">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Gender</span>
+                    <span class="field-value" id="fieldGender">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Email</span>
+                    <span class="field-value" id="fieldEmail">—</span>
+                  </div>
+                  <div class="details-field-item full-width">
+                    <span class="field-label">Address</span>
+                    <span class="field-value" id="fieldAddress">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION B: Medical Information -->
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                      <path d="m9 12 2 2 4-4"/>
+                    </svg>
+                    <span>Medical Information</span>
+                  </div>
+                  <button class="section-link-action" onclick="openEditPatientModal('medical')">Edit</button>
+                </div>
+
+                <div class="details-fields-grid">
+                  <div class="details-field-item">
+                    <span class="field-label">Blood Type</span>
+                    <span class="field-value" id="fieldBloodType">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Known Allergies</span>
+                    <span class="field-value" id="fieldAllergies">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Chronic Conditions</span>
+                    <span class="field-value" id="fieldChronic">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Preferred Pharmacy</span>
+                    <span class="field-value" id="fieldPharmacy">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION C: Recent Activity -->
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Recent Activity</span>
+                  </div>
+                  <button class="section-link-action" onclick="openAllPatientActivityModal()">View All</button>
+                </div>
+
+                <div class="recent-activity-list" id="detailActivityList">
+                  <div style="font-size:12.5px; color:#94A3B8; text-align:center; padding:18px 0;">
+                    No past activity recorded for this patient.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Danger Zone: Remove Patient Record -->
+              <div class="details-card-section" style="border: 1px dashed #FECACA; background: #FFF5F5;">
+                <div class="section-header-row" style="margin-bottom: 6px;">
+                  <div class="section-header-left" style="color: #DC2626;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <line x1="17" y1="8" x2="23" y2="14"/>
+                      <line x1="23" y1="8" x2="17" y2="14"/>
+                    </svg>
+                    <span style="font-weight: 600; color: #DC2626;">Remove Patient Account</span>
+                  </div>
+                </div>
+                <p style="font-size: 12px; color: #991B1B; margin: 0 0 10px 0; line-height: 1.4;">
+                  Removing this patient record will permanently delete the patient profile and all associated appointments.
+                </p>
+                <button type="button" class="btn-appt-cancel" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600;" onclick="confirmCancelSelectedPatient()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                  Remove Patient
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Dynamic Tab Content: Appointments -->
+            <div id="subTabContentAppointments" style="display:none; flex-direction:column; gap:14px;">
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                    </svg>
+                    <span>Patient Appointments</span>
+                  </div>
+                  <a href="appointments.html" class="section-link-action" style="text-decoration:none;">+ Book Appointment</a>
+                </div>
+                <div id="patientAppointmentsList">
+                  <div style="text-align:center; padding:28px 12px; color:#64748B;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="28" height="28" style="margin-bottom:6px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+                    <div style="font-size:13px; font-weight:600; color:#334155;">No Scheduled Appointments</div>
+                    <div style="font-size:12px; margin-top:2px;">This patient has no upcoming visits scheduled.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Tab Content: Medical Records -->
+            <div id="subTabContentRecords" style="display:none; flex-direction:column; gap:14px;">
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <span>Medical Summary & Clinical Notes</span>
+                  </div>
+                  <button class="section-link-action" onclick="openEditPatientModal('medical')">Edit Medical Info</button>
+                </div>
+                <div class="details-fields-grid">
+                  <div class="details-field-item">
+                    <span class="field-label">Blood Type</span>
+                    <span class="field-value" id="fieldRecordsBloodType">—</span>
+                  </div>
+                  <div class="details-field-item">
+                    <span class="field-label">Insurance Provider</span>
+                    <span class="field-value" id="fieldRecordsInsurance">—</span>
+                  </div>
+                  <div class="details-field-item full-width">
+                    <span class="field-label">Known Allergies</span>
+                    <span class="field-value" id="fieldRecordsAllergies">—</span>
+                  </div>
+                  <div class="details-field-item full-width">
+                    <span class="field-label">Chronic Conditions</span>
+                    <span class="field-value" id="fieldRecordsChronic">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Tab Content: History -->
+            <div id="subTabContentHistory" style="display:none; flex-direction:column; gap:14px;">
+              <div class="details-card-section">
+                <div class="section-header-row">
+                  <div class="section-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Audit History & Log</span>
+                  </div>
+                  <button class="section-link-action" onclick="openAllPatientActivityModal()">Expand Full Log</button>
+                </div>
+                <div class="recent-activity-list" id="detailFullHistoryList">
+                  <div style="font-size:12.5px; color:#94A3B8; text-align:center; padding:18px 0;">
+                    No past activity logged for this patient.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Placeholder if panel closed / empty state -->
+            <div id="patientDetailsEmptyNotice" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <h4 style="font-size:14px; font-weight:700; color:#334155; margin-bottom:4px;">No Patient Selected</h4>
+              <p style="color:#64748B; font-size:13px; margin:0;">Select a patient from the live database directory to review their profile.</p>
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       MODALS & DIALOGS CONTAINER
+       ========================================================================= -->
+  <div class="admin-modal-backdrop" id="adminModalBackdrop" onclick="closeAdminModal(event)">
+    <div class="admin-modal-container" id="adminModalContainer">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="adminModalTitle">Patient Action</h3>
+        <button class="modal-close-icon-btn" onclick="closeAdminModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="admin-modal-body" id="adminModalBody"></div>
+      <div class="admin-modal-footer" id="adminModalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Toast Stack -->
+  <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Centralized Config & API Client -->
+  <script src="admin-auth.js?v=live_v3"></script>
+  <script src="config.js?v=live_v3"></script>
+  <script src="api.js?v=live_v3"></script>
+
+  <!-- Patients Controller Script -->
+  <script src="patients.js?v=live_v3"></script>
+</body>
+</html>

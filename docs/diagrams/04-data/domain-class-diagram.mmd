@@ -2,7 +2,8 @@
 classDiagram
     class Patient {
         +int id
-        +string name
+        +string nameEn
+        +string nameAr
         +string phone
         +string email
         +Date dateOfBirth
@@ -13,8 +14,9 @@ classDiagram
 
     class Doctor {
         +int id
-        +string name
-        +string specialty
+        +string nameEn
+        +string nameAr
+        +int specialtyId
         +string title
         +List~string~ languages
         +float consultationFee
@@ -30,14 +32,15 @@ classDiagram
         +Time startTime
         +Time endTime
         +AppointmentStatus status
-        +string notes
+        +string visitReason
         +cancel(string reason) void
         +reschedule(Date newDate, Time newTime) void
     }
 
     class Service {
         +int id
-        +string name
+        +string nameEn
+        +string nameAr
         +string category
         +float price
         +int durationMinutes
@@ -55,8 +58,8 @@ classDiagram
     }
 
     class AgentSession {
-        +string sessionId
-        +int patientId
+        +string internalConversationRef
+        +string verificationState
         +string language
         +List~Turn~ turnHistory
         +Intent currentIntent
@@ -67,7 +70,10 @@ classDiagram
         +string toolName
         +Map parameters
         +boolean confirmationRequired
-        +boolean userConfirmed
+        +string proposalId
+        +string executionState
+        +int deliveredAtTurn
+        +int subsequentCallerTurn
         +execute() ToolResult
     }
 
