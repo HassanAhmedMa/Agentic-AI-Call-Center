@@ -4495,32 +4495,54 @@ html, body {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: #F8FAFC;
+  background: #0F172A;
   border-radius: 8px;
   overflow: hidden;
-  min-height: 220px;
+  width: 100%;
+  height: 250px;
+  user-select: none;
+  touch-action: none;
 }
 
-.avatar-crop-image {
-  max-width: 100%;
-  max-height: 240px;
-  object-fit: contain;
-  display: block;
+.avatar-crop-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-crop-viewport:active,
+.avatar-crop-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.avatar-crop-interactive-img {
+  position: absolute;
+  max-width: none;
+  max-height: none;
+  pointer-events: none;
+  will-change: transform;
+  transform-origin: center center;
 }
 
 .avatar-crop-grid-overlay {
   position: absolute;
-  top: 10px;
-  bottom: 10px;
+  top: 15px;
+  bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
   width: 180px;
   border: 2px solid #2563EB;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65);
   pointer-events: none;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
+  border-radius: 4px;
 }
 
 .avatar-crop-grid-overlay div {
@@ -4538,7 +4560,7 @@ html, body {
 
 .avatar-crop-label {
   position: absolute;
-  bottom: 18px;
+  bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.95);
@@ -4548,7 +4570,80 @@ html, body {
   padding: 3px 12px;
   border-radius: 4px;
   pointer-events: none;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* Zoom Controls */
+.crop-zoom-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.crop-zoom-btn {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crop-zoom-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.crop-zoom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 180px;
+  height: 6px;
+  border-radius: 3px;
+  background: #E2E8F0;
+  outline: none;
+}
+
+.crop-zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563EB;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s ease;
+}
+
+.crop-zoom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Inline Spinner for Buttons */
+.inline-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: inline-spin 0.65s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+@keyframes inline-spin {
+  to { transform: rotate(360deg); }
 }
 
 .btn-avatar-confirm {

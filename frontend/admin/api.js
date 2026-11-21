@@ -332,11 +332,55 @@
           method: 'PATCH',
           body: doctorData
         });
-        ClinicCache.invalidate('doctors');
+        if (typeof ClinicCache !== 'undefined' && ClinicCache.invalidate) {
+          ClinicCache.invalidate('doctors');
+        }
         return res;
       } catch (err) {
-        console.warn('[ClinicApi] Backend updateDoctor PATCH fallback to local state:', err);
-        return { success: true, localOnly: true, data: doctorData };
+        console.error('[ClinicApi] Backend updateDoctor PATCH failed:', err);
+        throw err;
+      }
+    },
+
+    /**
+     * Upload doctor profile picture (WebP) to Supabase Storage bucket doctor_pfp
+     * and persist public URL into clinic.doctors
+     */
+    uploadDoctorAvatar: async function (doctorId, webpBlob, webpBase64) {
+      const filename = `doctor_${doctorId}_${Date.now()}.webp`;
+      const supabaseUploadUrl = `https://api.193-122-68-159.sslip.io/storage/v1/object/doctor_pfp/${filename}`;
+      const supabasePublicUrl = `https://api.193-122-68-159.sslip.io/storage/v1/object/public/doctor_pfp/${filename}`;
+      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkxODQ0NDU4LCJleHAiOjE5NDk1MjQ0NTh9.RZ8tQC3CdlWU_bZOzxrt83ePIszO4jiCfSqTi_96ZNA';
+
+      // 1. Direct upload to Supabase Storage bucket doctor_pfp
+      try {
+        const resp = await fetch(supabaseUploadUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${anonKey}`,
+            'apikey': anonKey,
+            'Content-Type': 'image/webp'
+          },
+          body: webpBlob
+        });
+        if (resp.ok) {
+          await this.updateDoctor(doctorId, { avatar_url: supabasePublicUrl });
+          return { success: true, avatar_url: supabasePublicUrl };
+        }
+      } catch (err) {
+        console.warn('[ClinicApi] Direct Supabase Storage upload failed, trying backend proxy:', err);
+      }
+
+      // 2. Fallback to backend route
+      try {
+        const res = await request(`/doctors/${encodeURIComponent(doctorId)}/avatar`, {
+          method: 'POST',
+          body: { image: webpBase64 }
+        });
+        return res;
+      } catch (err2) {
+        console.error('[ClinicApi] Backend avatar upload also failed:', err2);
+        throw err2;
       }
     },
 
