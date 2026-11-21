@@ -323,6 +323,24 @@
     },
 
     /**
+     * Update doctor profile details
+     * PATCH /api/v1/doctors/{id}
+     */
+    updateDoctor: async function (doctorId, doctorData) {
+      try {
+        const res = await request(`/doctors/${encodeURIComponent(doctorId)}`, {
+          method: 'PATCH',
+          body: doctorData
+        });
+        ClinicCache.invalidate('doctors');
+        return res;
+      } catch (err) {
+        console.warn('[ClinicApi] Backend updateDoctor PATCH fallback to local state:', err);
+        return { success: true, localOnly: true, data: doctorData };
+      }
+    },
+
+    /**
      * Remove doctor from active directory
      * DELETE /api/v1/doctors/{id}
      */

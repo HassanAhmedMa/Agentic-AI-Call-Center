@@ -697,7 +697,7 @@
     }
     const langBtn = $('authLanguage');
     if (langBtn) {
-      langBtn.textContent = language === 'ar' ? 'English' : 'العربية';
+      langBtn.textContent = language === 'ar' ? 'EN' : 'AR';
     }
     document.querySelectorAll('[data-en]').forEach(node => {
       node.textContent = language === 'ar' ? node.dataset.ar : node.dataset.en;

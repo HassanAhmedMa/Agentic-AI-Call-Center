@@ -72,15 +72,15 @@
             if (k && AR[k]) el.textContent = AR[k];
             var p = el.getAttribute('data-i18n-placeholder');
             if (p && AR[p]) el.setAttribute('placeholder', AR[p]);
-            if (el.id === 'langLabelText') el.textContent = 'English';
-            var ch = el.querySelectorAll ? el.querySelectorAll('[data-i18n], [data-i18n-placeholder], #langLabelText') : [];
+            if (el.id === 'langLabelText' || el.id === 'authLanguage' || (el.classList && el.classList.contains('lang-label'))) el.textContent = 'EN';
+            var ch = el.querySelectorAll ? el.querySelectorAll('[data-i18n], [data-i18n-placeholder], #langLabelText, #authLanguage, .lang-label') : [];
             for (var c = 0; c < ch.length; c++) {
               var cel = ch[c];
               var ck = cel.getAttribute('data-i18n');
               if (ck && AR[ck]) cel.textContent = AR[ck];
               var cp = cel.getAttribute('data-i18n-placeholder');
               if (cp && AR[cp]) cel.setAttribute('placeholder', AR[cp]);
-              if (cel.id === 'langLabelText') cel.textContent = 'English';
+              if (cel.id === 'langLabelText' || cel.id === 'authLanguage' || (cel.classList && cel.classList.contains('lang-label'))) cel.textContent = 'EN';
             }
           };
           var obs = new MutationObserver(function (mutations) {
@@ -119,7 +119,7 @@
     </div>
 
     <div class="header-action-area">
-      <button type="button" id="authLanguage" class="portal-language">العربية</button>
+      <button type="button" id="authLanguage" class="portal-language">AR</button>
     </div>
   </header>
 

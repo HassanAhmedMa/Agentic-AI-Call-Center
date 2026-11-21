@@ -230,9 +230,10 @@
       window.__i18nPreloadObserver.disconnect();
     }
 
-    const labelEl = document.getElementById('langLabelText');
+    document.querySelectorAll('.lang-label, #langLabelText').forEach((el) => {
+      el.textContent = isAr ? 'EN' : 'AR';
+    });
     const profileLangEl = document.getElementById('profileActiveLangLabel');
-    if (labelEl) labelEl.textContent = isAr ? 'English' : 'العربية';
     if (profileLangEl) profileLangEl.textContent = isAr ? 'العربية (Arabic)' : 'English';
 
     const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;

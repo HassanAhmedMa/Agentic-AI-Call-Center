@@ -493,6 +493,68 @@ def create_app(
                 "is_active": new_doc.is_active,
             }
 
+    @app.patch("/api/v1/doctors/{doctor_id}", tags=["Doctors"])
+    async def update_doctor(doctor_id: int, payload: dict[str, Any]) -> dict[str, Any]:
+        from datetime import time as dt_time
+        from decimal import Decimal
+        from clinic_backend.models import Doctor
+
+        async with sessions() as session:
+            doc = await session.get(Doctor, doctor_id)
+            if not doc:
+                raise APIError(404, "DOCTOR_NOT_FOUND", "Doctor not found.")
+
+            if "name_en" in payload and payload["name_en"]:
+                doc.name_en = str(payload["name_en"]).strip()
+            if "name_ar" in payload and payload["name_ar"]:
+                doc.name_ar = str(payload["name_ar"]).strip()
+            if "title_en" in payload and payload["title_en"]:
+                doc.title_en = str(payload["title_en"]).strip()
+            if "title_ar" in payload and payload["title_ar"]:
+                doc.title_ar = str(payload["title_ar"]).strip()
+            if "specialty_id" in payload and payload["specialty_id"]:
+                try:
+                    doc.specialty_id = int(payload["specialty_id"])
+                except Exception:
+                    pass
+            if "consultation_fee" in payload and payload["consultation_fee"] is not None:
+                try:
+                    doc.consultation_fee = Decimal(str(payload["consultation_fee"]))
+                except Exception:
+                    pass
+            if "bio_en" in payload:
+                doc.bio_en = str(payload["bio_en"]).strip()
+            if "bio_ar" in payload:
+                doc.bio_ar = str(payload["bio_ar"]).strip()
+            if "languages" in payload and isinstance(payload["languages"], list):
+                doc.languages = payload["languages"]
+            if "working_days" in payload and isinstance(payload["working_days"], list):
+                doc.working_days = [int(d) for d in payload["working_days"] if d is not None]
+            if "shift_start" in payload and payload["shift_start"]:
+                try:
+                    sh_raw = str(payload["shift_start"]).replace("AM", "").replace("PM", "").strip()
+                    sh_h, sh_m = map(int, sh_raw.split(":")[:2])
+                    doc.shift_start = dt_time(sh_h, sh_m)
+                except Exception:
+                    pass
+            if "shift_end" in payload and payload["shift_end"]:
+                try:
+                    eh_raw = str(payload["shift_end"]).replace("AM", "").replace("PM", "").strip()
+                    eh_h, eh_m = map(int, eh_raw.split(":")[:2])
+                    doc.shift_end = dt_time(eh_h, eh_m)
+                except Exception:
+                    pass
+
+            await session.commit()
+            if hasattr(app.state, "cache"):
+                await app.state.cache.clear()
+
+            return {
+                "success": True,
+                "message": "Doctor profile updated successfully.",
+                "id": doctor_id,
+            }
+
     @app.delete("/api/v1/doctors/{doctor_id}", tags=["Doctors"])
     async def delete_doctor(doctor_id: int) -> dict[str, Any]:
         from clinic_backend.models import Doctor
