@@ -86,7 +86,12 @@
           }
         } catch (_) {}
 
-        // 4. Live Server / Vite / static development host detection (ports 5500, 5501, 3000, 5173, etc.)
+        // 4. File protocol detection (opened directly from disk) -> default to local tunnel port 8002
+        if (window.location && window.location.protocol === 'file:') {
+          return 'http://localhost:8002';
+        }
+
+        // 5. Live Server / Vite / static development host detection (ports 5500, 5501, 3000, 5173, etc.)
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
           if (['5500', '5501', '3000', '5173', '8080'].includes(port)) {
             // Default to local FastAPI backend on port 8000; api client will fallback to remote if unreachable

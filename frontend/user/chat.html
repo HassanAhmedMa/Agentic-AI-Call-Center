@@ -3,19 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>Shiffaa Clinics - Chat Support</title>
+  <script>
+    (function () {
+      try {
+        var lang = localStorage.getItem('clinic_user_lang') || 'en';
+        var d = document.documentElement;
+        d.setAttribute('lang', lang);
+        d.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        if (lang === 'ar') {
+          d.classList.add('lang-ar');
+          var AR = {
+            brand_name: "عيادات شفاء",
+            brand_tagline: "صحتكم، أولويتنا ورعايتنا",
+            nav_home: "الرئيسية",
+            nav_appointments: "مواعيدي",
+            nav_ai_chat: "التحدث معنا",
+            nav_support: "الدعم والاستفسارات",
+            nav_clinic_info: "معلومات العيادة",
+            nav_profile: "الملف الشخصي",
+            help_title: "محتاج مساعدة؟",
+            help_subtitle: "عايز تتكلم مع ممثل خدمة العملاء؟",
+            contact_support_btn: "تواصل مع الدعم",
+            search_placeholder: "ابحث عن دكتور، تخصص، أو كشف...",
+            hero_welcome: "أهلاً بك، ",
+            hero_subtitle: "صحتك أولويتنا.. يمكنك حجز موعدك بسهولة أو التحدث معنا مباشرة للإجابة عن أي استفسار.",
+            hero_book_btn: "احجز ميعاد كشف",
+            hero_chat_btn: "تحدث معنا",
+            quality_badge_title: "رعاية طبية متميزة",
+            quality_badge_sub: "من أجل صحتك وصحة أسرتك",
+            action_book_title: "حجز كشف جديد",
+            action_book_desc: "اختر التخصص والطبيب المناسب لك",
+            action_my_appts_title: "متابعة مواعيدي",
+            action_my_appts_desc: "إدارة وتعديل وإلغاء الكشوفات المسجلة",
+            action_ai_title: "التحدث معنا",
+            action_ai_desc: "تواصل معنا مباشرة للإجابة على كل استفساراتك",
+            upcoming_appt_title: "كشفك القادم",
+            upcoming_appt_sub: "ميعاد الاستشارة القادمة في العيادة",
+            view_all: "عرض الكل",
+            loading_appointments: "بنحمّل مواعيدك المحجوزة من قاعدة بيانات العيادة...",
+            appointments_page_title: "مواعيدي وكشوفاتي",
+            appointments_page_sub: "إدارة ومتابعة جميع حجوزاتك مع أطباء عيادات شفاء.",
+            book_new_appt_btn: "احجز كشف جديد",
+            tab_upcoming: "القادمة",
+            tab_past: "السابقة",
+            tab_canceled: "الملغية",
+            filter_dept_label: "التخصص",
+            filter_doctor_label: "الدكتور",
+            filter_date_label: "التاريخ",
+            all_departments: "كل التخصصات",
+            all_doctors: "كل الأطباء",
+            reset_filters: "إعادة ضبط",
+            ai_name: "فريق رعاية شفاء",
+            ai_desc: "خدمة واستفسارات المرضى على مدار الساعة",
+            status_online: "متصل الآن",
+            chat_greeting_hi: "أهلاً بحضرتك! أنا المساعد الذكي لعيادات شفاء.",
+            chat_greeting_body: "أهلاً بك في عيادات شفاء، يسعدنا مساعدتك في:",
+            cap_1: "حجز وتعديل وإلغاء مواعيد الكشف",
+            cap_2: "معرفة مواعيد الأطباء وأوقات عمل الفروع",
+            cap_3: "الإجابة عن فروع وأسعار العيادات",
+            cap_4: "فتح طلب دعم فوري لمتابعة حالتك",
+            chat_how_assist: "أقدر أساعد حضرتك بإيه النهاردة؟",
+            chat_slots_intro: "أكيد تحت أمرك! دي المواعيد المتاحة عند دكاترة القلب، اختر الميعاد الأنسب لك:",
+            chat_input_placeholder: "اكتب رسالتك هنا..."
+          };
+          var translateNode = function (el) {
+            if (!el || el.nodeType !== 1) return;
+            var k = el.getAttribute('data-i18n');
+            if (k && AR[k]) el.textContent = AR[k];
+            var p = el.getAttribute('data-i18n-placeholder');
+            if (p && AR[p]) el.setAttribute('placeholder', AR[p]);
+            if (el.id === 'langLabelText') el.textContent = 'English';
+            var ch = el.querySelectorAll ? el.querySelectorAll('[data-i18n], [data-i18n-placeholder], #langLabelText') : [];
+            for (var c = 0; c < ch.length; c++) {
+              var cel = ch[c];
+              var ck = cel.getAttribute('data-i18n');
+              if (ck && AR[ck]) cel.textContent = AR[ck];
+              var cp = cel.getAttribute('data-i18n-placeholder');
+              if (cp && AR[cp]) cel.setAttribute('placeholder', AR[cp]);
+              if (cel.id === 'langLabelText') cel.textContent = 'English';
+            }
+          };
+          var obs = new MutationObserver(function (mutations) {
+            for (var m = 0; m < mutations.length; m++) {
+              var added = mutations[m].addedNodes;
+              for (var a = 0; a < added.length; a++) {
+                translateNode(added[a]);
+              }
+            }
+          });
+          obs.observe(d, { childList: true, subtree: true });
+          window.__i18nPreloadObserver = obs;
+        }
+      } catch (_) {}
+    })();
+  </script>
+
+<title>Shiffaa Clinics - Chat Support</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=4.0">
+  <link rel="stylesheet" href="styles.css?v=5.0">
 </head>
-<body>
+<body class="chat-page">
 
   <div class="app-layout" id="appLayout">
 
@@ -23,7 +115,7 @@
     <aside class="sidebar" id="mainSidebar" data-ctrl="sidebar">
       
       <a href="index.html" class="logo-container" style="text-decoration:none;">
-        <img src="logo.png" alt="Shiffaa" class="brand-logo-img" style="width:34px; height:34px; object-fit:contain; flex-shrink:0;">
+        <img src="logo.png?v=1.1" alt="Shiffaa" class="brand-logo-img" style="width:34px; height:34px; object-fit:contain; flex-shrink:0;">
         <div class="logo-text">
           <div class="brand-name" data-i18n="brand_name">Shiffaa Clinics</div>
           <div class="brand-tagline" data-i18n="brand_tagline">Your Health, Our Care</div>
@@ -116,7 +208,7 @@
         
         <!-- Mobile brand toggle (< 992px) -->
         <div class="mobile-brand-box" onclick="window.location.href='index.html'">
-          <img src="logo.png" alt="Shiffaa" class="brand-logo-img" style="width:30px; height:30px; object-fit:contain; flex-shrink:0;">
+          <img src="logo.png?v=1.1" alt="Shiffaa" class="brand-logo-img" style="width:30px; height:30px; object-fit:contain; flex-shrink:0;">
           <div class="mobile-brand-titles">
             <div class="mobile-brand-name" data-i18n="brand_name">Shiffaa Clinics</div>
             <div class="mobile-brand-tagline" data-i18n="brand_tagline">Your Health, Our Care</div>
@@ -179,6 +271,11 @@
         <!-- Assistant Top Sub-Header -->
         <header class="chat-header-bar" data-ctrl="chat-header">
           <div class="assistant-lead-info">
+            <a href="index.html" class="chat-back-home-btn" title="Back to Home / العودة للرئيسية">
+              <svg height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+            </a>
             <div class="assistant-robot-avatar">
               <svg height="18" width="18" viewBox="0 0 32 32" fill="none">
                 <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
@@ -189,33 +286,63 @@
                 <path d="M11 20C12 21.5 20 21.5 21 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
             </div>
-            <div>
+            <div class="assistant-titles-col">
               <div class="assistant-name-row">
                 <span class="assistant-name-text" data-i18n="ai_name">Shiffaa Care Team</span>
-                <span class="online-status-pill">
-                  <span class="dot-live"></span>
-                  <span data-i18n="status_online">Online</span>
-                </span>
               </div>
               <div class="assistant-sub-text" data-i18n="ai_desc">Direct patient care and support</div>
             </div>
           </div>
 
           <div class="chat-header-action-btns">
+            <!-- Compact Language Toggle -->
+            <button class="lang-pill-btn chat-lang-btn" onclick="toggleLanguage()" title="Change Language / تغيير اللغة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span class="lang-label" id="langLabelText">العربية</span>
+            </button>
             <!-- Simulated AI Voice Call Button -->
             <button class="call-action-btn" onclick="startVoiceCall()" title="Simulate AI Voice Call" data-ctrl="chat-call-btn">
-              <svg height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <svg height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
               </svg>
             </button>
-            <button class="icon-btn-ghost" onclick="resetChat()" title="Start New Chat" data-ctrl="chat-reset-btn">
-              <svg height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                <path d="M3 3v5h5"/>
+            <!-- New Conversation (+) Button -->
+            <button class="icon-btn-ghost" onclick="createNewConversation()" title="New Chat / محادثة جديدة" data-ctrl="chat-new-btn">
+              <svg height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <!-- Sleek Hamburger Menu Button for Chat History -->
+            <button class="icon-btn-ghost chat-burger-btn" id="chatThreadsToggleBtn" onclick="toggleThreadsDrawer()" title="Conversations History / سجل المحادثات" data-ctrl="chat-threads-btn">
+              <svg height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="20" y2="12"/>
+                <line x1="4" y1="18" x2="20" y2="18"/>
               </svg>
             </button>
           </div>
         </header>
+
+        <!-- Sliding Conversations History Drawer -->
+        <div class="chat-threads-backdrop" id="chatThreadsBackdrop" onclick="toggleThreadsDrawer(false)"></div>
+        <aside class="chat-threads-drawer" id="chatThreadsDrawer">
+          <div class="threads-drawer-header">
+            <div class="threads-drawer-title-row">
+              <svg height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span data-i18n="chat_history_title">Conversations</span>
+            </div>
+            <button class="threads-new-chat-btn" onclick="createNewConversation()">
+              <svg height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span data-i18n="new_chat_btn">New Chat</span>
+            </button>
+          </div>
+          <div class="threads-list" id="chatThreadsList">
+            <!-- Dynamic thread items rendered here -->
+          </div>
+        </aside>
 
         <!-- Chat Messages Stream -->
         <div class="chat-messages-stream" id="chatMessages" data-ctrl="chat-stream">
@@ -232,7 +359,7 @@
             <div class="msg-balloon-wrapper">
               <div class="balloon-card bot-balloon">
                 <p class="greeting-lead">
-                  <span data-i18n="chat_greeting_hi" id="chatGreetingLead">Welcome!</span>
+                  <span id="chatGreetingLead">Hello!</span>
                 </p>
                 <p class="sub-lead" data-i18n="chat_greeting_body">Welcome to Shiffaa Clinics. We're here to assist you with:</p>
                 <ul class="capability-list">
@@ -253,51 +380,9 @@
                     <span data-i18n="cap_4">Creating support requests if you need further help</span>
                   </li>
                 </ul>
-                <p class="closing-lead" data-i18n="chat_how_assist">How can I assist you today?</p>
+                <p class="closing-lead" data-i18n="chat_how_assist">How can I help you today?</p>
               </div>
-              <div class="msg-timestamp">10:24 AM</div>
-            </div>
-          </div>
-
-          <!-- Message 2: Patient Prompt in Egyptian Arabic (From User Photo) -->
-          <div class="msg-bubble-row user-row">
-            <div class="msg-balloon-wrapper">
-              <div class="balloon-card user-balloon">
-                <span class="arabic-text">عايز أحجز مع دكتور القلب يوم الخميس بعد الظهر</span>
-              </div>
-              <div class="msg-timestamp">
-                <span>10:25 AM</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.3" width="14" height="14">
-                  <path d="M18 6 7 17l-5-5"/>
-                  <path d="m22 10-7.5 7.5L13 16"/>
-                </svg>
-              </div>
-            </div>
-            <div class="msg-avatar-user" id="chatUserAvatar"><span class="skeleton-shimmer skeleton-avatar" style="width:100%; height:100%; display:block;"></span></div>
-          </div>
-
-          <!-- Message 3: Doctor Slots Response (From User Photo) -->
-          <div class="msg-bubble-row bot-row">
-            <div class="msg-avatar-bot">
-              <svg height="18" width="18" viewBox="0 0 32 32" fill="none">
-                <rect x="5" y="7" width="22" height="18" rx="6" fill="#2563EB"/>
-                <circle cx="11.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
-                <circle cx="20.5" cy="14.5" r="2.5" fill="#FFFFFF"/>
-              </svg>
-            </div>
-            <div class="msg-balloon-wrapper">
-              <div class="balloon-card bot-balloon">
-                <p data-i18n="chat_slots_intro">Of course! Let me check the available cardiology appointments for Thursday, 14 November, in the afternoon. Here are the available slots:</p>
-                
-                <div class="chat-slots-pills-row">
-                  <button class="slot-pill-btn" onclick="selectSlotFromChat('Dr. Ahmed Mohamed', '2:00 PM')">2:00 PM</button>
-                  <button class="slot-pill-btn" onclick="selectSlotFromChat('Dr. Ahmed Mohamed', '2:30 PM')">2:30 PM</button>
-                  <button class="slot-pill-btn" onclick="selectSlotFromChat('Dr. Ahmed Mohamed', '3:00 PM')">3:00 PM</button>
-                  <button class="slot-pill-btn" onclick="selectSlotFromChat('Dr. Ahmed Mohamed', '3:30 PM')">3:30 PM</button>
-                  <button class="slot-pill-btn" onclick="selectSlotFromChat('Dr. Ahmed Mohamed', '4:00 PM')">4:00 PM</button>
-                </div>
-              </div>
-              <div class="msg-timestamp">10:26 AM</div>
+              <div class="msg-timestamp" id="greetingTimestamp">--:--</div>
             </div>
           </div>
 
@@ -404,10 +489,10 @@
   <div class="toast-stack" id="toastContainer"></div>
 
   <!-- Scripts -->
-  <script src="portal-api.js?v=4.0"></script>
-  <script src="portal-session.js?v=4.0"></script>
-  <script src="api.js?v=4.0"></script>
-  <script src="common.js?v=4.0"></script>
-  <script src="chat.js?v=4.0"></script>
+  <script src="common.js?v=4.5"></script>
+  <script src="portal-api.js?v=4.5"></script>
+  <script src="portal-session.js?v=4.5"></script>
+  <script src="api.js?v=4.5"></script>
+  <script src="chat.js?v=5.0"></script>
 </body>
 </html>

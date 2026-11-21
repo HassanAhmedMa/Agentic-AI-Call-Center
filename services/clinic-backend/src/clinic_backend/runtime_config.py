@@ -13,7 +13,7 @@ from typing import Any
 logger = logging.getLogger("clinic_backend.runtime_config")
 
 DEFAULT_SETTINGS: dict[str, Any] = {
-    "chat_public_coming_soon": True,
+    "chat_public_coming_soon": False,
 }
 
 

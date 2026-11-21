@@ -54,15 +54,22 @@
       ai_name: "Shiffaa Care Team",
       ai_desc: "Direct patient care and support",
       status_online: "Online",
-      chat_greeting_hi: "Welcome!",
+      chat_greeting_hi: "Hello! I am Shiffaa Clinics AI Assistant.",
       chat_greeting_body: "Welcome to Shiffaa Clinics. We're here to assist you with:",
       cap_1: "Booking, rescheduling, or canceling appointments",
       cap_2: "Checking doctor schedules and branch hours",
       cap_3: "Answering questions about our services or policies",
       cap_4: "Creating support requests if you need further help",
-      chat_how_assist: "How can I assist you today?",
+      chat_how_assist: "How can I help you today?",
       chat_slots_intro: "Of course! Let me check the available cardiology appointments for Thursday, 14 November, in the afternoon. Here are the available slots:",
       chat_input_placeholder: "Type your message...",
+      chat_history_title: "Conversations",
+      new_chat_btn: "New Chat",
+      chat_threads_label: "Chats",
+      no_threads_yet: "No conversations yet",
+      just_now: "Just now",
+      yesterday: "Yesterday",
+      delete_thread_tooltip: "Delete conversation",
       profile_page_title: "My Profile",
       profile_page_sub: "Manage your personal information and account settings.",
       profile_tab_personal: "Personal Information",
@@ -146,7 +153,7 @@
       ai_name: "فريق رعاية شفاء",
       ai_desc: "خدمة واستفسارات المرضى على مدار الساعة",
       status_online: "متصل الآن",
-      chat_greeting_hi: "أهلاً بك!",
+      chat_greeting_hi: "أهلاً بحضرتك! أنا المساعد الذكي لعيادات شفاء.",
       chat_greeting_body: "أهلاً بك في عيادات شفاء، يسعدنا مساعدتك في:",
       cap_1: "حجز وتعديل وإلغاء مواعيد الكشف",
       cap_2: "معرفة مواعيد الأطباء وأوقات عمل الفروع",
@@ -155,6 +162,13 @@
       chat_how_assist: "أقدر أساعد حضرتك بإيه النهاردة؟",
       chat_slots_intro: "أكيد تحت أمرك! دي المواعيد المتاحة عند دكاترة القلب، اختر الميعاد الأنسب لك:",
       chat_input_placeholder: "اكتب رسالتك هنا...",
+      chat_history_title: "سجل المحادثات",
+      new_chat_btn: "محادثة جديدة",
+      chat_threads_label: "المحادثات",
+      no_threads_yet: "لا توجد محادثات سابقة",
+      just_now: "الآن",
+      yesterday: "أمس",
+      delete_thread_tooltip: "حذف المحادثة",
       profile_page_title: "الملف الشخصي",
       profile_page_sub: "عرض بياناتك الشخصية المسجلة وإعدادات الحساب.",
       profile_tab_personal: "البيانات الشخصية",
@@ -206,6 +220,15 @@
 
     html.setAttribute('lang', isAr ? 'ar' : 'en');
     html.setAttribute('dir', isAr ? 'rtl' : 'ltr');
+    if (isAr) {
+      html.classList.add('lang-ar');
+    } else {
+      html.classList.remove('lang-ar');
+    }
+    html.classList.add('i18n-ready');
+    if (window.__i18nPreloadObserver) {
+      window.__i18nPreloadObserver.disconnect();
+    }
 
     const labelEl = document.getElementById('langLabelText');
     const profileLangEl = document.getElementById('profileActiveLangLabel');
@@ -437,17 +460,22 @@
   };
 
   // DOM Ready Initializer
-  document.addEventListener('DOMContentLoaded', () => {
+  const initCommon = () => {
     applyLanguage(currentLang);
     applyVisibilityConfig();
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCommon);
+  } else {
+    initCommon();
+  }
 
-    // Global keyboard shortcut: Ctrl+K focus search
-    window.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        const searchInput = document.getElementById('globalSearchInput');
-        if (searchInput) searchInput.focus();
-      }
-    });
+  // Global keyboard shortcut: Ctrl+K focus search
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('globalSearchInput');
+      if (searchInput) searchInput.focus();
+    }
   });
 })();

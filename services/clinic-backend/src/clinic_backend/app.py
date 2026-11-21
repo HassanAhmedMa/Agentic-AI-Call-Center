@@ -31,9 +31,10 @@ from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from starlette.exceptions import HTTPException
-from starlette.responses import FileResponse, Response
+from starlette.responses import FileResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
 
+from clinic_backend.ai_agent.orchestrator import stream_chat_turn
 from clinic_backend.availability_routes import availability_router
 from clinic_backend.catalog import Catalog
 from clinic_backend.conversations import conversation_router
@@ -1151,6 +1152,40 @@ def create_app(
         except (WebSocketDisconnect, Exception):
             await ws_manager.disconnect(websocket)
 
+    class ChatMessagePayload(BaseModel):
+        messages: list[dict[str, Any]]
+        language: str = "ar"
+        model: str | None = None
+
+    @app.post("/api/v1/chat/message", tags=["AI Chat"])
+    async def chat_message(
+        payload: ChatMessagePayload,
+        catalog_store: Annotated[Catalog, Depends(catalog)],
+    ) -> StreamingResponse:
+        model_name = payload.model or getattr(settings, "ai_chatbot_model", "gemini-3.5-flash-lite")
+        api_url = getattr(settings, "ai_proxy_url", "https://ai.141.253.118.80.sslip.io")
+        api_key = (
+            settings.ai_proxy_api_key.get_secret_value()
+            if hasattr(settings, "ai_proxy_api_key") and settings.ai_proxy_api_key
+            else "sk-41783f2a77994309a22717363289e4b9"
+        )
+        return StreamingResponse(
+            stream_chat_turn(
+                catalog=catalog_store,
+                messages=payload.messages,
+                model=model_name,
+                api_url=api_url,
+                api_key=api_key,
+                language=payload.language,
+            ),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-transform",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
     @app.post("/api/v1/ws/broadcast", tags=["Realtime"])
     async def broadcast_realtime_event(payload: dict[str, Any]) -> dict[str, Any]:
         event_type = str(payload.get("event") or "SYSTEM_NOTIFICATION")
@@ -1165,7 +1200,7 @@ def create_app(
     async def get_public_settings() -> dict[str, Any]:
         return {
             "chat_public_coming_soon": bool(
-                runtime_config.get("chat_public_coming_soon", True)
+                runtime_config.get("chat_public_coming_soon", False)
             ),
             "server_time": datetime.now(UTC).isoformat(),
         }
@@ -1175,7 +1210,7 @@ def create_app(
     async def update_chat_feature_setting(
         payload: dict[str, Any],
     ) -> dict[str, Any]:
-        coming_soon = bool(payload.get("chat_public_coming_soon", True))
+        coming_soon = bool(payload.get("chat_public_coming_soon", False))
         runtime_config.set("chat_public_coming_soon", coming_soon)
         logger.info("Admin updated chat_public_coming_soon to %s", coming_soon)
         await ws_manager.broadcast(
@@ -1201,7 +1236,7 @@ def create_app(
                     "data": {
                         "status": "ready",
                         "chat_public_coming_soon": bool(
-                            runtime_config.get("chat_public_coming_soon", True)
+                            runtime_config.get("chat_public_coming_soon", False)
                         ),
                         "server_time": datetime.now(UTC).isoformat(),
                     },
@@ -1862,10 +1897,19 @@ def create_app(
             }
             if asset not in allowed or not (settings.portal_assets / asset).is_file():
                 raise APIError(404, "NOT_FOUND", "Page not found.")
+
+            ext = (settings.portal_assets / asset).suffix.lower()
+            if ext in {".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico"}:
+                cache_header = "public, max-age=604800, stale-while-revalidate=86400"
+            elif ext in {".css", ".js"}:
+                cache_header = "public, max-age=86400, stale-while-revalidate=3600"
+            else:
+                cache_header = "no-cache, must-revalidate"
+
             return FileResponse(
                 settings.portal_assets / asset,
                 headers={
-                    "Cache-Control": "no-store",
+                    "Cache-Control": cache_header,
                     "Referrer-Policy": "no-referrer",
                     "X-Content-Type-Options": "nosniff",
                 },

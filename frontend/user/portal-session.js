@@ -38,15 +38,16 @@
     if (badgeAvatar) badgeAvatar.textContent = initials;
     if (badgeName) badgeName.textContent = name;
 
+    const isAr = (window.getCurrentLang ? window.getCurrentLang() === 'ar' : (localStorage.getItem('clinic_user_lang') === 'ar'));
+    const firstName = profile.first_name || name.split(' ')[0];
+
     // Home greeting
     const heroFName = document.getElementById('heroPatientFirstName');
     if (heroFName) {
-      heroFName.textContent = profile.first_name || name.split(' ')[0];
+      heroFName.textContent = firstName;
     }
     const heroTitle = document.getElementById('homeHeroGreeting');
     if (heroTitle && !heroFName) {
-      const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-      const firstName = profile.first_name || name.split(' ')[0];
       heroTitle.innerHTML = isAr 
         ? `أهلاً بك، ${firstName}`
         : `Welcome back, ${firstName}`;
@@ -55,9 +56,8 @@
     // Chat greeting
     const chatLead = document.getElementById('chatGreetingLead') || document.getElementById('chatGreetingHi');
     if (chatLead) {
-      const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
-      const firstName = profile.first_name || name.split(' ')[0];
       chatLead.textContent = isAr ? `أهلاً ${firstName}!` : `Hello ${firstName}!`;
+      chatLead.removeAttribute('data-i18n');
     }
 
     // Chat user avatar
@@ -71,6 +71,13 @@
       window.populateProfileDetails(profile);
     }
   }
+
+  // Update personalized text if language is switched at runtime
+  window.addEventListener('clinic:language-changed', () => {
+    if (window.ClinicSession) {
+      applySessionToUI(window.ClinicSession);
+    }
+  });
 
   async function syncAppointmentBadge() {
     const badge = document.getElementById('navApptBadge');

@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     migrations_dir: Path = Path("database/migrations")
     agent_service_token: SecretStr | None = None
     admin_api_token: SecretStr | None = None
+    ai_proxy_url: str = "https://ai.141.253.118.80.sslip.io"
+    ai_proxy_api_key: SecretStr = SecretStr("sk-41783f2a77994309a22717363289e4b9")
+    ai_chatbot_model: str = "gemini-3.5-flash-lite"
     identity_enabled: bool = False
     portal_google_enabled: bool = False
     portal_enabled: bool = False

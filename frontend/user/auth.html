@@ -3,10 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <meta name="referrer" content="no-referrer">
+  <script>
+    (function () {
+      try {
+        var lang = localStorage.getItem('clinic_user_lang') || 'en';
+        var d = document.documentElement;
+        d.setAttribute('lang', lang);
+        d.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        if (lang === 'ar') {
+          d.classList.add('lang-ar');
+          var AR = {
+            brand_name: "عيادات شفاء",
+            brand_tagline: "صحتكم، أولويتنا ورعايتنا",
+            nav_home: "الرئيسية",
+            nav_appointments: "مواعيدي",
+            nav_ai_chat: "التحدث معنا",
+            nav_support: "الدعم والاستفسارات",
+            nav_clinic_info: "معلومات العيادة",
+            nav_profile: "الملف الشخصي",
+            help_title: "محتاج مساعدة؟",
+            help_subtitle: "عايز تتكلم مع ممثل خدمة العملاء؟",
+            contact_support_btn: "تواصل مع الدعم",
+            search_placeholder: "ابحث عن دكتور، تخصص، أو كشف...",
+            hero_welcome: "أهلاً بك، ",
+            hero_subtitle: "صحتك أولويتنا.. يمكنك حجز موعدك بسهولة أو التحدث معنا مباشرة للإجابة عن أي استفسار.",
+            hero_book_btn: "احجز ميعاد كشف",
+            hero_chat_btn: "تحدث معنا",
+            quality_badge_title: "رعاية طبية متميزة",
+            quality_badge_sub: "من أجل صحتك وصحة أسرتك",
+            action_book_title: "حجز كشف جديد",
+            action_book_desc: "اختر التخصص والطبيب المناسب لك",
+            action_my_appts_title: "متابعة مواعيدي",
+            action_my_appts_desc: "إدارة وتعديل وإلغاء الكشوفات المسجلة",
+            action_ai_title: "التحدث معنا",
+            action_ai_desc: "تواصل معنا مباشرة للإجابة على كل استفساراتك",
+            upcoming_appt_title: "كشفك القادم",
+            upcoming_appt_sub: "ميعاد الاستشارة القادمة في العيادة",
+            view_all: "عرض الكل",
+            loading_appointments: "بنحمّل مواعيدك المحجوزة من قاعدة بيانات العيادة...",
+            appointments_page_title: "مواعيدي وكشوفاتي",
+            appointments_page_sub: "إدارة ومتابعة جميع حجوزاتك مع أطباء عيادات شفاء.",
+            book_new_appt_btn: "احجز كشف جديد",
+            tab_upcoming: "القادمة",
+            tab_past: "السابقة",
+            tab_canceled: "الملغية",
+            filter_dept_label: "التخصص",
+            filter_doctor_label: "الدكتور",
+            filter_date_label: "التاريخ",
+            all_departments: "كل التخصصات",
+            all_doctors: "كل الأطباء",
+            reset_filters: "إعادة ضبط",
+            ai_name: "فريق رعاية شفاء",
+            ai_desc: "خدمة واستفسارات المرضى على مدار الساعة",
+            status_online: "متصل الآن",
+            chat_greeting_hi: "أهلاً بحضرتك! أنا المساعد الذكي لعيادات شفاء.",
+            chat_greeting_body: "أهلاً بك في عيادات شفاء، يسعدنا مساعدتك في:",
+            cap_1: "حجز وتعديل وإلغاء مواعيد الكشف",
+            cap_2: "معرفة مواعيد الأطباء وأوقات عمل الفروع",
+            cap_3: "الإجابة عن فروع وأسعار العيادات",
+            cap_4: "فتح طلب دعم فوري لمتابعة حالتك",
+            chat_how_assist: "أقدر أساعد حضرتك بإيه النهاردة؟",
+            chat_slots_intro: "أكيد تحت أمرك! دي المواعيد المتاحة عند دكاترة القلب، اختر الميعاد الأنسب لك:",
+            chat_input_placeholder: "اكتب رسالتك هنا..."
+          };
+          var translateNode = function (el) {
+            if (!el || el.nodeType !== 1) return;
+            var k = el.getAttribute('data-i18n');
+            if (k && AR[k]) el.textContent = AR[k];
+            var p = el.getAttribute('data-i18n-placeholder');
+            if (p && AR[p]) el.setAttribute('placeholder', AR[p]);
+            if (el.id === 'langLabelText') el.textContent = 'English';
+            var ch = el.querySelectorAll ? el.querySelectorAll('[data-i18n], [data-i18n-placeholder], #langLabelText') : [];
+            for (var c = 0; c < ch.length; c++) {
+              var cel = ch[c];
+              var ck = cel.getAttribute('data-i18n');
+              if (ck && AR[ck]) cel.textContent = AR[ck];
+              var cp = cel.getAttribute('data-i18n-placeholder');
+              if (cp && AR[cp]) cel.setAttribute('placeholder', AR[cp]);
+              if (cel.id === 'langLabelText') cel.textContent = 'English';
+            }
+          };
+          var obs = new MutationObserver(function (mutations) {
+            for (var m = 0; m < mutations.length; m++) {
+              var added = mutations[m].addedNodes;
+              for (var a = 0; a < added.length; a++) {
+                translateNode(added[a]);
+              }
+            }
+          });
+          obs.observe(d, { childList: true, subtree: true });
+          window.__i18nPreloadObserver = obs;
+        }
+      } catch (_) {}
+    })();
+  </script>
+
+<meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#2563EB">
   <title>Shiffaa Clinics - Patient Portal Login & Sign Up</title>
 
@@ -19,7 +111,7 @@
   <!-- Top Global Header -->
   <header class="auth-header">
     <div class="brand-badge-group">
-      <img src="logo.png" alt="Shiffaa Clinics" class="brand-logo-img">
+      <img src="logo.png?v=1.1" alt="Shiffaa Clinics" class="brand-logo-img">
       <div class="brand-text-block">
         <span class="brand-title">Shiffaa Clinics</span>
         <span class="brand-subtitle">Your Health, Our Care</span>
@@ -83,7 +175,7 @@
 
           <!-- Premium Photo (Modern Shiffaa Clinic Center) -->
           <div class="hero-illustration-container">
-            <img src="clinic-building.jpg" alt="Shiffaa Clinics Modern Medical Center" class="clinic-img-hero">
+            <img src="clinic-building.jpg?v=1.1" alt="Shiffaa Clinics Modern Medical Center" class="clinic-img-hero">
           </div>
         </div>
 
@@ -94,7 +186,7 @@
             <!-- Mobile-only Top Banner (Modern Shiffaa Clinic Building) -->
             <div class="mobile-hero-banner">
               <div class="mobile-hero-illustration">
-                <img src="clinic-building.jpg" alt="Shiffaa Clinics Modern Medical Center" class="mobile-img-banner">
+                <img src="clinic-building.jpg?v=1.1" alt="Shiffaa Clinics Modern Medical Center" class="mobile-img-banner">
               </div>
             </div>
 
@@ -249,7 +341,7 @@
 
           <!-- Premium Photo (Modern Shiffaa Clinic Center) -->
           <div class="hero-illustration-container signup-hero-illustration">
-            <img src="clinic-building.jpg" alt="Shiffaa Clinics Modern Medical Center" class="clinic-img-hero">
+            <img src="clinic-building.jpg?v=1.1" alt="Shiffaa Clinics Modern Medical Center" class="clinic-img-hero">
           </div>
         </div>
 
@@ -260,7 +352,7 @@
             <!-- Mobile-only Top Banner (Modern Shiffaa Clinic Building) -->
             <div class="mobile-hero-banner">
               <div class="mobile-hero-illustration">
-                <img src="clinic-building.jpg" alt="Shiffaa Clinics Modern Medical Center" class="mobile-img-banner">
+                <img src="clinic-building.jpg?v=1.1" alt="Shiffaa Clinics Modern Medical Center" class="mobile-img-banner">
               </div>
             </div>
 
@@ -424,7 +516,7 @@
 
           <!-- Top Brand Sub-badge -->
           <div class="verify-top-brand">
-            <img src="logo.png" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
+            <img src="logo.png?v=1.1" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
             <div class="brand-text-block">
               <span class="brand-title">Shiffaa Clinics</span>
               <span class="brand-subtitle">Your Health, Our Care</span>
@@ -494,7 +586,7 @@
 
           <!-- Top Brand Sub-badge -->
           <div class="verify-top-brand">
-            <img src="logo.png" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
+            <img src="logo.png?v=1.1" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
             <div class="brand-text-block">
               <span class="brand-title">Shiffaa Clinics</span>
               <span class="brand-subtitle">Your Health, Our Care</span>
@@ -611,7 +703,7 @@
 
           <!-- Premium Photo (Modern Shiffaa Clinic Center) -->
           <div class="hero-illustration-container">
-            <img src="clinic-building.jpg" alt="Shiffaa Clinics Modern Medical Center" class="clinic-img-hero">
+            <img src="clinic-building.jpg?v=1.1" alt="Shiffaa Clinics Modern Medical Center" class="clinic-img-hero">
           </div>
         </div>
 
@@ -629,7 +721,7 @@
 
             <!-- Shiffaa Clinics Brand Icon Badge -->
             <div class="auth-card-icon-bubble" style="width:68px; height:68px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; box-shadow:0 4px 14px rgba(37,99,235,0.08);">
-              <img src="logo.png" alt="Shiffaa Clinics" style="width:42px; height:42px; object-fit:contain;">
+              <img src="logo.png?v=1.1" alt="Shiffaa Clinics" style="width:42px; height:42px; object-fit:contain;">
             </div>
 
             <h2 class="form-title">Send a magic link</h2>
@@ -700,7 +792,7 @@
 
           <!-- Top Brand Sub-badge -->
           <div class="verify-top-brand">
-            <img src="logo.png" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
+            <img src="logo.png?v=1.1" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
             <div class="brand-text-block">
               <span class="brand-title">Shiffaa Clinics</span>
               <span class="brand-subtitle">Your Health, Our Care</span>
@@ -822,7 +914,7 @@
 
           <!-- Top Brand Sub-badge -->
           <div class="verify-top-brand">
-            <img src="logo.png" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
+            <img src="logo.png?v=1.1" alt="Shiffaa Clinics" class="brand-logo-img" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
             <div class="brand-text-block">
               <span class="brand-title">Shiffaa Clinics</span>
               <span class="brand-subtitle">Your Health, Our Care</span>
@@ -945,7 +1037,7 @@
   </footer>
 
   <!-- Interactive JavaScript Logic -->
-  <script src="portal-api.js?v=4.2"></script>
+  <script src="portal-api.js?v=4.5"></script>
   <script src="auth.js?v=4.2"></script>
 </body>
 </html>

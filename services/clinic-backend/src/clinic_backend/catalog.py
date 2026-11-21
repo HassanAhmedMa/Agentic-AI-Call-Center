@@ -111,15 +111,11 @@ class Catalog:
         if row is None:
             return None
         doctor, specialty = row
+        base_dict = doctor_dto(doctor, specialty).model_dump()
         return dto.DoctorDetail(
-            **doctor_dto(doctor, specialty).model_dump(),
+            **base_dict,
             bio_en=doctor.bio_en,
             bio_ar=doctor.bio_ar,
-            working_days=[_DAYS[d - 1] for d in doctor.working_days],
-            working_hours=dto.WorkingHours(
-                start=doctor.shift_start.strftime("%H:%M"),
-                end=doctor.shift_end.strftime("%H:%M"),
-            ),
         )
 
     async def services(self, query: dto.ServiceQuery) -> dto.ServiceList:
