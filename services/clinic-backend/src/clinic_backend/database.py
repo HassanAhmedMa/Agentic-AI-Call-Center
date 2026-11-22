@@ -14,7 +14,7 @@ logger = logging.getLogger("clinic_backend")
 def connection_args(settings: Settings) -> dict[str, Any]:
     return {
         "timeout": 3,
-        "command_timeout": 5,
+        "command_timeout": settings.db_command_timeout_seconds,
         "server_settings": {"search_path": f'"{settings.database_schema}", pg_catalog'},
     }
 

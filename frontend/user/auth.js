@@ -158,6 +158,13 @@
   async function run(action) {
     if (busy) return;
     busy = true;
+    const loginButton = $('loginSubmitBtn');
+    const originalLogin = loginButton?.innerHTML;
+    if (loginButton) {
+      loginButton.setAttribute('aria-busy', 'true');
+      loginButton.classList.add('auth-is-loading');
+      loginButton.textContent = language === 'ar' ? 'جارٍ تسجيل الدخول…' : 'Signing in…';
+    }
     document.querySelectorAll('button[type=submit]').forEach(button => { button.disabled = true; });
     try {
       await action();
@@ -187,6 +194,11 @@
       }
     } finally {
       busy = false;
+      if (loginButton) {
+        loginButton.innerHTML = originalLogin;
+        loginButton.classList.remove?.('auth-is-loading');
+        loginButton.removeAttribute?.('aria-busy');
+      }
       document.querySelectorAll('button[type=submit]').forEach(button => { button.disabled = false; });
     }
   }

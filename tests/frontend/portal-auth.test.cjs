@@ -12,7 +12,7 @@ function fixture(responder, location = {}) {
       appendChild(){},querySelectorAll(){return [];}, closest(){return node(id+'Group');}, addEventListener(){}, setAttribute(){}});
     return nodes.get(id);
   }
-  const window = {location:{hash:'',search:'',pathname:'/portal/auth.html',assign(url){routes.push(url);},replace(url){routes.push(url);},...location},scrollTo(){}};
+  const window = {location:{hash:'',search:'',pathname:'/portal/auth.html',assign(url){routes.push(url);},replace(url){routes.push(url);},...location},scrollTo(){},addEventListener(){}};
   const context = {window, document:{getElementById:node,
     querySelectorAll(){return [];},addEventListener(name,fn){if(name==='DOMContentLoaded')loaded=fn;},
     createElement(){return node('toast');}, body:{appendChild(){},prepend(){}}},

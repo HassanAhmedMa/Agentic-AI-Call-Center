@@ -1509,3 +1509,7 @@ input[type=date].form-input-text{min-width:0;direction:ltr}
     gap: 10px;
   }
 }
+
+.auth-is-loading {cursor:wait;opacity:.8;}
+.auth-is-loading::before {content:'';display:inline-block;width:16px;height:16px;border:2px solid #ffffff66;border-top-color:white;border-radius:50%;margin-inline-end:10px;animation:auth-loading-spin .8s linear infinite;}
+@keyframes auth-loading-spin {to {transform:rotate(360deg);}}

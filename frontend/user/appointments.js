@@ -364,7 +364,20 @@
     openModal(title, body, footer);
   };
 
+  let appointmentActionBusy = false;
+  function actionLoading(selector, label) {
+    const button = document.querySelector(selector);
+    if (button) {button.disabled=true;button.dataset.originalLabel=button.textContent;button.textContent=label;button.setAttribute('aria-busy','true');}
+    return button;
+  }
+  function finishAction(button) {
+    appointmentActionBusy=false;
+    if (button && button.isConnected) {button.disabled=false;button.textContent=button.dataset.originalLabel;button.removeAttribute('aria-busy');}
+  }
   window.submitRescheduleModal = async function (apptId) {
+    if (appointmentActionBusy) return;
+    appointmentActionBusy=true;
+    const actionButton=actionLoading('[onclick*="submitRescheduleModal"]', 'Saving changes…');
     const newDate = document.getElementById('modalReschedDate')?.value;
     const newTime = document.getElementById('modalReschedTime')?.value;
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
@@ -377,7 +390,7 @@
     } catch (err) {
       closeActiveModal();
       showToast(err.message || (isAr ? 'تعذر تعديل الميعاد' : 'Reschedule failed'), 'error');
-    }
+    } finally {finishAction(actionButton);}
   };
 
   // CANCEL MODAL
@@ -412,6 +425,9 @@
   };
 
   window.submitCancelModal = async function (apptId) {
+    if (appointmentActionBusy) return;
+    appointmentActionBusy=true;
+    const actionButton=actionLoading('[onclick*="submitCancelModal"]', 'Cancelling appointment…');
     const isAr = window.getCurrentLang && window.getCurrentLang() === 'ar';
     try {
       await UserApi.cancelAppointment(apptId);
@@ -421,7 +437,7 @@
     } catch (err) {
       closeActiveModal();
       showToast(err.message || (isAr ? 'تعذر إلغاء الميعاد' : 'Cancellation failed'), 'error');
-    }
+    } finally {finishAction(actionButton);}
   };
 
   // DYNAMIC TIME SLOTS UPDATER

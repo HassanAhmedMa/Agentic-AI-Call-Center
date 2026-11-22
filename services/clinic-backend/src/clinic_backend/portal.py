@@ -1,10 +1,14 @@
-"""Same-origin patient authentication. Provider credentials stay in HttpOnly cookies."""
+(
+    "Same-origin patient authentication. Provider credential"
+    "s stay in HttpOnly cookies."
+)
 
 import base64
 import hashlib
 import re
 import secrets
 from datetime import UTC, date, datetime, time, timedelta
+from typing import Literal
 from urllib.parse import quote, urlencode, urlsplit
 
 from clinic_schemas import portal as dto
@@ -536,26 +540,28 @@ def portal_router(
             res = await session.execute(stmt)
             docs = []
             for d, s in res:
-                docs.append({
-                    "id": d.id,
-                    "name_en": d.name_en,
-                    "name_ar": d.name_ar,
-                    "full_name_en": d.name_en,
-                    "full_name_ar": d.name_ar,
-                    "title_en": d.title_en,
-                    "title_ar": d.title_ar,
-                    "specialty_id": s.id,
-                    "specialty_name_en": s.name_en,
-                    "specialty_name_ar": s.name_ar,
-                    "specialty": {
-                        "id": s.id,
-                        "name_en": s.name_en,
-                        "name_ar": s.name_ar,
-                    },
-                    "shift_start": str(d.shift_start)[:5],
-                    "shift_end": str(d.shift_end)[:5],
-                    "consultation_fee": float(d.consultation_fee),
-                })
+                docs.append(
+                    {
+                        "id": d.id,
+                        "name_en": d.name_en,
+                        "name_ar": d.name_ar,
+                        "full_name_en": d.name_en,
+                        "full_name_ar": d.name_ar,
+                        "title_en": d.title_en,
+                        "title_ar": d.title_ar,
+                        "specialty_id": s.id,
+                        "specialty_name_en": s.name_en,
+                        "specialty_name_ar": s.name_ar,
+                        "specialty": {
+                            "id": s.id,
+                            "name_en": s.name_en,
+                            "name_ar": s.name_ar,
+                        },
+                        "shift_start": str(d.shift_start)[:5],
+                        "shift_end": str(d.shift_end)[:5],
+                        "consultation_fee": float(d.consultation_fee),
+                    }
+                )
         json_resp = JSONResponse({"total": len(docs), "doctors": docs})
         json_resp.headers["Cache-Control"] = "no-store"
         return json_resp
@@ -565,8 +571,7 @@ def portal_router(
         async with sessions() as session:
             res = await session.scalars(select(Specialty).order_by(Specialty.id))
             specs = [
-                {"id": s.id, "name_en": s.name_en, "name_ar": s.name_ar}
-                for s in res
+                {"id": s.id, "name_en": s.name_en, "name_ar": s.name_ar} for s in res
             ]
         json_resp = JSONResponse({"total": len(specs), "specialties": specs})
         json_resp.headers["Cache-Control"] = "no-store"
@@ -602,7 +607,9 @@ def portal_router(
                 .join(Doctor, Appointment.doctor_id == Doctor.id)
                 .join(Specialty, Doctor.specialty_id == Specialty.id)
                 .where(Appointment.patient_id == binding.patient_id)
-                .order_by(Appointment.appointment_date.desc(), Appointment.start_time.desc())
+                .order_by(
+                    Appointment.appointment_date.desc(), Appointment.start_time.desc()
+                )
             )
             res = await session.execute(stmt)
             appointments = []
@@ -613,24 +620,31 @@ def portal_router(
                     t_12 = dt.strftime("%I:%M %p")
                 except Exception:
                     t_12 = t_str
-                appointments.append({
-                    "id": item["id"],
-                    "appointment_date": str(item["appointment_date"]),
-                    "start_time": str(item["start_time"]),
-                    "time_short": t_12,
-                    "doctor_name": item["doctor_name"],
-                    "doctor_name_ar": item["doctor_name_ar"],
-                    "doctor_id": item["doctor_id"],
-                    "specialty_id": item["specialty_id"],
-                    "specialty_name": item["specialty_name"],
-                    "specialty_name_ar": item["specialty_name_ar"],
-                    "branch_name": "Main Branch - Heliopolis",
-                    "branch_name_ar": "الفرع الرئيسي - مصر الجديدة",
-                    "status": item["status"],
-                    "visit_reason": item["visit_reason"],
-                    "avatar": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=120&h=120&fit=crop&crop=faces",
-                })
-        json_resp = JSONResponse({"total": len(appointments), "appointments": appointments})
+                appointments.append(
+                    {
+                        "id": item["id"],
+                        "appointment_date": str(item["appointment_date"]),
+                        "start_time": str(item["start_time"]),
+                        "time_short": t_12,
+                        "doctor_name": item["doctor_name"],
+                        "doctor_name_ar": item["doctor_name_ar"],
+                        "doctor_id": item["doctor_id"],
+                        "specialty_id": item["specialty_id"],
+                        "specialty_name": item["specialty_name"],
+                        "specialty_name_ar": item["specialty_name_ar"],
+                        "branch_name": "Main Branch - Heliopolis",
+                        "branch_name_ar": "الفرع الرئيسي - مصر الجديدة",
+                        "status": item["status"],
+                        "visit_reason": item["visit_reason"],
+                        "avatar": (
+                            "https://images.unsplash.com/photo-1622253692010-333f2da"
+                            "6031d?w=120&h=120&fit=crop&crop=faces"
+                        ),
+                    }
+                )
+        json_resp = JSONResponse(
+            {"total": len(appointments), "appointments": appointments}
+        )
         json_resp.headers["Cache-Control"] = "no-store"
         return json_resp
 
@@ -648,32 +662,48 @@ def portal_router(
             if binding is None or binding.supabase_session_id != user.session_id:
                 raise APIError(401, "SESSION_EXPIRED", "Sign in again.")
 
-            doctor_id = int(body.get("doctor_id") or body.get("doctorId") or 1)
+            doctor_id = int(str(body.get("doctor_id") or body.get("doctorId") or 1))
             doctor = await session.get(Doctor, doctor_id)
             if not doctor:
-                raise APIError(404, "DOCTOR_NOT_FOUND", "Selected doctor was not found.")
+                raise APIError(
+                    404, "DOCTOR_NOT_FOUND", "Selected doctor was not found."
+                )
 
             date_raw = str(body.get("appointment_date") or body.get("date") or "")[:10]
             try:
                 appt_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
             except Exception:
-                raise APIError(400, "INVALID_DATE", "Invalid appointment date format. Use YYYY-MM-DD.")
+                raise APIError(
+                    400,
+                    "INVALID_DATE",
+                    "Invalid appointment date format. Use YYYY-MM-DD.",
+                )
 
             if appt_date.isoweekday() == 5:
-                raise APIError(400, "CLINIC_CLOSED", "The clinic is closed on Fridays. / العيادة مغلقة أيام الجمعة.")
+                raise APIError(
+                    400,
+                    "CLINIC_CLOSED",
+                    "The clinic is closed on Fridays. / العيادة مغلقة أيام الجمعة.",
+                )
 
             time_raw = str(body.get("start_time") or body.get("time") or "10:00")[:5]
             try:
                 start_t = datetime.strptime(time_raw, "%H:%M").time()
             except Exception:
-                raise APIError(400, "INVALID_TIME", "Invalid appointment time format. Use HH:MM.")
+                raise APIError(
+                    400, "INVALID_TIME", "Invalid appointment time format. Use HH:MM."
+                )
 
             if start_t.minute not in (0, 30):
                 start_t = time(start_t.hour, 30 if start_t.minute > 15 else 0)
 
             start_dt = datetime.combine(appt_date, start_t)
             end_t = (start_dt + timedelta(minutes=30)).time()
-            visit_reason = str(body.get("visit_reason") or body.get("reason") or "Routine consultation via patient portal")[:300]
+            visit_reason = str(
+                body.get("visit_reason")
+                or body.get("reason")
+                or "Routine consultation via patient portal"
+            )[:300]
 
             # Check doctor conflict
             conflict = await session.scalar(
@@ -688,7 +718,14 @@ def portal_router(
                 raise APIError(
                     409,
                     "SLOT_OCCUPIED",
-                    f"Dr. {doctor.name_en} already has a scheduled appointment at {start_t.strftime('%H:%M')} on {appt_date}."
+                    "Dr. "
+                    f"{doctor.name_en}"
+                    " already has a scheduled app"
+                    "ointment at "
+                    f"{start_t.strftime('%H:%M')}"
+                    " on "
+                    f"{appt_date}"
+                    ".",
                 )
 
             # Check patient conflict
@@ -704,7 +741,12 @@ def portal_router(
                 raise APIError(
                     409,
                     "PATIENT_SLOT_CONFLICT",
-                    f"You already have a scheduled appointment at {start_t.strftime('%H:%M')} on {appt_date}."
+                    "You already have a scheduled"
+                    " appointment at "
+                    f"{start_t.strftime('%H:%M')}"
+                    " on "
+                    f"{appt_date}"
+                    ".",
                 )
 
             new_appt = Appointment(
@@ -747,7 +789,9 @@ def portal_router(
                 "date": appt_date.isoformat(),
                 "start_time": start_t.strftime("%H:%M:%S"),
                 "end_time": end_t.strftime("%H:%M:%S"),
-                "time": f"{start_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}",
+                (
+                    "time"
+                ): f"{start_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}",
                 "timeShort": start_t.strftime("%I:%M %p"),
                 "status": "Confirmed",
                 "visit_reason": visit_reason,
@@ -758,7 +802,11 @@ def portal_router(
         await ws_manager.broadcast("APPOINTMENT_BOOKED", ws_payload)
 
         json_resp = JSONResponse(
-            {"id": created_id, "status": "scheduled", "message": "Appointment booked successfully"},
+            {
+                "id": created_id,
+                "status": "scheduled",
+                "message": "Appointment booked successfully",
+            },
             status_code=201,
         )
         json_resp.headers["Cache-Control"] = "no-store"
@@ -766,7 +814,10 @@ def portal_router(
 
     @router.patch("/appointments/{appointment_id}/cancel")
     async def cancel_patient_appointment(
-        appointment_id: int, body: dict[str, object], request: Request, response: Response
+        appointment_id: int,
+        body: dict[str, object],
+        request: Request,
+        response: Response,
     ) -> Response:
         user, _ = await provider_session(request, response)
         async with sessions() as session, session.begin():
@@ -787,7 +838,9 @@ def portal_router(
             appt.status = "cancelled"
             appt.cancelled_at = datetime.now(UTC)
             appt.cancelled_by = "patient"
-            appt.cancellation_reason = str(body.get("reason") or "Patient cancelled via portal")[:300]
+            appt.cancellation_reason = str(
+                body.get("reason") or "Patient cancelled via portal"
+            )[:300]
             session.add(
                 AppointmentHistory(
                     appointment_id=appointment_id,
@@ -810,14 +863,21 @@ def portal_router(
         await ws_manager.broadcast("APPOINTMENT_CANCELLED", cancel_payload)
 
         json_resp = JSONResponse(
-            {"id": appointment_id, "status": "cancelled", "message": "Appointment cancelled successfully"}
+            {
+                "id": appointment_id,
+                "status": "cancelled",
+                "message": "Appointment cancelled successfully",
+            }
         )
         json_resp.headers["Cache-Control"] = "no-store"
         return json_resp
 
     @router.patch("/appointments/{appointment_id}/reschedule")
     async def reschedule_patient_appointment(
-        appointment_id: int, body: dict[str, object], request: Request, response: Response
+        appointment_id: int,
+        body: dict[str, object],
+        request: Request,
+        response: Response,
     ) -> Response:
         user, _ = await provider_session(request, response)
         async with sessions() as session, session.begin():
@@ -834,15 +894,25 @@ def portal_router(
                 raise APIError(404, "NOT_FOUND", "Appointment not found.")
 
             try:
-                new_date = datetime.strptime(str(body.get("new_date")), "%Y-%m-%d").date()
+                new_date = datetime.strptime(
+                    str(body.get("new_date")), "%Y-%m-%d"
+                ).date()
             except Exception:
-                raise APIError(400, "INVALID_DATE", "Invalid new appointment date format.")
+                raise APIError(
+                    400, "INVALID_DATE", "Invalid new appointment date format."
+                )
 
             if new_date.isoweekday() == 5:
-                raise APIError(400, "CLINIC_CLOSED", "The clinic is closed on Fridays. / العيادة مغلقة أيام الجمعة.")
+                raise APIError(
+                    400,
+                    "CLINIC_CLOSED",
+                    "The clinic is closed on Fridays. / العيادة مغلقة أيام الجمعة.",
+                )
 
             try:
-                new_time = datetime.strptime(str(body.get("new_start_time"))[:5], "%H:%M").time()
+                new_time = datetime.strptime(
+                    str(body.get("new_start_time"))[:5], "%H:%M"
+                ).time()
             except Exception:
                 raise APIError(400, "INVALID_TIME", "Invalid new start time format.")
 
@@ -860,7 +930,11 @@ def portal_router(
                 )
             )
             if conflict:
-                raise APIError(409, "SLOT_OCCUPIED", "The requested doctor time slot is already booked.")
+                raise APIError(
+                    409,
+                    "SLOT_OCCUPIED",
+                    "The requested doctor time slot is already booked.",
+                )
 
             # Check patient conflict
             p_conflict = await session.scalar(
@@ -873,7 +947,11 @@ def portal_router(
                 )
             )
             if p_conflict:
-                raise APIError(409, "PATIENT_SLOT_CONFLICT", "You already have another appointment scheduled at this time.")
+                raise APIError(
+                    409,
+                    "PATIENT_SLOT_CONFLICT",
+                    "You already have another appointment scheduled at this time.",
+                )
 
             start_dt = datetime.combine(new_date, new_time)
             end_t = (start_dt + timedelta(minutes=30)).time()
@@ -910,7 +988,11 @@ def portal_router(
         await ws_manager.broadcast("APPOINTMENT_UPDATED", update_payload)
 
         json_resp = JSONResponse(
-            {"id": appointment_id, "status": "scheduled", "message": "Appointment rescheduled successfully"}
+            {
+                "id": appointment_id,
+                "status": "scheduled",
+                "message": "Appointment rescheduled successfully",
+            }
         )
         json_resp.headers["Cache-Control"] = "no-store"
         return json_resp
@@ -925,9 +1007,13 @@ def portal_router(
         confirm_password = str(body.get("confirm_password") or new_password).strip()
 
         if not new_password or len(new_password) < 8:
-            raise APIError(400, "INVALID_PASSWORD", "New password must be at least 8 characters.")
+            raise APIError(
+                400, "INVALID_PASSWORD", "New password must be at least 8 characters."
+            )
         if new_password != confirm_password:
-            raise APIError(400, "PASSWORD_MISMATCH", "New password and confirmation do not match.")
+            raise APIError(
+                400, "PASSWORD_MISMATCH", "New password and confirmation do not match."
+            )
 
         if current_password:
             try:
@@ -936,7 +1022,9 @@ def portal_router(
                     body={"email": user.email, "password": current_password},
                 )
             except APIError as exc:
-                raise APIError(400, "INVALID_CURRENT_PASSWORD", "Current password is incorrect.") from exc
+                raise APIError(
+                    400, "INVALID_CURRENT_PASSWORD", "Current password is incorrect."
+                ) from exc
 
         try:
             await auth.request(
@@ -947,11 +1035,18 @@ def portal_router(
             )
         except APIError as exc:
             if exc.status == 503:
-                raise APIError(503, "SERVICE_UNAVAILABLE", "Supabase authentication service unavailable.") from exc
+                raise APIError(
+                    503,
+                    "SERVICE_UNAVAILABLE",
+                    "Supabase authentication service unavailable.",
+                ) from exc
             raise
 
         json_resp = JSONResponse(
-            {"status": "success", "message": "Password updated successfully in Supabase."}
+            {
+                "status": "success",
+                "message": "Password updated successfully in Supabase.",
+            }
         )
         json_resp.headers["Cache-Control"] = "no-store"
         return json_resp
@@ -1051,5 +1146,288 @@ def portal_router(
         response = Response(status_code=204)
         clear(response, request=request)
         return response
+
+    # Deterministic browser confirmation bypasses model interpretation of "yes".
+    import httpx
+    from clinic_schemas.bookings import Book
+    from pydantic import BaseModel, ConfigDict, Field
+
+    from clinic_backend.ai_agent.appointments import AppointmentAPI
+    from clinic_backend.chat_proposals import issue
+    from clinic_backend.chat_proposals import verify as verify_proposal
+
+    class ConfirmProposal(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+        proposal: str = Field(min_length=1, max_length=4096)
+
+    def proposal_secret() -> str:
+        if not settings.otp_hmac_secret:
+            raise APIError(
+                503, "SERVICE_UNAVAILABLE", "Proposal signing is unavailable."
+            )
+        return settings.otp_hmac_secret.get_secret_value()
+
+    def action_client(request: Request) -> tuple[httpx.AsyncClient, AppointmentAPI]:
+        client = httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=request.app),
+            base_url="http://internal",
+            timeout=25,
+        )
+        api = AppointmentAPI(
+            client,
+            request.cookies.get(CONVERSATION, ""),
+            (
+                settings.agent_service_token.get_secret_value()
+                if settings.agent_service_token
+                else None
+            ),
+        )
+        return client, api
+
+    @router.post("/chat/propose-booking")
+    async def propose_chat_booking(
+        body: Book, request: Request, response: Response
+    ) -> dict[str, object]:
+        await profile(request, response)
+        client, api = action_client(request)
+        async with client:
+            try:
+                available = await api.availability(
+                    body.doctor_id, {"from_date": body.date.isoformat()}
+                )
+                schedule = await api.appointments(
+                    {"status": "scheduled", "upcoming_only": True, "limit": 100}
+                )
+            except httpx.HTTPStatusError as error:
+                raise APIError(
+                    503, "SERVICE_UNAVAILABLE", "Availability could not be checked."
+                ) from error
+        if not any(
+            day["date"] == body.date.isoformat() and body.start_time in day["slots"]
+            for day in available["days"]
+        ):
+            raise APIError(409, "SLOT_UNAVAILABLE", "The slot is no longer available.")
+        from clinic_backend.ai_agent.schedule import conflicts
+
+        start = datetime.strptime(body.start_time, "%H:%M")
+        overlaps = conflicts(
+            body.date.isoformat(),
+            body.start_time,
+            (start + timedelta(minutes=30)).strftime("%H:%M"),
+            schedule["appointments"],
+        )
+        if overlaps:
+            other = overlaps[0]
+            name = other["doctor"]["name_en"]
+            raise APIError(
+                409,
+                "PATIENT_SLOT_CONFLICT",
+                f"This time conflicts with {name}. Choose another available time.",
+                {
+                    "appointment_id": other["id"],
+                    "doctor": name,
+                    "date": other["date"],
+                    "start_time": other["start_time"],
+                },
+            )
+        client, api = action_client(request)
+        async with client:
+            doctor = await api.request("GET", f"doctors/{body.doctor_id}")
+        payload = body.model_dump(mode="json", exclude_none=True)
+        return {
+            "proposal": issue(
+                payload, request.cookies.get(CONVERSATION, ""), proposal_secret()
+            ),
+            "selection": {**payload, "doctor": doctor},
+            "expires_in": 300,
+            "reserved": False,
+        }
+
+    from clinic_backend.ai_agent.booking_tools import CancelInput, RescheduleInput
+
+    class ChangeProposal(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+        operation: Literal["reschedule", "cancel"]
+        appointment_id: int = Field(gt=0)
+        date: str | None = None
+        start_time: str | None = None
+        reason: str | None = Field(default=None, max_length=300)
+
+    @router.post("/chat/propose-change")
+    async def propose_chat_change(
+        body: ChangeProposal, request: Request, response: Response
+    ) -> dict[str, object]:
+        await profile(request, response)
+        values = body.model_dump(exclude_none=True)
+        operation = values.pop("operation")
+        model = RescheduleInput if operation == "reschedule" else CancelInput
+        try:
+            selection = model.model_validate(values).model_dump(
+                mode="json", exclude_none=True
+            )
+        except ValueError as error:
+            raise APIError(
+                422, "VALIDATION_FAILED", "Specify appointment and new date/time."
+            ) from error
+        client, api = action_client(request)
+        async with client:
+            try:
+                current = await api.request(
+                    "GET", f"patients/me/appointments/{body.appointment_id}"
+                )
+            except httpx.HTTPStatusError as error:
+                raise APIError(
+                    404, "APPOINTMENT_NOT_FOUND", "Appointment not found."
+                ) from error
+        if not current.get("can_change"):
+            raise APIError(
+                409,
+                "ACTION_NOT_ALLOWED",
+                "Appointment cannot be changed under the clinic policy.",
+            )
+        if operation == "reschedule":
+            from clinic_backend.ai_agent.schedule import conflicts
+
+            client, api = action_client(request)
+            async with client:
+                try:
+                    page = await api.appointments(
+                        {"status": "scheduled", "upcoming_only": True, "limit": 100}
+                    )
+                except httpx.HTTPStatusError as error:
+                    raise APIError(
+                        503, "SERVICE_UNAVAILABLE", "Could not check your schedule."
+                    ) from error
+            end = (
+                datetime.combine(
+                    date.fromisoformat(selection["date"]),
+                    time.fromisoformat(selection["start_time"]),
+                )
+                + timedelta(minutes=30)
+            ).strftime("%H:%M")
+            overlap = conflicts(
+                selection["date"],
+                selection["start_time"],
+                end,
+                page["appointments"],
+                exclude_id=body.appointment_id,
+            )
+            if overlap:
+                other = overlap[0]
+                name = other["doctor"]["name_en"]
+                client, api = action_client(request)
+                async with client:
+                    available = await api.availability(
+                        current["doctor"]["id"], {"from_date": selection["date"]}
+                    )
+                eligible = []
+                for day in available["days"]:
+                    for slot in day["slots"]:
+                        stop = (
+                            datetime.combine(
+                                date.fromisoformat(day["date"]),
+                                time.fromisoformat(slot),
+                            )
+                            + timedelta(minutes=30)
+                        ).strftime("%H:%M")
+                        if not conflicts(
+                            day["date"],
+                            slot,
+                            stop,
+                            page["appointments"],
+                            exclude_id=body.appointment_id,
+                        ):
+                            eligible.append(slot)
+                earlier = [slot for slot in eligible if slot < selection["start_time"]]
+                later = [slot for slot in eligible if slot > selection["start_time"]]
+                alternatives = (
+                    [
+                        {
+                            "date": selection["date"],
+                            "start_time": max(earlier),
+                            "position": "before",
+                        }
+                    ]
+                    if earlier
+                    else []
+                ) + (
+                    [
+                        {
+                            "date": selection["date"],
+                            "start_time": min(later),
+                            "position": "after",
+                        }
+                    ]
+                    if later
+                    else []
+                )
+                raise APIError(
+                    409,
+                    "PATIENT_SLOT_CONFLICT",
+                    "This time conflicts with "
+                    f"{name}"
+                    " on "
+                    f"{other['date']}"
+                    " at "
+                    f"{other['start_time']}"
+                    ". Choose another time, or re"
+                    "quest cancellation separatel"
+                    "y.",
+                    {
+                        "appointment_id": other["id"],
+                        "doctor": name,
+                        "date": other["date"],
+                        "start_time": other["start_time"],
+                        "alternatives": alternatives,
+                    },
+                )
+        selection["operation"] = operation
+        return {
+            "proposal": issue(
+                selection, request.cookies.get(CONVERSATION, ""), proposal_secret()
+            ),
+            "selection": {**selection, "doctor": current["doctor"]},
+            "reserved": False,
+            "expires_in": 300,
+        }
+
+    @router.post("/chat/confirm-booking")
+    async def confirm_chat_booking(
+        body: ConfirmProposal, request: Request, response: Response
+    ) -> dict[str, object]:
+        await profile(request, response)
+        try:
+            payload = verify_proposal(
+                body.proposal, request.cookies.get(CONVERSATION, ""), proposal_secret()
+            )
+        except ValueError as error:
+            raise APIError(409, "PROPOSAL_EXPIRED", "Choose the slot again.") from error
+        client, api = action_client(request)
+        async with client:
+            try:
+                operation = payload.pop("operation", "book")
+                key = "chat_" + hashlib.sha256(body.proposal.encode()).hexdigest()
+                if operation == "book":
+                    appointment = await api.book(payload, key)
+                elif operation == "reschedule":
+                    appointment = await api.reschedule(
+                        payload.pop("appointment_id"), payload, key
+                    )
+                else:
+                    appointment = await api.cancel(
+                        payload.pop("appointment_id"), payload, key
+                    )
+            except httpx.HTTPStatusError as error:
+                try:
+                    details = error.response.json().get("error", {})
+                except ValueError:
+                    details = {}
+                raise APIError(
+                    error.response.status_code,
+                    details.get("code", "BOOKING_FAILED"),
+                    details.get("message", "Booking failed; refresh available slots."),
+                ) from error
+        response.headers["Cache-Control"] = "no-store"
+        return {"appointment": appointment, "saved": True, "operation": operation}
 
     return router

@@ -54,3 +54,15 @@ def test_remote_plain_http_supabase_remains_rejected():
             environment="development",
             supabase_url="http://auth.example.test",
         )
+
+
+def test_remote_dev_database_timeout_is_explicitly_configurable():
+    from clinic_backend.database import connection_args
+
+    config = Settings(
+        database_url="postgresql+asyncpg://test:test@localhost/test",
+        db_command_timeout_seconds=20,
+    )
+    assert connection_args(config)["command_timeout"] == 20
+    baseline = Settings(database_url="postgresql+asyncpg://test:test@localhost/test")
+    assert connection_args(baseline)["command_timeout"] == 5

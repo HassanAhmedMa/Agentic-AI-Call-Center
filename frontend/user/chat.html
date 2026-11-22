@@ -106,7 +106,39 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="styles.css?v=5.0">
-</head>
+<style>
+.bot-widget-container {margin-top:14px;}
+.chat-slot-day {font-weight:700;color:#273452;padding:14px 0 8px;border-top:1px solid #e6eaf4;margin-top:16px;}
+.bot-widget-container .slot-pill-btn {padding:11px 17px;margin:4px;border:1px solid #d8ddf3;border-radius:12px;background:#f4f5ff;color:#5630c7;font-weight:650;transition:background .15s,transform .15s;}
+.bot-widget-container .slot-pill-btn:hover {background:#e7e3ff;transform:translateY(-1px);}
+.bot-widget-container .slot-pill-btn:focus-visible {outline:3px solid #aa98ed;outline-offset:2px;}
+.chat-action-success {display:flex;flex-direction:column;gap:12px;padding:20px;border:1px solid #b7e4cc;border-radius:18px;background:#edf9f2;color:#17633e;box-shadow:0 5px 18px #1d6b4310;}
+.chat-action-success a {color:#17633e;text-decoration:underline;font-size:14px;}
+.chat-booking-summary {display:flex;flex-direction:column;gap:12px;padding:4px 0;}
+.chat-booking-summary strong {font-size:18px;color:#202c48;}
+.chat-booking-when {display:inline-flex;align-self:flex-start;padding:10px 14px;border-radius:12px;background:#f1efff;color:#5031a5;font-size:15px;font-weight:600;}
+.chat-booking-status {padding:12px 14px;border-radius:12px;background:#f5f7fb;font-size:14px;line-height:1.5;margin:12px 0;}
+.chat-booking-status.is-pending {background:#eef2ff;color:#434da3;}
+.chat-booking-status.is-error {background:#fff0ee;color:#9b3128;border:1px solid #f4c8c2;}
+.chat-booking-status.is-success {background:#eaf8ef;color:#17633e;}
+.bot-widget-container .chat-doc-book-btn {width:100%;min-height:48px;border:0;border-radius:14px;padding:13px 18px;font-size:15px;font-weight:700;cursor:pointer;}
+.bot-widget-container .chat-doc-book-btn:disabled {opacity:.65;cursor:wait;}
+.is-saving::before {content:'';display:inline-block;width:14px;height:14px;border:2px solid #ffffff66;border-top-color:white;border-radius:50%;margin-inline-end:9px;vertical-align:middle;animation:chat-spin .8s linear infinite;}
+@keyframes chat-spin {to {transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce) {.is-saving::before {animation:none;}}
+.msg-balloon-wrapper,.balloon-card,.bot-widget-container {min-width:0;max-width:100%;overflow-wrap:anywhere;}
+.chat-messages {overflow-x:hidden;}
+.bot-widget-container {white-space:normal;}
+.chat-cancel-action {width:100%;min-height:44px;border:1px solid #f0c3c8;border-radius:12px;background:#fff4f5;color:#a32f40;font-weight:650;margin-top:8px;cursor:pointer;}
+.chat-conflict-summary {border-inline-start:3px solid #d5a35d;background:#fff9ef;padding:14px;border-radius:12px;}
+.chat-action-doctor {font-weight:700;font-size:17px;color:#26314c;}
+.chat-booking-summary .chat-doc-book-btn {margin-top:12px;line-height:1.5;white-space:normal;}
+.chat-typing-dots {display:inline-flex;align-items:center;gap:10px;font-style:normal!important;color:#645587!important;}
+.chat-typing-dots::before {content:'';width:16px;height:16px;border:2px solid #e1dbf6;border-top-color:#7041df;border-radius:50%;animation:chat-spin .8s linear infinite;}
+.chat-doctor-suggestions {margin-top:12px;padding-top:12px;border-top:1px solid #eeeaf7;font-size:13px;color:#766b8b;line-height:1.5;}
+@media(prefers-reduced-motion:reduce){.chat-typing-dots::before{animation:none;}}
+.voice-call-overlay {display:none;}
+</style></head>
 <body class="chat-page">
 
   <div class="app-layout" id="appLayout">
@@ -493,6 +525,7 @@
   <script src="portal-api.js?v=4.5"></script>
   <script src="portal-session.js?v=4.5"></script>
   <script src="api.js?v=4.5"></script>
-  <script src="chat.js?v=5.0"></script>
+  <script src="chat-stream.js?v=1"></script>
+  <script src="chat.js?v=6.6"></script>
 </body>
 </html>

@@ -13,6 +13,7 @@ from sqlalchemy.exc import ArgumentError
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=None, extra="ignore")
 
+    db_command_timeout_seconds: int = Field(default=5, ge=1, le=60)
     database_url: SecretStr
     database_schema: str = Field(default="public", pattern=r"^[a-z_][a-z0-9_]{0,62}$")
     public_rate_limit: int = Field(default=60, ge=1, le=1000)

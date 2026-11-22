@@ -133,14 +133,13 @@ async def test_portal_origin_and_recovery_email_match(portal):
             "/api/v1/portal/recover", json={"email": "unknown@example.test"}
         )
     ).status_code == 202
-    assert (
-        await client.post(
-            "/api/v1/portal/recovery-session",
-            json={
-                "access_token": "synthetic-access",
-            },
-        )
-    ).status_code == 204
+    recovery = await client.post(
+        "/api/v1/portal/recovery-session",
+        json={"access_token": "synthetic-access"},
+    )
+    assert recovery.status_code == 200
+    assert recovery.json()["email"] == FORM["email"]
+
     wrong = await client.post(
         "/api/v1/portal/reset-password",
         json={
@@ -586,11 +585,13 @@ async def test_local_password_otp_and_reset_round_trip(
             json={"email": FORM["email"], "return_path": "/auth.html"},
         )
     ).status_code == 202
-    assert (
-        await client.post(
-            "/api/v1/portal/recovery-session", json={"access_token": "synthetic-access"}
-        )
-    ).status_code == 204
+    recovery = await client.post(
+        "/api/v1/portal/recovery-session",
+        json={"access_token": "synthetic-access"},
+    )
+    assert recovery.status_code == 200
+    assert recovery.json()["email"] == FORM["email"]
+
     reset = await client.post(
         "/api/v1/portal/reset-password",
         json={

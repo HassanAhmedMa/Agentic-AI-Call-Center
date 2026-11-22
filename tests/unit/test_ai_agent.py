@@ -1,15 +1,14 @@
-import pytest
-from unittest.mock import AsyncMock, MagicMock
-from decimal import Decimal
 import json
+from decimal import Decimal
+from unittest.mock import AsyncMock, MagicMock
 
-from clinic_schemas import catalog as dto
-from clinic_backend.ai_agent.tools import (
-    get_available_tools_schema,
-    execute_fetch_doctors,
-    FETCH_DOCTORS_TOOL,
-)
+import pytest
 from clinic_backend.ai_agent.orchestrator import assemble_tool_call, format_sse
+from clinic_backend.ai_agent.tools import (
+    execute_fetch_doctors,
+    get_available_tools_schema,
+)
+from clinic_schemas import catalog as dto
 
 
 def test_tool_schema_structure():

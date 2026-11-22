@@ -15,5 +15,6 @@ RUN chmod -R a+rX /app/database/migrations /app/database/seed /app/frontend/user
     && chmod a+r /app/pyproject.toml /app/alembic.ini
 USER clinic
 RUN python -c "from pathlib import Path; import clinic_backend; p=Path(clinic_backend.__file__).parent/'static/supabase-otp.html'; assert '{{ .Token }}' in p.read_text()"
+RUN python -c "from clinic_backend.app import create_app"
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "clinic_backend.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-proxy-headers"]

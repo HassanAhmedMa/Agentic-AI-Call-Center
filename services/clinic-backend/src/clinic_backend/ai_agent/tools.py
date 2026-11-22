@@ -1,7 +1,8 @@
-"""AI Agent Tools definition and execution layer.
-
-Follows the zero-direct-DB rule: tools query backend domain stores deterministically.
-"""
+(
+    "AI Agent Tools definition and execution layer.\n\nFollows"
+    " the zero-direct-DB rule: tools query backend domain st"
+    "ores deterministically.\n"
+)
 
 from __future__ import annotations
 
@@ -18,13 +19,25 @@ FETCH_DOCTORS_TOOL = {
     "type": "function",
     "function": {
         "name": "fetch_doctors",
-        "description": "Fetch available clinic doctors and their working shifts by medical specialty or doctor name.",
+        "description": (
+            "Fetch available clinic doctors and their working shifts"
+            " by medical specialty or doctor name."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
                 "specialty_name": {
                     "type": "string",
-                    "description": "Medical specialty or query in Arabic or English, e.g. 'القلب', 'Cardiology', 'جلدية', 'باطنة', 'أطفال', 'Dr. Sarah'.",
+                    "description": (
+                        "Medical specialty or query in Arabic or English, e.g. '"
+                        "القلب', 'Cardiology', 'جلدية', 'باطنة', 'أطفال', 'Dr. S"
+                        "arah'."
+                    ),
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Requested visit date as YYYY-MM-DD, if specified.",
                 },
                 "language": {
                     "type": "string",
@@ -80,9 +93,9 @@ async def execute_fetch_doctors(
         )
 
         days_formatted = (
-            ", ".join(DAYS_AR.get(day.lower(), day) for day in d.working_days)
+            ", ".join(DAYS_AR.get(day.lower(), day) for day in (d.working_days or []))
             if language == "ar"
-            else ", ".join(d.working_days)
+            else ", ".join(d.working_days or [])
         )
         shifts_formatted = f"{d.shift_start} - {d.shift_end}"
 

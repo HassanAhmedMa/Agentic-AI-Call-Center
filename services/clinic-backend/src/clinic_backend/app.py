@@ -37,15 +37,17 @@ from starlette.staticfiles import StaticFiles
 from clinic_backend.ai_agent.orchestrator import stream_chat_turn
 from clinic_backend.availability_routes import availability_router
 from clinic_backend.catalog import Catalog
+from clinic_backend.chat_contract import ChatMessagePayload
 from clinic_backend.conversations import conversation_router
 from clinic_backend.database import is_ready, make_engine
 from clinic_backend.errors import APIError, ErrorEnvelope, error_response
 from clinic_backend.identity_models import Patient
 from clinic_backend.mail import Delivery, make_delivery
+from clinic_backend.models import Doctor
+from clinic_backend.runtime_config import runtime_config
 from clinic_backend.settings import Settings
 from clinic_backend.supabase_auth import AuthClient
 from clinic_backend.websocket_manager import ws_manager
-from clinic_backend.runtime_config import runtime_config
 
 logger = logging.getLogger("clinic_backend")
 
@@ -497,6 +499,7 @@ def create_app(
     async def update_doctor(doctor_id: int, payload: dict[str, Any]) -> dict[str, Any]:
         from datetime import time as dt_time
         from decimal import Decimal
+
         from clinic_backend.models import Doctor
 
         async with sessions() as session:
@@ -517,7 +520,10 @@ def create_app(
                     doc.specialty_id = int(payload["specialty_id"])
                 except Exception:
                     pass
-            if "consultation_fee" in payload and payload["consultation_fee"] is not None:
+            if (
+                "consultation_fee" in payload
+                and payload["consultation_fee"] is not None
+            ):
                 try:
                     doc.consultation_fee = Decimal(str(payload["consultation_fee"]))
                 except Exception:
@@ -529,17 +535,29 @@ def create_app(
             if "languages" in payload and isinstance(payload["languages"], list):
                 doc.languages = payload["languages"]
             if "working_days" in payload and isinstance(payload["working_days"], list):
-                doc.working_days = [int(d) for d in payload["working_days"] if d is not None]
+                doc.working_days = [
+                    int(d) for d in payload["working_days"] if d is not None
+                ]
             if "shift_start" in payload and payload["shift_start"]:
                 try:
-                    sh_raw = str(payload["shift_start"]).replace("AM", "").replace("PM", "").strip()
+                    sh_raw = (
+                        str(payload["shift_start"])
+                        .replace("AM", "")
+                        .replace("PM", "")
+                        .strip()
+                    )
                     sh_h, sh_m = map(int, sh_raw.split(":")[:2])
                     doc.shift_start = dt_time(sh_h, sh_m)
                 except Exception:
                     pass
             if "shift_end" in payload and payload["shift_end"]:
                 try:
-                    eh_raw = str(payload["shift_end"]).replace("AM", "").replace("PM", "").strip()
+                    eh_raw = (
+                        str(payload["shift_end"])
+                        .replace("AM", "")
+                        .replace("PM", "")
+                        .strip()
+                    )
                     eh_h, eh_m = map(int, eh_raw.split(":")[:2])
                     doc.shift_end = dt_time(eh_h, eh_m)
                 except Exception:
@@ -1121,7 +1139,9 @@ def create_app(
                     {"pid": pid},
                 )
             except Exception as e:
-                logger.warning("Failed deleting appointments for patient %s: %s", pid, e)
+                logger.warning(
+                    "Failed deleting appointments for patient %s: %s", pid, e
+                )
 
             # 2. Delete verification challenges
             try:
@@ -1151,7 +1171,9 @@ def create_app(
                     {"pid": pid},
                 )
             except Exception as e:
-                logger.warning("Failed deleting idempotency keys for patient %s: %s", pid, e)
+                logger.warning(
+                    "Failed deleting idempotency keys for patient %s: %s", pid, e
+                )
 
             # 5. Delete patient record
             await session.delete(patient)
@@ -1160,9 +1182,18 @@ def create_app(
             # 6. Delete Supabase user if present
             if supabase_uid and auth_client:
                 try:
-                    await auth_client.delete_user(str(supabase_uid))
+                    delete_user = getattr(auth_client, "delete_user", None)
+                    if delete_user is None:
+                        raise APIError(
+                            503,
+                            "SERVICE_UNAVAILABLE",
+                            "Auth user deletion is not configured.",
+                        )
+                    await delete_user(str(supabase_uid))
                 except Exception as e:
-                    logger.warning("Failed deleting supabase user %s: %s", supabase_uid, e)
+                    logger.warning(
+                        "Failed deleting supabase user %s: %s", supabase_uid, e
+                    )
 
             return {
                 "success": True,
@@ -1214,32 +1245,138 @@ def create_app(
         except (WebSocketDisconnect, Exception):
             await ws_manager.disconnect(websocket)
 
-    class ChatMessagePayload(BaseModel):
-        messages: list[dict[str, Any]]
-        language: str = "ar"
-        model: str | None = None
+    pending_chat_bookings: dict[str, dict[str, Any]] = {}
 
+    @app.post("/api/v1/portal/chat/message", tags=["AI Chat"])
     @app.post("/api/v1/chat/message", tags=["AI Chat"])
     async def chat_message(
         payload: ChatMessagePayload,
+        request: Request,
         catalog_store: Annotated[Catalog, Depends(catalog)],
     ) -> StreamingResponse:
-        model_name = payload.model or getattr(settings, "ai_chatbot_model", "gemini-3.5-flash-lite")
-        api_url = getattr(settings, "ai_proxy_url", "https://ai.141.253.118.80.sslip.io")
-        api_key = (
-            settings.ai_proxy_api_key.get_secret_value()
-            if hasattr(settings, "ai_proxy_api_key") and settings.ai_proxy_api_key
-            else "sk-41783f2a77994309a22717363289e4b9"
+        if not settings.ai_proxy_api_key:
+            raise APIError(
+                503, "SERVICE_UNAVAILABLE", "Chat provider is not configured."
+            )
+        model_name = settings.ai_chatbot_model
+        api_url = settings.ai_proxy_url
+        api_key = settings.ai_proxy_api_key.get_secret_value()
+        import httpx
+
+        from clinic_backend.ai_agent.appointments import AppointmentAPI
+        from clinic_backend.portal import CONVERSATION, is_allowed_portal_origin
+
+        if not is_allowed_portal_origin(
+            request.headers.get("Origin", ""), settings.portal_origin
+        ):
+            raise APIError(403, "ACTION_NOT_ALLOWED", "Use the clinic portal.")
+        token = request.cookies.get(CONVERSATION, "")
+        if not token:
+            raise APIError(401, "VERIFICATION_REQUIRED", "Sign in first.")
+        client = httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://internal",
+            cookies=dict(request.cookies),
+            headers={"Origin": request.headers.get("Origin", "")},
+            timeout=25,
         )
-        return StreamingResponse(
-            stream_chat_turn(
-                catalog=catalog_store,
-                messages=payload.messages,
-                model=model_name,
-                api_url=api_url,
-                api_key=api_key,
-                language=payload.language,
+        patient_api = AppointmentAPI(
+            client,
+            token,
+            (
+                settings.agent_service_token.get_secret_value()
+                if settings.agent_service_token
+                else None
             ),
+        )
+        try:
+            context = await patient_api.patient_context()
+        except httpx.HTTPStatusError as error:
+            await client.aclose()
+            raise APIError(
+                401 if error.response.status_code == 401 else 503,
+                (
+                    "VERIFICATION_REQUIRED"
+                    if error.response.status_code == 401
+                    else "SERVICE_UNAVAILABLE"
+                ),
+                (
+                    "Sign in again."
+                    if error.response.status_code == 401
+                    else "Session service unavailable. Please retry."
+                ),
+            ) from error
+        except Exception:
+            await client.aclose()
+            raise
+
+        import hashlib
+        import json
+
+        from clinic_backend.ai_agent.booking_tools import BookingTools
+
+        state_key = hashlib.sha256(
+            (token + ":" + payload.thread_id).encode()
+        ).hexdigest()
+        if (
+            len(pending_chat_bookings) >= 1000
+            and state_key not in pending_chat_bookings
+        ):
+            await client.aclose()
+            raise APIError(
+                429, "RATE_LIMITED", "Too many active booking conversations."
+            )
+        pending = pending_chat_bookings.setdefault(state_key, {})
+        if payload.confirmation_id and (
+            not pending.get("proposal")
+            or hashlib.sha256(pending["proposal"].encode()).hexdigest()
+            != payload.confirmation_id
+        ):
+            await client.aclose()
+            raise APIError(
+                409,
+                "PROPOSAL_REPLACED",
+                "This selection is outdated. Choose the slot again.",
+            )
+        turn = hashlib.sha256(
+            json.dumps(
+                [message.model_dump() for message in payload.messages], sort_keys=True
+            ).encode()
+        ).hexdigest()
+        from clinic_backend.ai_agent.booking_tools import interpret_consent
+
+        async def consent(text: str) -> bool:
+            return await interpret_consent(
+                text,
+                url=api_url,
+                key=api_key,
+                model=model_name,
+                proposal=pending.get("selection"),
+            )
+
+        actions = BookingTools(
+            patient_api, pending, turn, payload.messages[-1].content, consent
+        )
+
+        async def stream_patient_chat() -> AsyncIterator[str]:
+            try:
+                async for event in stream_chat_turn(
+                    catalog=catalog_store,
+                    messages=[message.model_dump() for message in payload.messages],
+                    model=model_name,
+                    api_url=api_url,
+                    api_key=api_key,
+                    language=payload.language,
+                    patient_api=patient_api,
+                    patient_context=context,
+                    booking_actions=actions,
+                ):
+                    yield event
+            finally:
+                await client.aclose()
+
+        chat_response = StreamingResponse(
+            stream_patient_chat(),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache, no-transform",
@@ -1247,6 +1384,11 @@ def create_app(
                 "X-Accel-Buffering": "no",
             },
         )
+        for cookie_header in getattr(patient_api, "profile_cookie_headers", []):
+            chat_response.raw_headers.append(
+                (b"set-cookie", cookie_header.encode("latin-1"))
+            )
+        return chat_response
 
     @app.post("/api/v1/ws/broadcast", tags=["Realtime"])
     async def broadcast_realtime_event(payload: dict[str, Any]) -> dict[str, Any]:
@@ -1563,23 +1705,52 @@ def create_app(
             end_obj = end_dt.time()
 
             # 3b. Validate Doctor Working Days & Shift Hours
-            if doctor.working_days and appt_date.isoweekday() not in doctor.working_days:
+            if (
+                doctor.working_days
+                and appt_date.isoweekday() not in doctor.working_days
+            ):
                 days_str = ", ".join(
-                    [{1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 6: "Saturday", 7: "Sunday"}.get(d, str(d)) for d in doctor.working_days]
+                    [
+                        {
+                            1: "Monday",
+                            2: "Tuesday",
+                            3: "Wednesday",
+                            4: "Thursday",
+                            6: "Saturday",
+                            7: "Sunday",
+                        }.get(d, str(d))
+                        for d in doctor.working_days
+                    ]
                 )
                 raise APIError(
                     422,
                     "DOCTOR_UNAVAILABLE",
-                    f"Dr. {doctor.name_en} is off-duty on {appt_date.strftime('%A')} ({appt_date}). Working days: {days_str}.",
+                    "Dr. "
+                    f"{doctor.name_en}"
+                    " is off-duty on "
+                    f"{appt_date.strftime('%A')}"
+                    " ("
+                    f"{appt_date}"
+                    "). Working days: "
+                    f"{days_str}"
+                    ".",
                 )
 
             if doctor.shift_start and doctor.shift_end:
                 if start_obj < doctor.shift_start or end_obj > doctor.shift_end:
-                    shift_str = f"{doctor.shift_start.strftime('%H:%M')} – {doctor.shift_end.strftime('%H:%M')}"
+                    shift_str = (
+                        f"{doctor.shift_start:%H:%M} – " f"{doctor.shift_end:%H:%M}"
+                    )
                     raise APIError(
                         422,
                         "DOCTOR_UNAVAILABLE",
-                        f"Selected time {start_obj.strftime('%H:%M')} is outside Dr. {doctor.name_en}'s active shift ({shift_str}).",
+                        "Selected time "
+                        f"{start_obj.strftime('%H:%M')}"
+                        " is outside Dr. "
+                        f"{doctor.name_en}"
+                        "'s active shift ("
+                        f"{shift_str}"
+                        ").",
                     )
 
             # 4. Check slot conflict
@@ -1785,22 +1956,51 @@ def create_app(
 
             doctor = await session.get(Doctor, appt.doctor_id)
             if doctor:
-                if doctor.working_days and new_date.isoweekday() not in doctor.working_days:
+                if (
+                    doctor.working_days
+                    and new_date.isoweekday() not in doctor.working_days
+                ):
                     days_str = ", ".join(
-                        [{1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 6: "Saturday", 7: "Sunday"}.get(d, str(d)) for d in doctor.working_days]
+                        [
+                            {
+                                1: "Monday",
+                                2: "Tuesday",
+                                3: "Wednesday",
+                                4: "Thursday",
+                                6: "Saturday",
+                                7: "Sunday",
+                            }.get(d, str(d))
+                            for d in doctor.working_days
+                        ]
                     )
                     raise APIError(
                         422,
                         "DOCTOR_UNAVAILABLE",
-                        f"Dr. {doctor.name_en} is off-duty on {new_date.strftime('%A')} ({new_date}). Working days: {days_str}.",
+                        "Dr. "
+                        f"{doctor.name_en}"
+                        " is off-duty on "
+                        f"{new_date.strftime('%A')}"
+                        " ("
+                        f"{new_date}"
+                        "). Working days: "
+                        f"{days_str}"
+                        ".",
                     )
                 if doctor.shift_start and doctor.shift_end:
                     if new_start < doctor.shift_start or new_end > doctor.shift_end:
-                        shift_str = f"{doctor.shift_start.strftime('%H:%M')} – {doctor.shift_end.strftime('%H:%M')}"
+                        shift_str = (
+                            f"{doctor.shift_start:%H:%M} – " f"{doctor.shift_end:%H:%M}"
+                        )
                         raise APIError(
                             422,
                             "DOCTOR_UNAVAILABLE",
-                            f"Selected time {new_start.strftime('%H:%M')} is outside Dr. {doctor.name_en}'s active shift ({shift_str}).",
+                            "Selected time "
+                            f"{new_start.strftime('%H:%M')}"
+                            " is outside Dr. "
+                            f"{doctor.name_en}"
+                            "'s active shift ("
+                            f"{shift_str}"
+                            ").",
                         )
 
             conflict = await session.scalar(
@@ -1946,6 +2146,7 @@ def create_app(
                 "appointments.js",
                 "chat.html",
                 "chat.js",
+                "chat-stream.js",
                 "profile.html",
                 "profile.js",
                 "support.html",
@@ -1961,7 +2162,9 @@ def create_app(
                 raise APIError(404, "NOT_FOUND", "Page not found.")
 
             ext = (settings.portal_assets / asset).suffix.lower()
-            if ext in {".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico"}:
+            if asset == "auth.html":
+                cache_header = "no-store"
+            elif ext in {".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico"}:
                 cache_header = "public, max-age=604800, stale-while-revalidate=86400"
             elif ext in {".css", ".js"}:
                 cache_header = "public, max-age=86400, stale-while-revalidate=3600"

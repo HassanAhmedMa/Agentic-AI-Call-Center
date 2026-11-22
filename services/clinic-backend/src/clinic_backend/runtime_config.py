@@ -2,6 +2,7 @@
 
 Persists settings to a JSON file on disk, with thread-safe atomic writes.
 """
+
 from __future__ import annotations
 
 import json
@@ -31,7 +32,7 @@ class RuntimeConfig:
     def _load(self) -> None:
         if self.filepath.exists():
             try:
-                with open(self.filepath, "r", encoding="utf-8") as f:
+                with open(self.filepath, encoding="utf-8") as f:
                     stored = json.load(f)
                     if isinstance(stored, dict):
                         self._data.update(stored)
