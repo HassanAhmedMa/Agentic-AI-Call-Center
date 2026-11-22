@@ -1,13 +1,13 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
 stateDiagram-v2
-    [*] --> Open: POST /tickets (Ticket Created by Agent / Patient)
+    [*] --> Open: POST /patients/me/tickets (Ticket Created by Agent / Patient)
     
     Open --> InProgress: Staff Begins Review & Investigation
     Open --> Resolved: Direct Quick Resolution
     
     InProgress --> Resolved: Solution / Information Provided to Patient
     
-    Resolved --> Closed: Patient / Staff Confirms Resolution (Archive)
-    Resolved --> InProgress: Patient Reports Issue Remains Unresolved
+    Resolved --> Closed: Staff Confirms Resolution - deferred auth contract (Archive)
+    Resolved --> InProgress: Staff Reopens - deferred auth contract
 
     Closed --> [*]: Archived Ticket

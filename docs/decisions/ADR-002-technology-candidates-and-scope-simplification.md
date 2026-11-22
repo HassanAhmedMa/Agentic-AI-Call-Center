@@ -9,6 +9,11 @@
 ---
 
 ## 1. Context & Problem Statement
+
+**Phase 1 packaging note (2026-10-10):** the existing Africa/Cairo date contract
+requires IANA timezone data. Windows Python lacks an OS timezone database, so the
+backend pins Python's tzdata distribution. This adds timezone data for the approved
+Python backend, without introducing another service or changing the architecture.
 The Phase 0 architecture baseline established strong boundaries (modular monorepo, strict API contracts, no direct DB access for LLMs). However, our comprehensive feasibility audit identified several components that introduce excessive operational complexity, high financial cost, or high delivery risk for a five-person student team operating on a 12-week timeline:
 1. **Telephony & WebRTC:** Traditional PSTN phone connectivity and WebRTC media servers require complex infrastructure (STUN/TURN, SIP trunking, telecom approvals).
 2. **External Vector Database Infrastructure:** Deploying standalone vector database clusters (Qdrant/Chroma) increases deployment friction for a relatively small clinic knowledge base (< 100 documents).

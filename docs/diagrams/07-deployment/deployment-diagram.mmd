@@ -11,7 +11,7 @@ flowchart TB
             RAGContainer["[Container] rag-service\n- Retrieval Engine & Embedder Adapter"]
             BackendContainer["[Container] clinic-backend-service\n- FastAPI Application\n- Pydantic DTOs & Business Rules"]
             
-            DBContainer[("[Container] postgres-database\n- PostgreSQL 16 Alpine\n- Relational Tables & Indexes\n- pgvector Vector Index")]
+            DBContainer[("[Container] postgres-database\n- PostgreSQL 16 Alpine\n- Relational Tables & Indexes")]
             RedisContainer[("[Container] redis-cache\n- Ephemeral Session & Memory Store")]
         end
     end
@@ -33,8 +33,12 @@ flowchart TB
     AgentContainer <-->|"Redis Protocol (TCP 6379)"| RedisContainer
     
     BackendContainer <-->|"PostgreSQL Wire Protocol (TCP 5432)"| DBContainer
-    RAGContainer <-->|"pgvector Queries (TCP 5432)"| DBContainer
+    RAGContainer <--> EmbeddedKnowledge[("Embedded approved knowledge index; not patient DB")]
 
     %% Cloud External API Calls
     AgentContainer <-->|"HTTPS REST (Token Streams)"| LLM_API
     VoiceContainer <-->|"HTTPS / WSS Audio Streaming"| Voice_API
+
+    Browser -->|"Direct typed code and registration HTTPS"| BackendContainer
+    Mailpit["Local Mailpit SMTP and synthetic inbox"]
+    BackendContainer -->|"SMTP 1025"| Mailpit

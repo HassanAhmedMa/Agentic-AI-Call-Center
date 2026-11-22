@@ -1,0 +1,277 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="1200" height="680">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgGlow" cx="50%" cy="30%" r="80%" fx="50%" fy="30%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0B0F17" stop-opacity="1"/>
+    </radialGradient>
+
+    <!-- Card Gradients -->
+    <linearGradient id="cardGradDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+    </linearGradient>
+
+    <linearGradient id="blueCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0369A1" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="purpleCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="greenCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="emeraldCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#047857" stop-opacity="0.08"/>
+    </linearGradient>
+
+    <!-- Arrow Markers -->
+    <marker id="arrowCyan" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#38BDF8"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#818CF8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#34D399"/>
+    </marker>
+    <marker id="arrowReturn" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#94A3B8"/>
+    </marker>
+
+    <!-- Glow Filters -->
+    <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="shadowBox" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="680" fill="url(#bgGlow)"/>
+
+  <!-- Subtle Grid Lines -->
+  <g stroke="#334155" stroke-opacity="0.15" stroke-width="1">
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="560" x2="1200" y2="560"/>
+    <line x1="240" y1="0" x2="240" y2="680"/>
+    <line x1="480" y1="0" x2="480" y2="680"/>
+    <line x1="720" y1="0" x2="720" y2="680"/>
+    <line x1="960" y1="0" x2="960" y2="680"/>
+  </g>
+
+  <!-- Header Section -->
+  <g id="Header">
+    <text x="600" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#F8FAFC" text-anchor="middle" letter-spacing="1.5">
+      SYSTEM ARCHITECTURE &amp; EXECUTION FLOW
+    </text>
+    <text x="600" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="500" fill="#94A3B8" text-anchor="middle">
+      Strict Separation of AI Orchestration &amp; Deterministic Healthcare Business Logic
+    </text>
+  </g>
+
+  <!-- Layer Labels / Boundary Zones -->
+  <!-- Layer 1: Client & Audio -->
+  <rect x="35" y="110" width="220" height="490" rx="16" fill="#0F172A" fill-opacity="0.4" stroke="#334155" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <text x="145" y="135" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" letter-spacing="1">CLIENT &amp; VOICE LAYER</text>
+
+  <!-- Layer 2: AI Orchestrator -->
+  <rect x="275" y="110" width="280" height="490" rx="16" fill="#0F172A" fill-opacity="0.4" stroke="#4F46E5" stroke-width="1.2" stroke-dasharray="4 4" stroke-opacity="0.6"/>
+  <text x="415" y="135" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#818CF8" text-anchor="middle" letter-spacing="1">AI ORCHESTRATION LAYER (PROBABILISTIC)</text>
+
+  <!-- Layer 3: Deterministic Backend & Database -->
+  <rect x="575" y="110" width="590" height="490" rx="16" fill="#0F172A" fill-opacity="0.5" stroke="#10B981" stroke-width="1.2" stroke-dasharray="4 4" stroke-opacity="0.6"/>
+  <text x="870" y="135" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#34D399" text-anchor="middle" letter-spacing="1">DETERMINISTIC CLINICAL CORE (TRUSTED &amp; SAFE)</text>
+
+  <!-- ==================== STAGE 1: PATIENT / CALLER ==================== -->
+  <g id="StagePatient" filter="url(#shadowBox)">
+    <rect x="55" y="160" width="180" height="150" rx="12" fill="url(#cardGradDark)" stroke="#38BDF8" stroke-width="1.5"/>
+    <rect x="55" y="160" width="180" height="150" rx="12" fill="url(#blueCard)"/>
+    
+    <!-- User Icon Circle -->
+    <circle cx="145" cy="205" r="22" fill="#0369A1" fill-opacity="0.3" stroke="#38BDF8" stroke-width="1.5"/>
+    <path d="M 145 198 A 5 5 0 1 1 145 208 A 5 5 0 1 1 145 198 M 134 219 C 134 213 139 211 145 211 C 151 211 156 213 156 219" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round"/>
+    
+    <text x="145" y="248" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#F8FAFC" text-anchor="middle">Patient / Caller</text>
+    <text x="145" y="268" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#94A3B8" text-anchor="middle">Voice Call or Web Text Chat</text>
+    <text x="145" y="285" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" fill="#38BDF8" text-anchor="middle">Arabic (MSA/Egyptian) &amp; English</text>
+  </g>
+
+  <!-- ==================== STAGE 2: VOICE & STREAM GATEWAY ==================== -->
+  <g id="StageGateway" filter="url(#shadowBox)">
+    <rect x="55" y="360" width="180" height="200" rx="12" fill="url(#cardGradDark)" stroke="#64748B" stroke-width="1.2"/>
+    
+    <!-- Wave Icon -->
+    <circle cx="145" cy="400" r="18" fill="#334155" fill-opacity="0.4" stroke="#94A3B8" stroke-width="1.2"/>
+    <path d="M 135 400 L 138 395 L 142 405 L 146 392 L 150 408 L 155 400" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="145" y="438" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#F8FAFC" text-anchor="middle">Voice Gateway</text>
+    <text x="145" y="456" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#94A3B8" text-anchor="middle">Audio Streaming Adapter</text>
+    
+    <!-- Sub-badges -->
+    <rect x="68" y="475" width="154" height="26" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+    <text x="145" y="492" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" fill="#CBD5E1" text-anchor="middle">STT: Whisper / Realtime</text>
+
+    <rect x="68" y="510" width="154" height="26" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+    <text x="145" y="527" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" fill="#CBD5E1" text-anchor="middle">TTS: Low-Latency Speech</text>
+  </g>
+
+  <!-- ==================== STAGE 3: AI AGENT ORCHESTRATOR ==================== -->
+  <g id="StageOrchestrator" filter="url(#shadowBox)">
+    <rect x="295" y="210" width="240" height="300" rx="14" fill="url(#cardGradDark)" stroke="#818CF8" stroke-width="1.8"/>
+    <rect x="295" y="210" width="240" height="300" rx="14" fill="url(#purpleCard)"/>
+
+    <!-- Brain / AI Icon -->
+    <circle cx="415" cy="260" r="24" fill="#4338CA" fill-opacity="0.3" stroke="#818CF8" stroke-width="1.5"/>
+    <path d="M 405 260 C 405 252 410 248 415 248 C 420 248 425 252 425 260 C 425 267 420 272 415 272 C 410 272 405 267 405 260 Z" fill="none" stroke="#818CF8" stroke-width="1.8"/>
+    <circle cx="415" cy="260" r="3" fill="#C7D2FE"/>
+
+    <text x="415" y="305" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#F8FAFC" text-anchor="middle">AI Agent Orchestrator</text>
+    <text x="415" y="325" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="600" fill="#A5B4FC" text-anchor="middle">State, Intent &amp; Policy Control</text>
+
+    <!-- Function checklist -->
+    <g transform="translate(315, 345)">
+      <rect x="0" y="0" width="200" height="30" rx="6" fill="#1E1B4B" fill-opacity="0.6" stroke="#4F46E5" stroke-width="1"/>
+      <text x="10" y="19" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" font-weight="500" fill="#E0E7FF">✓ Intent Classification (AR/EN)</text>
+      
+      <rect x="0" y="38" width="200" height="30" rx="6" fill="#1E1B4B" fill-opacity="0.6" stroke="#4F46E5" stroke-width="1"/>
+      <text x="10" y="57" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" font-weight="500" fill="#E0E7FF">✓ Multi-Turn Dialogue Memory</text>
+
+      <rect x="0" y="76" width="200" height="30" rx="6" fill="#1E1B4B" fill-opacity="0.6" stroke="#4F46E5" stroke-width="1"/>
+      <text x="10" y="95" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" font-weight="500" fill="#E0E7FF">✓ Strict Tool Dispatching</text>
+    </g>
+
+    <!-- Danger Badge: Zero DB -->
+    <rect x="315" y="465" width="200" height="28" rx="6" fill="#450A0A" stroke="#EF4444" stroke-width="1.2"/>
+    <text x="415" y="483" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="700" fill="#FCA5A5" text-anchor="middle">⛔ NO DIRECT DATABASE ACCESS</text>
+  </g>
+
+  <!-- ==================== STAGE 4: CLINIC BACKEND REST API ==================== -->
+  <g id="StageBackend" filter="url(#shadowBox)">
+    <rect x="600" y="180" width="270" height="360" rx="14" fill="url(#cardGradDark)" stroke="#10B981" stroke-width="1.8"/>
+    <rect x="600" y="180" width="270" height="360" rx="14" fill="url(#greenCard)"/>
+
+    <!-- Server Icon -->
+    <circle cx="735" cy="230" r="22" fill="#065F46" fill-opacity="0.3" stroke="#34D399" stroke-width="1.5"/>
+    <rect x="724" y="220" width="22" height="7" rx="2" fill="none" stroke="#34D399" stroke-width="1.5"/>
+    <rect x="724" y="233" width="22" height="7" rx="2" fill="none" stroke="#34D399" stroke-width="1.5"/>
+    <circle cx="740" cy="223.5" r="1" fill="#34D399"/>
+    <circle cx="740" cy="236.5" r="1" fill="#34D399"/>
+
+    <text x="735" y="274" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#F8FAFC" text-anchor="middle">Clinic Backend REST API</text>
+    <text x="735" y="293" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="600" fill="#6EE7B7" text-anchor="middle">FastAPI • Business Rules Core</text>
+
+    <!-- Backend Functions -->
+    <g transform="translate(620, 312)">
+      <rect x="0" y="0" width="230" height="42" rx="6" fill="#064E3B" fill-opacity="0.5" stroke="#059669" stroke-width="1"/>
+      <text x="10" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#A7F3D0">Doctor Availability Engine</text>
+      <text x="10" y="33" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="500" fill="#D1FAE5">30-min aligned slots, doctor shifts, off-days</text>
+
+      <rect x="0" y="50" width="230" height="42" rx="6" fill="#064E3B" fill-opacity="0.5" stroke="#059669" stroke-width="1"/>
+      <text x="10" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#A7F3D0">Booking &amp; Rescheduling Guard</text>
+      <text x="10" y="83" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="500" fill="#D1FAE5">Past-date lock, overlap checks, clinic holidays</text>
+
+      <rect x="0" y="100" width="230" height="42" rx="6" fill="#064E3B" fill-opacity="0.5" stroke="#059669" stroke-width="1"/>
+      <text x="10" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#A7F3D0">Deterministic Auth / RBAC</text>
+      <text x="10" y="133" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="500" fill="#D1FAE5">Patient session verification, operator rights</text>
+
+      <rect x="0" y="150" width="230" height="42" rx="6" fill="#064E3B" fill-opacity="0.5" stroke="#059669" stroke-width="1"/>
+      <text x="10" y="168" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#A7F3D0">Audit &amp; Emergency Escalation</text>
+      <text x="10" y="183" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="500" fill="#D1FAE5">Ticket issuance &amp; human receptionist handoff</text>
+    </g>
+
+    <!-- Deployment Badge -->
+    <rect x="620" y="510" width="230" height="22" rx="5" fill="#022C22" stroke="#10B981" stroke-width="1"/>
+    <text x="735" y="525" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="600" fill="#6EE7B7" text-anchor="middle">🐳 Dockerized on Oracle Cloud VPS</text>
+  </g>
+
+  <!-- ==================== STAGE 5: POSTGRESQL / DATABASE ==================== -->
+  <g id="StageDatabase" filter="url(#shadowBox)">
+    <rect x="920" y="210" width="220" height="300" rx="14" fill="url(#cardGradDark)" stroke="#34D399" stroke-width="1.8"/>
+    <rect x="920" y="210" width="220" height="300" rx="14" fill="url(#emeraldCard)"/>
+
+    <!-- Cylindrical DB Icon -->
+    <path d="M 1015 240 C 1015 235 1022 230 1030 230 C 1038 230 1045 235 1045 240 L 1045 265 C 1045 270 1038 275 1030 275 C 1022 275 1015 270 1015 265 Z" fill="#064E3B" stroke="#34D399" stroke-width="1.5"/>
+    <ellipse cx="1030" cy="240" rx="15" ry="5" fill="#059669" stroke="#34D399" stroke-width="1.5"/>
+    <path d="M 1015 252 C 1015 257 1022 261 1030 261 C 1038 261 1045 257 1045 252" fill="none" stroke="#34D399" stroke-width="1.5"/>
+
+    <text x="1030" y="300" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#F8FAFC" text-anchor="middle">PostgreSQL / Supabase</text>
+    <text x="1030" y="318" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#6EE7B7" text-anchor="middle">Single Source of Truth</text>
+
+    <!-- Table Items -->
+    <g transform="translate(938, 335)">
+      <rect x="0" y="0" width="184" height="26" rx="5" fill="#022C22" stroke="#059669" stroke-width="1"/>
+      <text x="12" y="17" font-family="monospace" font-size="10.5" font-weight="600" fill="#A7F3D0">clinic.appointments</text>
+
+      <rect x="0" y="32" width="184" height="26" rx="5" fill="#022C22" stroke="#059669" stroke-width="1"/>
+      <text x="12" y="49" font-family="monospace" font-size="10.5" font-weight="600" fill="#A7F3D0">clinic.doctors &amp; shifts</text>
+
+      <rect x="0" y="64" width="184" height="26" rx="5" fill="#022C22" stroke="#059669" stroke-width="1"/>
+      <text x="12" y="81" font-family="monospace" font-size="10.5" font-weight="600" fill="#A7F3D0">clinic.patients</text>
+
+      <rect x="0" y="96" width="184" height="26" rx="5" fill="#022C22" stroke="#059669" stroke-width="1"/>
+      <text x="12" y="113" font-family="monospace" font-size="10.5" font-weight="600" fill="#A7F3D0">clinic.holidays_offdays</text>
+
+      <rect x="0" y="128" width="184" height="26" rx="5" fill="#022C22" stroke="#059669" stroke-width="1"/>
+      <text x="12" y="145" font-family="monospace" font-size="10.5" font-weight="600" fill="#A7F3D0">clinic.appointment_logs</text>
+    </g>
+
+    <text x="1030" y="495" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="700" fill="#34D399" text-anchor="middle">🛡️ ACID Transactions Guaranteed</text>
+  </g>
+
+  <!-- ==================== FLOW CONNECTORS & ARROWS ==================== -->
+  
+  <!-- 1. Caller to Gateway (Voice/Text) -->
+  <path d="M 145 310 L 145 352" fill="none" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrowCyan)"/>
+  <rect x="155" y="322" width="85" height="18" rx="4" fill="#0F172A" stroke="#38BDF8" stroke-width="0.8"/>
+  <text x="197" y="334" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="600" fill="#38BDF8" text-anchor="middle">Audio Stream / Text</text>
+
+  <!-- 2. Gateway to AI Agent (Transcribed Utterance) -->
+  <path d="M 235 440 L 265 440 L 265 340 L 287 340" fill="none" stroke="#818CF8" stroke-width="2" marker-end="url(#arrowPurple)"/>
+  <rect x="238" y="375" width="55" height="26" rx="4" fill="#0F172A" stroke="#818CF8" stroke-width="0.8"/>
+  <text x="265" y="387" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="700" fill="#A5B4FC" text-anchor="middle">STT Text</text>
+  <text x="265" y="397" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="500" fill="#94A3B8" text-anchor="middle">Event</text>
+
+  <!-- 3. AI Agent to Backend (Typed Tool Invocation) -->
+  <path d="M 535 340 L 592 340" fill="none" stroke="#34D399" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <rect x="540" y="318" width="55" height="20" rx="4" fill="#0F172A" stroke="#34D399" stroke-width="0.8"/>
+  <text x="567" y="331" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="700" fill="#6EE7B7" text-anchor="middle">REST Tool</text>
+
+  <!-- 4. Backend to PostgreSQL (SQL Queries & Atomic Commit) -->
+  <path d="M 870 340 L 912 340" fill="none" stroke="#34D399" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <rect x="874" y="318" width="40" height="20" rx="4" fill="#0F172A" stroke="#34D399" stroke-width="0.8"/>
+  <text x="894" y="331" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="700" fill="#6EE7B7" text-anchor="middle">SQL</text>
+
+  <!-- 5. PostgreSQL Return to Backend -->
+  <path d="M 920 380 L 878 380" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="3 3" marker-end="url(#arrowReturn)"/>
+  <text x="899" y="395" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="500" fill="#94A3B8" text-anchor="middle">Row Data</text>
+
+  <!-- 6. Backend Return to AI Agent (Tool Result) -->
+  <path d="M 600 380 L 543 380" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="3 3" marker-end="url(#arrowReturn)"/>
+  <text x="571" y="395" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="500" fill="#94A3B8" text-anchor="middle">JSON Result</text>
+
+  <!-- 7. AI Agent to Gateway (Synthesized Response) -->
+  <path d="M 295 400 L 265 400 L 265 480 L 243 480" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="3 3" marker-end="url(#arrowReturn)"/>
+  <text x="265" y="445" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="500" fill="#94A3B8" text-anchor="middle">TTS Input</text>
+
+  <!-- 8. Gateway to Patient (Final Audio/Text Stream) -->
+  <path d="M 90 360 L 90 318" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="3 3" marker-end="url(#arrowCyan)"/>
+  <text x="60" y="340" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="600" fill="#38BDF8" text-anchor="middle">Audio Stream</text>
+
+  <!-- Footer Banner / Architectural Takeaway -->
+  <rect x="150" y="625" width="900" height="34" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="646" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="600" fill="#CBD5E1" text-anchor="middle">
+    Key Takeaway: The AI acts solely as an orchestrator. All clinical validation, state mutations, and slot allocations are executed deterministically by FastAPI and PostgreSQL.
+  </text>
+
+</svg>

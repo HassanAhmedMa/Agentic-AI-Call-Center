@@ -1,14 +1,9 @@
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff' }}}%%
 stateDiagram-v2
-    [*] --> Scheduled: POST /appointments (Slot Confirmed)
-    
-    Scheduled --> Completed: Clinic Visit Attended & Concluded
-    Scheduled --> Cancelled: DELETE /appointments/{id} (Patient / Clinic Cancelled)
-    Scheduled --> NoShow: Patient Missed Appointment Window
-    
-    Scheduled --> Rescheduled: PATCH /appointments/{id} (New Slot Requested)
-    Rescheduled --> Scheduled: New Slot Validated & Reserved
-
-    Completed --> [*]: Final State
-    Cancelled --> [*]: Final State (Slot Freed)
-    NoShow --> [*]: Final State
+    [*] --> Scheduled: Verified POST /patients/me/appointments
+    Scheduled --> Scheduled: POST reschedule - atomic time_changed history
+    Scheduled --> Cancelled: POST cancel - ownership and four-hour cutoff
+    Scheduled --> Completed: Staff operation - later authenticated contract
+    Scheduled --> NoShow: Staff operation - later authenticated contract
+    Completed --> [*]
+    Cancelled --> [*]
+    NoShow --> [*]

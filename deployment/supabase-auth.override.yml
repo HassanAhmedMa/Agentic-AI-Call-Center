@@ -1,0 +1,13 @@
+# Layer onto /srv/supabase/docker-compose.yml after paired application deployment.
+# No SMTP credentials here: retain the existing protected Supabase .env.
+services:
+  auth:
+    environment:
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_HOOK_SEND_EMAIL_ENABLED: "false"
+      GOTRUE_MAILER_OTP_LENGTH: "6"
+      GOTRUE_MAILER_OTP_EXP: "3600"
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Nile Clinics · كود تأكيد البريد"
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Nile Clinics · كود تسجيل الدخول"
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: "http://clinic-backend:8000/identity-assets/supabase-otp.html"
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: "http://clinic-backend:8000/identity-assets/supabase-otp.html"

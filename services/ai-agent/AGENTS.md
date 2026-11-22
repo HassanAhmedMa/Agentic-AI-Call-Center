@@ -13,9 +13,9 @@ The AI Agent orchestrator is the reasoning core of the simulated clinic assistan
 - Interprets caller utterances across English, MSA, and Egyptian Arabic.
 - Maintains multi-turn conversation state and session context.
 - Invokes approved tools according to schemas defined in `docs/architecture/tool-schemas.md`.
-- Solicits explicit user confirmation before executing state-altering tools (`book_appointment`, `cancel_appointment`, `reschedule_appointment`).
+- Uses `propose_booking`, `propose_cancellation`, `propose_reschedule` and `propose_ticket`, then `confirm_pending_action` after delivered summary and a new affirmative caller turn.
 - Uses `services/rag` for informational clinic inquiries.
-- Immediately escalates to human personnel (`transfer_to_human`) for medical emergencies or on patient demand.
+- Requests escalation (truthfully reports unavailable/queued/connected state) (`transfer_to_human`) for medical emergencies or on patient demand.
 
 ---
 
@@ -27,7 +27,7 @@ The AI Agent orchestrator is the reasoning core of the simulated clinic assistan
 2. **Strict Tool Schemas:**
    - Tools must match `docs/architecture/tool-schemas.md` in name, input parameters, and output contracts.
 3. **Confirmation Guardrails:**
-   - Before executing `book_appointment`, `cancel_appointment`, or `reschedule_appointment`, the agent MUST formulate an explicit confirmation query and receive patient confirmation.
+   - The deterministic dispatcher enforces the proposal/session/delivery/turn checks and replay lifecycle in tool-schemas §3. The LLM never supplies identity, credentials, OTPs or idempotency keys. Negative or ambiguous answers never authorize execution.
 4. **Provider Abstraction:**
    - LLM model invocation must sit behind a clean adapter interface (`LLMProvider`) to ensure seamless model swapping (OpenAI, Anthropic, Google, local models).
 5. **No Medical Diagnoses:**

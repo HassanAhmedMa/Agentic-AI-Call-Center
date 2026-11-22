@@ -42,15 +42,15 @@ This audit evaluates all planned architectural components against a strict feasi
 | **13** | **WebSockets for Audio Streaming** | **GREEN** | Standard browser/server duplex streaming for PCM audio chunks. | Use FastAPI WebSocket endpoint for audio transport. | Phase 1 |
 | **14** | **WebRTC Media Server** | **RED** | Extreme complexity: requires ICE/STUN/TURN infrastructure, SDP signaling, and media server ops. | **REMOVE WebRTC requirement.** Replace with standard WebSocket audio streaming. | Immediate (ADR-002) |
 | **15** | **PSTN / Telephony (Twilio / SIP)** | **RED** | High financial cost, Egyptian telecom regulatory hurdles, complex SIP trunking. | **REMOVE live telephony requirement.** Provide browser-based call simulator widget for live demo. | Immediate (ADR-002) |
-| **16** | **JWT Authentication** | **GREEN** | Standard token-based auth for patient/staff sessions. | Keep simple: signed JWT bearer token containing `patient_id` and role. | Phase 1 |
+| **16** | **Conversation-bound Authentication** | **GREEN** | Standard token-based auth for patient/staff sessions. | ADR-003 proposes opaque conversation tokens and backend patient-session bindings; email OTP from Phase 1, no patient token in model context. Staff auth is specified separately. | Phase 1 |
 | **17** | **Role-Based Authorization (RBAC)** | **YELLOW** | Risk of over-complicating permissions with granular matrices. | Simplify to 2 roles: `patient` and `clinic_staff`. Enforced strictly at the REST API layer. | Phase 1 |
 | **18** | **API Versioning** | **GREEN** | Minimal overhead. Standard `/api/v1` URL prefix. | Adopt as standard. | Immediate |
-| **19** | **Controlled Tool Calling** | **GREEN** | Core architectural foundation. Protects DB from LLM hallucination. | 13 explicit JSON Schema tools mapping to REST endpoints. | Immediate |
+| **19** | **Controlled Tool Calling** | **GREEN** | Core architectural foundation. Protects DB from LLM hallucination. | 19 state-filtered tools, with deterministic propose/confirm execution and explicit API DTO mapping. | Immediate |
 | **20** | **Session State Management** | **GREEN** | Bounded dialogue history and active slot memory. | Keep session memory limited to active booking intent and last 10 turns. | Phase 1 |
-| **21** | **Human Escalation / Handoff** | **GREEN** | High value for clinical safety and project demonstration. | Deliver as a WebSocket handoff event + UI reception queue alert (not physical call forwarding). | Phase 1 |
+| **21** | **Human Escalation / Handoff** | **GREEN** | High value for clinical safety and project demonstration. | Deliver as a Truthful unavailable fallback in Phase 1; authenticated reception queue contract and implementation in Phase 2. | Phase 2 |
 | **22** | **Evaluation Framework** | **YELLOW** | Risk of spending weeks building custom evaluation harnesses. | Use an offline Python evaluation script with 50 curated synthetic test transcripts. | Phase 1 |
 | **23** | **Distributed Observability (OTel/Jaeger)**| **RED** | Massive overhead configuring OpenTelemetry collectors and tracing collectors. | **REMOVE distributed tracing.** Use structured JSON logging to stdout with correlated `trace_id`. | Immediate (ADR-002) |
-| **24** | **Docker & Docker Compose** | **GREEN** | Standardizes local development environment for 5 students. | Maintain lightweight `docker-compose.yml` for PostgreSQL and Redis. | Immediate |
+| **24** | **Docker & Docker Compose** | **GREEN** | Standardizes local development environment for 5 students. | Maintain lightweight `docker-compose.yml` for PostgreSQL, Redis and local Mailpit. | Immediate |
 | **25** | **CI/CD Automation** | **GREEN** | Essential for preventing regressions when 5 students merge code. | Automated linting, repo validation, and unit tests on GitHub Actions. | Immediate |
 
 ---

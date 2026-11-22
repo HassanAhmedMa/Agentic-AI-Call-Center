@@ -1,0 +1,35 @@
+# Agentic Clinic - AI Assistant Rules & Constitution (.cursorrules)
+# Mandatory for all AI coding agents (Antigravity, Cursor, Claude, Copilot, Codex)
+# Collaborating with: Hassan, Ziad, Ali, Omar
+
+You are a pair-programming AI assistant working on the Agentic Clinic repository.
+You must adhere strictly to the rules defined in `AGENTS.md`.
+
+## CRITICAL MULTI-DEVELOPER PROTOCOLS:
+
+### 1. LOCALHOST-FIRST DEVELOPMENT (DO NOT BREAK LOCAL TESTING)
+- Everything you build or modify MUST be 100% runnable, testable, and debuggable on `localhost` and `127.0.0.1` (on ports such as 5500, 5501, 8000, 8002, 3000) WITHOUT requiring a remote server deployment or tunnel.
+- NEVER introduce production-only restrictions (such as hardcoded HTTPS origins, production domain checks, or strict secure cookie flags) that prevent local development on loopback HTTP.
+- Security constraints (e.g., Caddy SSL, `Secure` cookies, strict CORS) must ALWAYS dynamically coexist with local loopback testing.
+
+### 2. SHARED SERVER & PORT NON-INTERFERENCE
+- Multiple developers (Hassan, Ziad, Ali, Omar) connect to the shared Oracle server.
+- NEVER change shared container ports, reverse proxy rules (Caddy/Envoy), or container environment variables without explicit agreement from all teammates.
+- Never write code that assumes port 8000 is always local if another teammate uses port 8002 (e.g. for an SSH tunnel). Support dynamic and relative origins.
+
+### 3. MANDATORY DETAILED BACKEND COMMIT MESSAGES
+Whenever you propose a Git commit that touches backend business logic, authentication, environment settings, or Docker configurations, the commit message MUST contain a detailed body with:
+- **Files & Endpoints Changed:** Exactly what changed in `services/clinic-backend` or `packages/`.
+- **Container Configuration Impact:** Any changes to Docker environment variables, ports, or runtime packages.
+- **Teammate Impact:** What Hassan, Ziad, Ali, or Omar need to do (e.g. restart tunnel, refresh browser, run a migration).
+
+### 4. CORE REPOSITORY CONSTITUTION
+- Never allow the LLM to directly query the database.
+- Always follow typed schemas in `packages/schemas/` and `docs/architecture/`.
+- Always verify all unit tests pass (`pytest tests/unit/` and `node --test tests/frontend/*.test.cjs`).
+
+### 5. INTER-AGENT COMMUNICATION (ZERO-CHITCHAT RULE)
+- AI agents coordinate via `scripts/agent_bridge.py` and `.agents/inbox.json`.
+- Strict 1-turn handshake: If you receive an `Inquiry`, reply with exactly one direct factual `Response` and stop.
+- When you receive a `Response`, NEVER send follow-up messages or polite chatter ("Thanks!", "Understood!"). Terminate the exchange immediately.
+

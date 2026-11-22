@@ -11,7 +11,7 @@ All diagrams are rendered with an **opaque solid white canvas** for high-contras
 - **Vector Image:** [`seq-appointment-booking.svg`](seq-appointment-booking.svg)
 - **High-Res PNG:** [`seq-appointment-booking.png`](seq-appointment-booking.png)
 - **Source File:** [`seq-appointment-booking.mmd`](seq-appointment-booking.mmd)
-- **Key Flow:** Dialectal Arabic voice input ➔ Intent extraction ➔ `find_doctors` ➔ `get_doctor_availability` ➔ Conversational option summary ➔ Patient selection ➔ Mandatory confirmation ➔ Atomic database transaction via `POST /appointments`.
+- **Key Flow:** Dialectal Arabic voice input ➔ Intent extraction ➔ `find_doctors` ➔ `get_doctor_availability` ➔ Conversational option summary ➔ Patient selection ➔ Mandatory confirmation ➔ Atomic database transaction via `POST /patients/me/appointments`.
 
 ---
 
@@ -19,7 +19,7 @@ All diagrams are rendered with an **opaque solid white canvas** for high-contras
 ![Appointment Cancellation](seq-appointment-cancellation.svg)
 - **Vector Image:** [`seq-appointment-cancellation.svg`](seq-appointment-cancellation.svg)
 - **Source File:** [`seq-appointment-cancellation.mmd`](seq-appointment-cancellation.mmd)
-- **Key Flow:** Cancellation request ➔ Appointment retrieval ➔ **Mandatory confirmation guardrail** ("Are you sure you want to cancel?") ➔ Explicit user confirmation ➔ Soft delete via `DELETE /appointments/{id}` ➔ Slot freed in database.
+- **Key Flow:** Cancellation request ➔ Appointment retrieval ➔ **Mandatory confirmation guardrail** ("Are you sure you want to cancel?") ➔ Explicit user confirmation ➔ Soft delete via `POST /patients/me/appointments/{id}/cancel` ➔ Slot freed in database.
 
 ---
 
@@ -35,7 +35,7 @@ All diagrams are rendered with an **opaque solid white canvas** for high-contras
 ![Predefined Safety Escalation](seq-human-handoff.svg)
 - **Vector Image:** [`seq-human-handoff.svg`](seq-human-handoff.svg)
 - **Source File:** [`seq-human-handoff.mmd`](seq-human-handoff.mmd)
-- **Key Flow:** User reports acute symptoms / requests human ➔ Predefined safety rule trigger (non-diagnostic) ➔ `transfer_to_human` tool invocation ➔ WebSocket alert on clinic staff dashboard ➔ Non-clinical safety advisory to caller ➔ Receptionist accepts and bridges call.
+- **Key Flow:** User reports acute symptoms / requests human ➔ Predefined safety rule trigger (non-diagnostic) ➔ `transfer_to_human` tool invocation ➔ Phase 1 truthful unavailable response; Phase 2 authenticated queue and separate connection state.
 
 ---
 

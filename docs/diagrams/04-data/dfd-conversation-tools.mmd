@@ -36,3 +36,6 @@ flowchart LR
 
     P2_NLU -->|"6. Natural Language Response Text"| P4_TTS
     P4_TTS -->|"7. Audio Chunks / Text Message"| Caller
+
+    BrowserForm["Browser code box and registration form"] -->|"Direct HTTPS, no speech or LLM"| P3_Backend
+    P3_Backend -->|"Sanitized verification state"| P2_NLU

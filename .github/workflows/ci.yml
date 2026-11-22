@@ -1,8 +1,8 @@
-name: Repository Foundation CI
+name: Repository and Backend CI
 
 on:
   push:
-    branches: [ main, feature/**, fix/**, refactor/**, experiment/**, docs/** ]
+    branches: [ main, feature/**, fix/**, refactor/**, experiment/**, docs/**, codex/** ]
   pull_request:
     branches: [ main ]
 
@@ -25,8 +25,8 @@ jobs:
 
       - name: Check for Uncommitted Secrets & Sensitive Files
         run: |
-          # Verify .env is not committed and no obvious API keys exist
-          if [ -f .env ]; then
+          # Verify .env is not tracked; local ignored env is allowed.
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
             echo "ERROR: .env file found in repository! Real secrets must never be committed."
             exit 1
           fi
@@ -34,5 +34,58 @@ jobs:
 
       - name: Verify Docker Compose Configuration Syntax
         run: |
-          docker compose config -q
+          docker compose --profile backend config -q
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile backend config -q
           echo "docker-compose.yml syntax is valid."
+
+  backend:
+    name: Catalog, Identity and PostgreSQL Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: clinic_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: clinic_test
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U clinic_test -d clinic_test"
+          --health-interval 5s --health-timeout 5s --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://clinic_test:synthetic_test_password@localhost:55432/clinic_test
+      COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml
+      COMPOSE_PROJECT_NAME: clinic-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend and test tools
+        run: python -m pip install -e '.[dev]'
+      - name: Check lint, formatting and types
+        run: |
+          python -m ruff check services/clinic-backend/src packages/schemas/src tests/unit tests/integration database/migrations
+          python -m black --check services/clinic-backend/src packages/schemas/src tests/unit tests/integration database/migrations
+          python -m mypy
+      - name: Patient frontend auth tests
+        run: node --test tests/frontend/portal-auth.test.cjs
+      - name: Unit and real PostgreSQL integration tests
+        run: python -m pytest -q
+      - name: Build backend image
+        run: docker compose --profile backend build clinic-backend
+      - name: Container migration and bilingual smoke test
+        run: |
+          docker compose up -d database
+          python scripts/setup_identity_dev.py
+          docker compose up -d mailpit
+          docker compose --profile backend run --rm clinic-backend python -m alembic upgrade head
+          docker compose --profile backend run --rm clinic-backend python -m clinic_backend.seed
+          docker compose --profile backend up -d clinic-backend
+          curl --retry 10 --retry-delay 2 --retry-all-errors --fail http://localhost:8000/api/v1/health/ready
+          curl --fail --get --data-urlencode 'q=قلب' http://localhost:8000/api/v1/doctors
+          python scripts/smoke_identity.py
+          python scripts/smoke_availability.py
+      - name: Stop containers
+        if: always()
+        run: docker compose --profile backend down

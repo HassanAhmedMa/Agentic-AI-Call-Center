@@ -1,0 +1,10 @@
+{
+  "_notice": "Opt-in fictional scheduling demo. Offsets are relative to the chosen Cairo base date. No patients or appointments.",
+  "closures": [
+    {"day_offset": 6, "reason_en": "Synthetic maintenance day", "reason_ar": "يوم صيانة تجريبي"}
+  ],
+  "time_off": [
+    {"doctor_id": 1, "day_offset": 1, "start_time": "12:00", "end_time": "13:00", "reason": "Synthetic partial leave"},
+    {"doctor_id": 2, "day_offset": 3, "start_time": null, "end_time": null, "reason": "Synthetic full-day leave"}
+  ]
+}

@@ -59,3 +59,5 @@ flowchart TB
     %% Inviolable Boundary Annotations
     DialogueManager -.-x|"❌ ZERO DIRECT SQL ACCESS"| PostgresDB
     Retriever -.-x|"❌ ZERO MUTATION ACCESS"| PostgresDB
+
+    WebUI -->|"Direct registration and typed code HTTPS"| RESTControllers

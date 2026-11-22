@@ -64,7 +64,7 @@ Under no circumstances does the AI Agent, LLM, or RAG retriever communicate dire
 ### 3.1. Voice Layer (`services/voice`)
 - **Role:** Bridges audio streams between the user and the system.
 - **Key Responsibilities:**
-  - Manages real-time audio input/output via WebSocket or WebRTC.
+  - Manages real-time audio input/output via browser WebSockets (ADR-002).
   - Performs Speech-to-Text (STT) and Text-to-Speech (TTS) through a pluggable `VoiceProvider` interface.
   - Detects caller interruption (barge-in) and immediately halts outgoing audio.
   - Supports English, Modern Standard Arabic (MSA), and Egyptian Arabic phonetics.
@@ -93,7 +93,7 @@ Under no circumstances does the AI Agent, LLM, or RAG retriever communicate dire
   - Exposes RESTful endpoints defined in `docs/architecture/api-contracts.md`.
   - Enforces schedule constraints (e.g., preventing double-booking, verifying doctor working hours).
   - Manages patient accounts, doctor rosters, appointments, services, and support tickets.
-  - Issues cryptographic tokens (JWT) and validates request permissions.
+  - Issues opaque conversation tokens, binds server-side verified patient sessions, and validates service authentication plus patient ownership (ADR-003).
 - **Boundaries:** Completely decoupled from the LLM. Operates as a standard, secure web API that could serve web, mobile, or third-party consumers.
 
 ### 3.5. Persistence Layer (`database/`)
@@ -107,7 +107,7 @@ Under no circumstances does the AI Agent, LLM, or RAG retriever communicate dire
 
 | Source | Destination | Protocol / Interface | Contract Reference |
 | :--- | :--- | :--- | :--- |
-| User Client | Voice Layer | WebSockets / WebRTC / HTTP Audio | `docs/architecture/voice-architecture.md` |
+| User Client | Voice Layer | Browser WSS audio / HTTPS forms | `docs/architecture/voice-architecture.md` |
 | Voice Layer | AI Agent | Async Event Bus / Internal HTTP / WS | `docs/architecture/voice-architecture.md` |
 | AI Agent | Tools | Structured Function Calling | `docs/architecture/tool-schemas.md` |
 | Tools | Clinic Backend | HTTP/1.1 REST (JSON) | `docs/architecture/api-contracts.md` |
@@ -121,3 +121,5 @@ Under no circumstances does the AI Agent, LLM, or RAG retriever communicate dire
 1. **Isolation of Failures:** A failure in speech recognition or RAG retrieval does not crash the clinic backend. The agent falls back to asking the user to repeat or transfers to human support.
 2. **Deterministic Fallbacks:** When the LLM generates an invalid tool call or encounters a backend 4xx/5xx error, the error is parsed deterministically and explained naturally to the user.
 3. **Session Expiry & Data Minimization:** Audio buffers are processed in memory and not permanently retained on disk. No real patient data is permitted in the system.
+
+The browser submits registration forms and email codes directly to the clinic backend; they bypass the voice and agent services. See ADR-003 and [implementation-roadmap.md](../development/implementation-roadmap.md) for proposed identity changes and phase gates.

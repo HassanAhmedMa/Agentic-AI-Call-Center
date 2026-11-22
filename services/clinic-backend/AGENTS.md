@@ -42,6 +42,6 @@ This service is the **sole authority for clinic business rules and database muta
 
 ---
 
-## 4. Phase 0 Status
+## 4. Initial Phase 1 Status
 
-Do NOT implement the full service in Phase 0. Ensure that any future PR implements endpoints strictly matching the documented contracts.
+Public catalog, health, conversations, registration/email verification, patient bindings, profile/logout and the bilingual registration page are implemented. Conversation end/expiry revokes identity. Public availability/search and revision 0004 scheduling persistence are implemented and deployed to Oracle at 0004 after user approval. Booking writes and agent operations remain planned. Reuse slot_rules.py for later booking validation, inside transaction/ownership/limit checks. Local SMTP/Mailpit and authenticated n8n delivery adapters are implemented. Oracle uses the published n8n workflow; credentials remain outside source control.

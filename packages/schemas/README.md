@@ -2,6 +2,8 @@
 
 Single source of truth for shared data schemas, request/response models, and AI tool parameter contracts across the monorepo.
 
+The initial implementation in `src/clinic_schemas/catalog.py` provides Pydantic v2 public catalog request/response DTOs. Install from the repository root with `python -m pip install -e '.[dev]'`. Other DTOs and TypeScript definitions remain planned.
+
 ## Purpose
 - Contains shared Pydantic v2 and TypeScript type definitions for:
   - Backend API Data Transfer Objects (DTOs) from `docs/architecture/api-contracts.md`

@@ -10,7 +10,7 @@ flowchart TD
 
     subgraph IntelligenceTier [" Intelligence & Orchestration Tier (services/ai-agent) "]
         AgentOrchestrator["AI Agent Orchestrator\n- Turn Management & Context Tracker\n- Multilingual Intent & Slot Extractor (AR / EN)\n- Safety Rules & Escalation Triage Engine"]
-        ToolCaller["Controlled Tool Dispatcher\n(Validates 13 Typed Tool Schemas & User Confirmation)"]
+        ToolCaller["Controlled Tool Dispatcher\n(Validates 19 State-filtered Schemas; Proposal Delivery and Confirmation)"]
         AgentOrchestrator --> ToolCaller
     end
 
@@ -40,3 +40,5 @@ flowchart TD
 
     %% Strict Negative Constraint Note
     AgentOrchestrator -.-x|"❌ NEVER DIRECTLY ACCESSES"| PostgresDB
+
+    Client -->|"Direct registration and typed code HTTPS"| ClinicAPI

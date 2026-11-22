@@ -1,7 +1,7 @@
 # AGENTS.md - Voice Layer Guidelines for AI Coding Agents
 
-> **SERVICE:** `services/voice`  
-> **DOMAIN:** Real-time Audio Streaming, STT, TTS, Interruption Detection & Telephony  
+> **SERVICE:** `services/voice`
+> **DOMAIN:** Real-time Audio Streaming, STT, TTS, Interruption Detection & Browser Calls
 > **CONTRACT REFERENCE:** [docs/architecture/voice-architecture.md](../../docs/architecture/voice-architecture.md)
 
 ---
@@ -9,7 +9,7 @@
 ## 1. Service Responsibilities
 
 The Voice service is responsible for real-time bidirectional audio transport between the patient and the AI Agent.
-- Manages audio streaming via WebSockets / WebRTC.
+- Manages audio streaming via browser WebSockets (ADR-002; telephony deferred).
 - Converts inbound speech to text (STT) and outbound responses to audio (TTS).
 - Detects user interruption (barge-in) and immediately cuts off playback.
 - Supports Egyptian Arabic and English acoustic models.
@@ -33,5 +33,7 @@ The Voice service is responsible for real-time bidirectional audio transport bet
 ## 3. Technology Stack (Phase 1+)
 
 - **Language:** Python 3.11+ or Node.js / TypeScript (FastAPI / WebSockets)
-- **Protocols:** WebSockets / WebRTC
+- **Protocols:** browser WebSockets (ADR-002; telephony deferred)
 - **Audio Standards:** Linear PCM 16kHz / 24kHz, 16-bit mono
+
+Identity/control events, resume, OTP transcript redaction and direct browser forms follow voice-architecture §5. No verification code is routed to the agent.
