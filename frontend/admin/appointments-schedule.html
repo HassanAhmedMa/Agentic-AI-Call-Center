@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Shiffaa Clinics - Appointments Schedule & Agenda</title>
+
+  <!-- Typography: Inter for UI & Cairo for Arabic details -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css?v=2.3">
+
+  <style>
+    /* =========================================================================
+       APPOINTMENTS SCHEDULE & AGENDA VIEW STYLING
+       ========================================================================= */
+    .view-mode-pill-group {
+      display: inline-flex;
+      background: #F1F5F9;
+      padding: 4px;
+      border-radius: 10px;
+      gap: 4px;
+      border: 1px solid #E2E8F0;
+    }
+    .view-mode-pill {
+      background: transparent;
+      border: none;
+      padding: 7px 16px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748B;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .view-mode-pill:hover {
+      color: #0F172A;
+    }
+    .view-mode-pill.active {
+      background: #FFFFFF;
+      color: #2563EB;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    .btn-switch-classic {
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      color: #334155;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .btn-switch-classic:hover {
+      background: #EFF6FF;
+      color: #2563EB;
+      border-color: #93C5FD;
+    }
+
+    /* Date & Filter Ribbon */
+    .schedule-control-ribbon {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+    .date-stepper-cluster {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .date-nav-btn {
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.15s ease;
+    }
+    .date-nav-btn:hover {
+      background: #EFF6FF;
+      color: #2563EB;
+      border-color: #93C5FD;
+    }
+    .date-picker-box {
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F172A;
+      font-family: inherit;
+      outline: none;
+      background: #FFFFFF;
+    }
+    .date-picker-box:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+    .date-quick-btn {
+      background: #F1F5F9;
+      border: 1px solid transparent;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .date-quick-btn:hover {
+      background: #E2E8F0;
+      color: #0F172A;
+    }
+    .date-quick-btn.active {
+      background: #EFF6FF;
+      color: #2563EB;
+      border-color: #BFDBFE;
+    }
+
+    /* DOCTOR ROSTER SPLIT LAYOUT (VIEW 1) */
+    .roster-split-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1080px) {
+      .roster-split-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Doctor Roster Card */
+    .doctor-roster-panel {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+      max-height: 820px;
+      display: flex;
+      flex-direction: column;
+    }
+    .roster-search-box {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .roster-search-input {
+      width: 100%;
+      height: 38px;
+      padding: 0 12px 0 34px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .roster-search-input:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+    .roster-search-icon {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      color: #94A3B8;
+      width: 16px;
+      height: 16px;
+    }
+    .doctor-roster-list {
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .doctor-roster-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: #FFFFFF;
+    }
+    .doctor-roster-item:hover {
+      background: #F8FAFC;
+      border-color: #E2E8F0;
+    }
+    .doctor-roster-item.active {
+      background: #EFF6FF;
+      border-color: #93C5FD;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
+    }
+    .roster-doc-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #E2E8F0;
+      object-fit: cover;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #2563EB;
+      font-size: 16px;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .roster-doc-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .roster-doc-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F172A;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .roster-doc-sub {
+      font-size: 12px;
+      color: #64748B;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .roster-appt-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    .roster-appt-pill.has-appts {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+    .roster-appt-pill.free {
+      background: #F1F5F9;
+      color: #94A3B8;
+    }
+
+    /* Right Schedule Timeline Panel */
+    .schedule-timeline-panel {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+      min-height: 700px;
+    }
+    .doc-hero-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #F1F5F9;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    .doc-hero-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .doc-hero-img {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #EFF6FF;
+      border: 2px solid #DBEAFE;
+    }
+    .doc-hero-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .doc-hero-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #475569;
+    }
+    .badge-specialty {
+      background: #EFF6FF;
+      color: #2563EB;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .badge-shift {
+      background: #F1F5F9;
+      color: #475569;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    /* Chronological Timeline Slots */
+    .timeline-feed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .timeline-appt-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+    @media (max-width: 640px) {
+      .timeline-appt-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .timeline-time-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .timeline-time-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .timeline-time-dur {
+      font-size: 11px;
+      color: #64748B;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .timeline-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-left: 4px solid #2563EB;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .timeline-card:hover {
+      box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+      border-color: #CBD5E1;
+      border-left-color: #1D4ED8;
+    }
+    .timeline-card.status-cancelled {
+      border-left-color: #EF4444;
+      background: #FEF2F2;
+      opacity: 0.85;
+    }
+    .timeline-card.status-completed {
+      border-left-color: #10B981;
+    }
+    .timeline-patient-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .patient-avatar-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #EFF6FF;
+      color: #2563EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .patient-info-col {
+      min-width: 0;
+    }
+    .patient-name-link {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .patient-file-tag {
+      font-size: 11px;
+      background: #F1F5F9;
+      color: #64748B;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .patient-contact-row {
+      font-size: 12px;
+      color: #64748B;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .patient-contact-row a {
+      color: #2563EB;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .patient-contact-row a:hover {
+      text-decoration: underline;
+    }
+    .timeline-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-appt-action {
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .btn-appt-action:hover {
+      background: #EFF6FF;
+      color: #2563EB;
+      border-color: #93C5FD;
+    }
+    .btn-appt-cancel {
+      color: #DC2626;
+      border-color: #FECACA;
+      background: #FEF2F2;
+    }
+    .btn-appt-cancel:hover {
+      background: #FEE2E2;
+      color: #B91C1C;
+    }
+
+    /* Available slot placeholder bar */
+    .timeline-available-slot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px dashed #CBD5E1;
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: #64748B;
+      font-size: 12px;
+      font-weight: 600;
+      background: #F8FAFC;
+      transition: all 0.15s ease;
+    }
+    .timeline-available-slot:hover {
+      border-color: #93C5FD;
+      background: #EFF6FF;
+      color: #2563EB;
+    }
+    .btn-book-slot-fast {
+      background: #2563EB;
+      color: #FFFFFF;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* AGENDA TABLE (VIEW 2) */
+    .agenda-table-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    }
+    .clinical-agenda-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 10px;
+    }
+    .clinical-agenda-table th {
+      background: #F8FAFC;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 14px;
+      border-bottom: 2px solid #E2E8F0;
+      text-align: left;
+    }
+    .clinical-agenda-table td {
+      padding: 14px;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 13px;
+      color: #0F172A;
+      vertical-align: middle;
+    }
+    .clinical-agenda-table tr:hover td {
+      background: #F8FAFC;
+    }
+
+    /* KANBAN STATUS FLOW (VIEW 3) */
+    .kanban-flow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 1200px) {
+      .kanban-flow-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .kanban-flow-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .kanban-col {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 550px;
+      display: flex;
+      flex-direction: column;
+    }
+    .kanban-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #E2E8F0;
+      margin-bottom: 12px;
+    }
+    .kanban-col-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .kanban-col-badge {
+      background: #E2E8F0;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .kanban-cards-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+    .kanban-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      cursor: grab;
+      transition: all 0.15s ease;
+    }
+    .kanban-card:hover {
+      box-shadow: 0 3px 8px rgba(0,0,0,0.07);
+      border-color: #93C5FD;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Admin Main Layout Grid -->
+  <div class="admin-layout">
+
+    <!-- =========================================================================
+         LEFT SIDEBAR NAVIGATION
+         ========================================================================= -->
+    <aside class="admin-sidebar">
+      
+      <!-- Top Brand Header -->
+      <div class="sidebar-brand-box">
+        <img src="logo.png" alt="Shiffaa" class="brand-logo-img" style="width:34px; height:34px; object-fit:contain; flex-shrink:0;">
+        <div class="brand-text-col">
+          <h2 class="brand-title">Shiffaa Clinics</h2>
+          <span class="brand-subtitle">AI Call Center</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <!-- 1. Dashboard -->
+        <a href="index.html" class="nav-link" id="nav-dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22" fill="#FFFFFF"/>
+          </svg>
+          <span class="nav-text">Dashboard</span>
+        </a>
+
+        <!-- 2. Live Calls -->
+        <a href="live-calls.html" class="nav-link" id="nav-live-calls">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="nav-text">Live Calls</span>
+        </a>
+
+        <!-- 3. Appointments (Active Tab) -->
+        <a href="appointments-schedule.html" class="nav-link active" id="nav-appointments">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="nav-text">Appointments</span>
+        </a>
+
+        <!-- 4. Doctors (Live Supabase Catalog) -->
+        <a href="doctors.html" class="nav-link" id="nav-doctors">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M3 11h6"/>
+            <path d="M6 8v6"/>
+          </svg>
+          <span class="nav-text">Doctors</span>
+          <span class="nav-badge-blue" id="doctorsCountBadge">12</span>
+        </a>
+
+        <!-- 5. Patients -->
+        <a href="patients.html?v=live_v3" class="nav-link" id="nav-patients">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="nav-text">Patients</span>
+        </a>
+
+        <!-- 6. Knowledge Base -->
+        <a href="index.html#knowledge" class="nav-link" id="nav-knowledge">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+          <span class="nav-text">Knowledge Base</span>
+        </a>
+
+        <!-- 7. Documents -->
+        <a href="index.html#documents" class="nav-link" id="nav-documents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          <span class="nav-text">Documents</span>
+        </a>
+
+        <!-- 8. Analytics -->
+        <a href="index.html#analytics" class="nav-link" id="nav-analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <!-- 9. Operators -->
+        <a href="operators.html" class="nav-link" id="nav-operators">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-text">Operators</span>
+        </a>
+
+        <!-- 10. Settings -->
+        <a href="index.html#settings" class="nav-link" id="nav-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom Cluster -->
+      <div class="sidebar-bottom-cluster">
+        <div class="branch-switcher-pill" onclick="handleBranchChange()">
+          <div class="branch-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="branch-name" id="currentBranchName">Main Clinic</span>
+        </div>
+
+        <div class="admin-profile-pill">
+          <div class="admin-avatar-circle">A</div>
+          <div class="admin-profile-meta">
+            <span class="admin-user-name">Ahmed Salah</span>
+            <span class="admin-user-role">Administrator</span>
+          </div>
+        </div>
+
+        <button class="logout-btn" onclick="handleLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================================
+         MAIN ADMIN CONTENT WORKSPACE
+         ========================================================================= -->
+    <div class="admin-main-viewport">
+      
+      <!-- Top Search & Status Bar -->
+      <header class="admin-top-bar">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="scheduleGlobalSearch" placeholder="Search patient name, phone, code, or doctor..." autocomplete="off">
+          <span class="shortcut-tag">Ctrl K</span>
+        </div>
+
+        <div class="top-bar-right">
+          <div class="api-status-badge" id="apiStatusBadge" onclick="openApiConfigModal()" title="FastAPI Connection Status">
+            <span class="status-indicator-dot dot-connecting" id="apiStatusDot"></span>
+            <span class="status-indicator-text" id="apiStatusText">Live Backend: Connected</span>
+          </div>
+
+          <button class="top-bell-btn" title="Alerts & Notifications" onclick="toggleNotifications()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="bell-red-badge"></span>
+          </button>
+
+          <div class="live-clock-box">
+            <span class="live-date" id="liveDateText">Today</span>
+            <span class="live-time" id="liveTimeText">--:--</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Workspace Body -->
+      <main class="dashboard-scroll-body">
+        
+        <!-- Header Row with View Switcher & Action Buttons -->
+        <div class="live-calls-header-row" style="margin-bottom: 16px;">
+          <div class="live-calls-title-group">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap: wrap;">
+              <h1 class="live-calls-main-title" style="margin: 0;">Appointments Schedule & Roster</h1>
+              <span style="background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #BFDBFE;">New Experience</span>
+            </div>
+            <p class="live-calls-subtext">Doctor-centric patient timelines, structured clinical agendas, and arrival flow without horizontal grid clutter.</p>
+          </div>
+
+          <div class="appointments-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <!-- View Mode Switcher Pill Group -->
+            <div class="view-mode-pill-group">
+              <button type="button" class="view-mode-pill active" id="btnModeDoctorRoster" onclick="switchScheduleViewMode('roster')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Doctor Schedule</span>
+              </button>
+              <button type="button" class="view-mode-pill" id="btnModeAgendaTable" onclick="switchScheduleViewMode('agenda')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <span>Clinical Agenda</span>
+              </button>
+              <button type="button" class="view-mode-pill" id="btnModeFlowBoard" onclick="switchScheduleViewMode('kanban')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/></svg>
+                <span>Patient Flow</span>
+              </button>
+            </div>
+
+            <!-- New Appointment Button -->
+            <button class="btn-new-appointment" onclick="openNewAppointmentModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ New Appointment</span>
+            </button>
+
+            <!-- Link to Classic Grid View -->
+            <a href="appointments.html" class="btn-switch-classic" title="Switch back to classic multi-column calendar view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Classic Grid</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- TOP METRICS CARDS -->
+        <section class="metrics-grid" style="margin-bottom: 16px;">
+          <div class="metric-card">
+            <div class="metric-icon-box bg-blue-subtle text-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="metric-content">
+              <span class="metric-label" id="metricTotalLabel">Today's Appointments</span>
+              <div class="metric-value-row">
+                <span class="metric-value" id="metricTotalAppointments">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#ECFDF5; color:#10B981;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="metric-content">
+              <span class="metric-label">Confirmed & Scheduled</span>
+              <div class="metric-value-row">
+                <span class="metric-value" id="metricConfirmedAppointments">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#EFF6FF; color:#2563EB;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="metric-content">
+              <span class="metric-label">Active Doctors on Duty</span>
+              <div class="metric-value-row">
+                <span class="metric-value" id="metricActiveDoctorsCount">12</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#FEF2F2; color:#EF4444;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </div>
+            <div class="metric-content">
+              <span class="metric-label">Cancelled / Rescheduled</span>
+              <div class="metric-value-row">
+                <span class="metric-value" id="metricCancelledAppointments">0</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- DATE & FILTER RIBBON -->
+        <div class="schedule-control-ribbon">
+          <!-- Date Stepper -->
+          <div class="date-stepper-cluster">
+            <button type="button" class="date-nav-btn" onclick="stepScheduleDate(-1)" title="Previous Day">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <input type="date" id="scheduleDateInput" class="date-picker-box" onchange="handleScheduleDateChange(this.value)">
+            <button type="button" class="date-nav-btn" onclick="stepScheduleDate(1)" title="Next Day">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button type="button" class="date-quick-btn active" id="btnQuickToday" onclick="setQuickDate('today')">Today</button>
+            <button type="button" class="date-quick-btn" id="btnQuickTomorrow" onclick="setQuickDate('tomorrow')">Tomorrow</button>
+          </div>
+
+          <!-- Department & Status Dropdown Filters -->
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <select id="scheduleDeptFilter" class="date-picker-box" onchange="handleFilterChange()" style="cursor: pointer;">
+              <option value="">All Specialties / كل التخصصات</option>
+            </select>
+            <select id="scheduleStatusFilter" class="date-picker-box" onchange="handleFilterChange()" style="cursor: pointer;">
+              <option value="">All Statuses</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+            <button type="button" class="date-quick-btn" onclick="resetScheduleFilters()" title="Reset Filters">Reset</button>
+          </div>
+        </div>
+
+        <!-- =====================================================================
+             VIEW 1: DOCTOR ROSTER & CHRONOLOGICAL SCHEDULE (MASTER-DETAIL)
+             ===================================================================== -->
+        <div id="viewDoctorScheduleContainer" class="roster-split-layout">
+          
+          <!-- Left: Doctor Roster List -->
+          <div class="doctor-roster-panel">
+            <div class="roster-search-box">
+              <svg class="roster-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="rosterSearchInput" class="roster-search-input" placeholder="Filter doctor..." oninput="handleRosterSearch(this.value)">
+            </div>
+            
+            <div class="doctor-roster-list" id="doctorRosterList">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Right: Doctor Schedule Timeline Feed -->
+          <div class="schedule-timeline-panel" id="doctorTimelinePanel">
+            <!-- Rendered via JS: Selected Doctor Header & Chronological Appointments -->
+          </div>
+
+        </div>
+
+        <!-- =====================================================================
+             VIEW 2: CLINICAL AGENDA TABLE
+             ===================================================================== -->
+        <div id="viewAgendaTableContainer" class="agenda-table-card" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Daily Clinical Agenda Table</h3>
+            <span style="font-size: 13px; color: #64748B;" id="agendaTableTotalBadge">Loading appointments...</span>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="clinical-agenda-table">
+              <thead>
+                <tr>
+                  <th style="width: 130px;">Time</th>
+                  <th>Patient Details</th>
+                  <th>Assigned Doctor</th>
+                  <th>Specialty</th>
+                  <th>Visit Reason</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="agendaTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Agenda Pagination Controls -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid #F1F5F9;">
+            <span style="font-size: 13px; color: #64748B;" id="agendaPaginationText">Showing 1–10</span>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="date-nav-btn" id="btnAgendaPrev" onclick="stepAgendaPage(-1)">‹</button>
+              <button type="button" class="date-nav-btn" id="btnAgendaNext" onclick="stepAgendaPage(1)">›</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================================
+             VIEW 3: PATIENT FLOW KANBAN BOARD
+             ===================================================================== -->
+        <div id="viewFlowBoardContainer" class="kanban-flow-grid" style="display: none;">
+          
+          <!-- Column 1: Scheduled / Confirmed -->
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#2563EB;"></span>
+                <span>Confirmed</span>
+              </span>
+              <span class="kanban-col-badge" id="kanbanCountConfirmed">0</span>
+            </div>
+            <div class="kanban-cards-stack" id="kanbanStackConfirmed"></div>
+          </div>
+
+          <!-- Column 2: Arrived / Waiting -->
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#F59E0B;"></span>
+                <span>Arrived / Waiting</span>
+              </span>
+              <span class="kanban-col-badge" id="kanbanCountWaiting">0</span>
+            </div>
+            <div class="kanban-cards-stack" id="kanbanStackWaiting"></div>
+          </div>
+
+          <!-- Column 3: In Consultation -->
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#8B5CF6;"></span>
+                <span>In Consultation</span>
+              </span>
+              <span class="kanban-col-badge" id="kanbanCountInVisit">0</span>
+            </div>
+            <div class="kanban-cards-stack" id="kanbanStackInVisit"></div>
+          </div>
+
+          <!-- Column 4: Completed -->
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10B981;"></span>
+                <span>Completed</span>
+              </span>
+              <span class="kanban-col-badge" id="kanbanCountCompleted">0</span>
+            </div>
+            <div class="kanban-cards-stack" id="kanbanStackCompleted"></div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       MODALS & TOASTS
+       ========================================================================= -->
+  <div class="admin-modal-backdrop" id="adminModalBackdrop" onclick="closeAdminModal(event)" style="display: none; align-items: center; justify-content: center;">
+    <div class="admin-modal-container" id="adminModalContainer" onclick="event.stopPropagation()">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="adminModalTitle">Appointment Details</h3>
+        <button class="modal-close-icon-btn" onclick="closeAdminModal()">✕</button>
+      </div>
+      <div class="admin-modal-body" id="adminModalBody"></div>
+      <div class="admin-modal-footer" id="adminModalFooter"></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="adminToastContainer"></div>
+
+  <!-- Shared Configuration & API Client -->
+  <script src="admin-auth.js"></script>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+
+  <!-- Appointments Schedule Controller -->
+  <script src="appointments-schedule.js"></script>
+</body>
+</html>
