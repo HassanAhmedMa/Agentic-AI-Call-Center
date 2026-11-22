@@ -33,6 +33,9 @@ def doctor_dto(item: models.Doctor, specialty: models.Specialty) -> dto.Doctor:
         shift_end=s_end,
         working_days=days_list,
         working_hours=dto.WorkingHours(start=s_start, end=s_end),
+        avatar_url=item.avatar_url,
+        bio_en=item.bio_en,
+        bio_ar=item.bio_ar,
     )
 
 
@@ -112,11 +115,9 @@ class Catalog:
             return None
         doctor, specialty = row
         base_dict = doctor_dto(doctor, specialty).model_dump()
-        return dto.DoctorDetail(
-            **base_dict,
-            bio_en=doctor.bio_en,
-            bio_ar=doctor.bio_ar,
-        )
+        base_dict["bio_en"] = doctor.bio_en
+        base_dict["bio_ar"] = doctor.bio_ar
+        return dto.DoctorDetail(**base_dict)
 
     async def services(self, query: dto.ServiceQuery) -> dto.ServiceList:
         statement = select(models.Service).where(models.Service.is_available.is_(True))

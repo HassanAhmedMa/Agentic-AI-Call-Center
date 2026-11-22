@@ -332,11 +332,33 @@
           method: 'PATCH',
           body: doctorData
         });
-        ClinicCache.invalidate('doctors');
+        if (typeof ClinicCache !== 'undefined' && ClinicCache.invalidate) {
+          ClinicCache.invalidate('doctors');
+        }
         return res;
       } catch (err) {
-        console.warn('[ClinicApi] Backend updateDoctor PATCH fallback to local state:', err);
-        return { success: true, localOnly: true, data: doctorData };
+        console.error('[ClinicApi] Backend updateDoctor PATCH failed:', err);
+        throw err;
+      }
+    },
+
+    /**
+     * Upload doctor profile picture (WebP) via backend endpoint
+     * which verifies admin credentials and persists to Supabase Storage
+     */
+    uploadDoctorAvatar: async function (doctorId, webpBlob, webpBase64) {
+      try {
+        const res = await request(`/doctors/${encodeURIComponent(doctorId)}/avatar`, {
+          method: 'POST',
+          body: { image: webpBase64 }
+        });
+        if (typeof ClinicCache !== 'undefined' && ClinicCache.invalidate) {
+          ClinicCache.invalidate('doctors');
+        }
+        return res;
+      } catch (err) {
+        console.error('[ClinicApi] Backend avatar upload failed:', err);
+        throw err;
       }
     },
 

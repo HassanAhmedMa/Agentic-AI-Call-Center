@@ -40,6 +40,9 @@ class Doctor(DTO):
     shift_end: str | None = None
     working_days: list[str] | None = None
     working_hours: WorkingHours | None = None
+    avatar_url: str | None = None
+    bio_en: str | None = None
+    bio_ar: str | None = None
 
 
 class DoctorDetail(Doctor):

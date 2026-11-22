@@ -103,6 +103,7 @@ class Doctor(Timestamps, Base):
     working_days: Mapped[list[int]] = mapped_column(ARRAY(SmallInteger))
     shift_start: Mapped[time] = mapped_column(Time)
     shift_end: Mapped[time] = mapped_column(Time)
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="true")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

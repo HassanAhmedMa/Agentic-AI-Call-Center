@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import math
+import os
 import re
 import secrets
 import time
@@ -144,6 +145,10 @@ def create_app(
             or path.startswith("/api/v1/appointments/")
             or path == "/api/v1/ws/broadcast"
             or (path == "/api/v1/doctors" and request.method == "POST")
+            or (
+                path.startswith("/api/v1/doctors/")
+                and request.method in {"POST", "PATCH", "DELETE"}
+            )
         )
         if privileged and request.method != "OPTIONS":
             expected = settings.admin_api_token
@@ -532,12 +537,22 @@ def create_app(
                 doc.bio_en = str(payload["bio_en"]).strip()
             if "bio_ar" in payload:
                 doc.bio_ar = str(payload["bio_ar"]).strip()
+            if "avatar_url" in payload:
+                doc.avatar_url = (
+                    str(payload["avatar_url"]).strip()
+                    if payload["avatar_url"]
+                    else None
+                )
             if "languages" in payload and isinstance(payload["languages"], list):
                 doc.languages = payload["languages"]
             if "working_days" in payload and isinstance(payload["working_days"], list):
-                doc.working_days = [
-                    int(d) for d in payload["working_days"] if d is not None
+                valid_days = [
+                    int(d)
+                    for d in payload["working_days"]
+                    if d is not None and int(d) in {1, 2, 3, 4, 6, 7}
                 ]
+                if valid_days:
+                    doc.working_days = valid_days
             if "shift_start" in payload and payload["shift_start"]:
                 try:
                     sh_raw = (
@@ -547,6 +562,8 @@ def create_app(
                         .strip()
                     )
                     sh_h, sh_m = map(int, sh_raw.split(":")[:2])
+                    sh_m = 30 if 15 <= sh_m < 45 else (0 if sh_m < 15 else 30)
+                    sh_h = max(7, min(21, sh_h))
                     doc.shift_start = dt_time(sh_h, sh_m)
                 except Exception:
                     pass
@@ -559,7 +576,10 @@ def create_app(
                         .strip()
                     )
                     eh_h, eh_m = map(int, eh_raw.split(":")[:2])
-                    doc.shift_end = dt_time(eh_h, eh_m)
+                    eh_m = 30 if 15 <= eh_m < 45 else (0 if eh_m < 15 else 30)
+                    eh_h = max(8, min(22, eh_h))
+                    if dt_time(eh_h, eh_m) > doc.shift_start:
+                        doc.shift_end = dt_time(eh_h, eh_m)
                 except Exception:
                     pass
 
@@ -571,7 +591,110 @@ def create_app(
                 "success": True,
                 "message": "Doctor profile updated successfully.",
                 "id": doctor_id,
+                "avatar_url": doc.avatar_url,
             }
+
+    @app.post("/api/v1/doctors/{doctor_id}/avatar", tags=["Doctors"])
+    async def upload_doctor_avatar(
+        doctor_id: int, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        import base64
+        import time as py_time
+        import urllib.request
+
+        from clinic_backend.models import Doctor
+
+        image_data = (
+            payload.get("image") or payload.get("avatar") or payload.get("data")
+        )
+        if not image_data or not isinstance(image_data, str):
+            raise APIError(400, "INVALID_IMAGE", "Valid base64 image data is required.")
+
+        if "base64," in image_data:
+            image_data = image_data.split("base64,", 1)[1]
+
+        try:
+            image_bytes = base64.b64decode(image_data)
+        except Exception:
+            raise APIError(400, "INVALID_BASE64", "Failed to decode base64 image.")
+
+        anon_key = (
+            settings.supabase_public_key.get_secret_value()
+            if settings.supabase_public_key
+            else os.environ.get("SUPABASE_PUBLIC_KEY", "")
+        )
+        service_key = (
+            settings.supabase_service_role_key.get_secret_value()
+            if settings.supabase_service_role_key
+            else os.environ.get("SUPABASE_SERVICE_ROLE_KEY", anon_key)
+        )
+        internal_storage = (
+            settings.supabase_storage_url
+            or os.environ.get("SUPABASE_STORAGE_URL", "http://supabase-storage:5000")
+        ).rstrip("/")
+        public_origin = (
+            settings.supabase_url
+            or os.environ.get("SUPABASE_URL", "https://api.193-122-68-159.sslip.io")
+        ).rstrip("/")
+
+        file_name = f"doctor_{doctor_id}_{int(py_time.time())}.webp"
+        storage_url = f"{internal_storage}/object/doctor_pfp/{file_name}"
+        public_storage_url = f"{public_origin}/storage/v1/object/doctor_pfp/{file_name}"
+        public_url = f"{public_origin}/storage/v1/object/public/doctor_pfp/{file_name}"
+
+        uploaded = False
+        try:
+            req = urllib.request.Request(
+                storage_url,
+                data=image_bytes,
+                headers={
+                    "Authorization": f"Bearer {service_key}",
+                    "apikey": anon_key,
+                    "Content-Type": "image/webp",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                uploaded = True
+        except Exception as e:
+            logger.error("Failed to upload avatar via internal storage: %s", e)
+
+        if not uploaded:
+            try:
+                req_ext = urllib.request.Request(
+                    public_storage_url,
+                    data=image_bytes,
+                    headers={
+                        "Authorization": f"Bearer {anon_key}",
+                        "apikey": anon_key,
+                        "Content-Type": "image/webp",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req_ext, timeout=10) as resp:
+                    uploaded = True
+            except Exception as e2:
+                logger.error("Fallback upload to external storage also failed: %s", e2)
+                raise APIError(
+                    500, "STORAGE_UPLOAD_FAILED", "Failed to upload avatar to storage."
+                )
+
+        async with sessions() as session:
+            doc = await session.get(Doctor, doctor_id)
+            if not doc:
+                raise APIError(404, "DOCTOR_NOT_FOUND", "Doctor not found.")
+            doc.avatar_url = public_url
+            await session.commit()
+
+        if hasattr(app.state, "cache"):
+            await app.state.cache.clear()
+
+        return {
+            "success": True,
+            "message": "Avatar uploaded successfully.",
+            "avatar_url": public_url,
+            "doctor_id": doctor_id,
+        }
 
     @app.delete("/api/v1/doctors/{doctor_id}", tags=["Doctors"])
     async def delete_doctor(doctor_id: int) -> dict[str, Any]:

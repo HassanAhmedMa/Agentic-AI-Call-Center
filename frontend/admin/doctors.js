@@ -278,8 +278,10 @@
       allSpecialties = cachedSpecs;
       allDoctors = cachedDocs.doctors;
       allDoctors.forEach(d => {
-        const savedAvatar = localStorage.getItem(`shiffaa_doctor_avatar_${d.id}`);
-        if (savedAvatar) d.avatar_url = savedAvatar;
+        if (!d.avatar_url) {
+          const savedAvatar = localStorage.getItem(`shiffaa_doctor_avatar_${d.id}`);
+          if (savedAvatar) d.avatar_url = savedAvatar;
+        }
       });
       populateDeptFilter(allSpecialties);
       updateDoctorMetrics(allDoctors, allSpecialties);
@@ -303,8 +305,10 @@
       allSpecialties = Array.isArray(specData) ? specData : [];
       allDoctors = Array.isArray(docData?.doctors) ? docData.doctors : [];
       allDoctors.forEach(d => {
-        const savedAvatar = localStorage.getItem(`shiffaa_doctor_avatar_${d.id}`);
-        if (savedAvatar) d.avatar_url = savedAvatar;
+        if (!d.avatar_url) {
+          const savedAvatar = localStorage.getItem(`shiffaa_doctor_avatar_${d.id}`);
+          if (savedAvatar) d.avatar_url = savedAvatar;
+        }
       });
 
       populateDeptFilter(allSpecialties);
@@ -899,30 +903,77 @@
     });
   };
 
+  let isScheduleSaving = false;
   window.saveDoctorSchedule = async function () {
+    if (isScheduleSaving) return;
+
     const doc = allDoctors.find(d => d.id === selectedDoctorId);
     if (!doc) return;
+
+    if (!scheduleState.workingDays || scheduleState.workingDays.length === 0) {
+      showToast('Please select at least one working day for the doctor.', 'warning');
+      return;
+    }
 
     const startInp = document.getElementById('scheduleStartTimeInput');
     const endInp = document.getElementById('scheduleEndTimeInput');
     if (startInp) scheduleState.startTime = startInp.value.trim();
     if (endInp) scheduleState.endTime = endInp.value.trim();
 
-    // Update in-memory doctor object
-    doc.working_days = [...scheduleState.workingDays];
-    doc.shift_start = scheduleState.startTime;
-    doc.shift_end = scheduleState.endTime;
+    const btn = document.querySelector('.btn-schedule-confirm');
+    const originalBtnHtml = btn ? btn.innerHTML : 'Confirm';
+    isScheduleSaving = true;
 
-    // Invalidate cache and update sessionStorage
-    if (window.ClinicCache) {
-      window.ClinicCache.set('doctors_all', { total: allDoctors.length, doctors: allDoctors });
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-spinner"></span> Saving to Supabase...';
+      btn.style.opacity = '0.75';
+      btn.style.cursor = 'not-allowed';
     }
 
-    showToast(`Working schedule for ${doc.name_en} updated successfully! (Active days: ${formatWorkingDays(doc.working_days)})`, 'success');
+    try {
+      // 1. Realistic lazy loading delay
+      await new Promise(r => setTimeout(r, 700));
 
-    // Switch back to details view or refresh
-    setDoctorSidePanelView('details');
-    applyFilterAndRender();
+      // 2. Persist to Supabase PostgreSQL via PATCH /api/v1/doctors/{id}
+      if (window.ClinicApi && typeof window.ClinicApi.updateDoctor === 'function') {
+        await window.ClinicApi.updateDoctor(doc.id, {
+          working_days: scheduleState.workingDays,
+          shift_start: scheduleState.startTime,
+          shift_end: scheduleState.endTime
+        });
+      }
+
+      // Update in-memory doctor object
+      doc.working_days = [...scheduleState.workingDays];
+      doc.shift_start = scheduleState.startTime;
+      doc.shift_end = scheduleState.endTime;
+
+      // Invalidate cache and update sessionStorage
+      if (window.ClinicCache) {
+        window.ClinicCache.set('doctors_all', { total: allDoctors.length, doctors: allDoctors });
+      }
+
+      showToast(`Working schedule for ${doc.name_en} saved to Supabase! (Active days: ${formatWorkingDays(doc.working_days)})`, 'success');
+
+      // Switch back to details view or refresh
+      setDoctorSidePanelView('details');
+      applyFilterAndRender();
+    } catch (err) {
+      console.error('[Doctors] Failed to update schedule:', err);
+      showToast(`Failed to update schedule in Supabase: ${err.message || 'Error'}`, 'error');
+    } finally {
+      setTimeout(() => {
+        isScheduleSaving = false;
+        const currentBtn = document.querySelector('.btn-schedule-confirm');
+        if (currentBtn) {
+          currentBtn.disabled = false;
+          currentBtn.innerHTML = originalBtnHtml;
+          currentBtn.style.opacity = '1';
+          currentBtn.style.cursor = 'pointer';
+        }
+      }, 1000);
+    }
   };
 
   /* =============================================================================
@@ -953,58 +1004,92 @@
     }, 50);
   };
 
+  let isDoctorDetailsSaving = false;
   window.confirmDoctorDetailsEdit = async function () {
+    if (isDoctorDetailsSaving) return;
+
     const doc = allDoctors.find(d => d.id === selectedDoctorId);
     if (!doc) return;
 
-    const nameInp = document.getElementById('inlineEditDocName');
-    const specSelect = document.getElementById('inlineEditDocSpecialty');
-    const langsInp = document.getElementById('inlineEditDocLangs');
-    const bioTextarea = document.getElementById('inlineEditDocBio');
+    const btn = document.getElementById('btnConfirmDoctorDetails');
+    const originalBtnHtml = btn ? btn.innerHTML : 'Confirm';
+    isDoctorDetailsSaving = true;
 
-    if (nameInp && nameInp.value.trim()) {
-      doc.name_en = nameInp.value.trim();
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-spinner"></span> Saving to Supabase...';
+      btn.style.opacity = '0.75';
+      btn.style.cursor = 'not-allowed';
     }
-    if (specSelect) {
-      const specId = parseInt(specSelect.value, 10);
-      if (!isNaN(specId)) {
-        doc.specialty_id = specId;
-        const matched = allSpecialties.find(s => s.id === specId);
-        if (matched) doc.specialty = matched;
+
+    try {
+      const nameInp = document.getElementById('inlineEditDocName');
+      const specSelect = document.getElementById('inlineEditDocSpecialty');
+      const langsInp = document.getElementById('inlineEditDocLangs');
+      const bioTextarea = document.getElementById('inlineEditDocBio');
+
+      if (nameInp && nameInp.value.trim()) {
+        doc.name_en = nameInp.value.trim();
       }
-    }
-    if (langsInp) {
-      const parsedLangs = langsInp.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-      doc.languages = parsedLangs.length > 0 ? parsedLangs : ['ar', 'en'];
-    }
-    if (bioTextarea) {
-      doc.bio_en = bioTextarea.value.trim();
-    }
+      if (specSelect) {
+        const specId = parseInt(specSelect.value, 10);
+        if (!isNaN(specId)) {
+          doc.specialty_id = specId;
+          const matched = allSpecialties.find(s => s.id === specId);
+          if (matched) doc.specialty = matched;
+        }
+      }
+      if (langsInp) {
+        const parsedLangs = langsInp.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        doc.languages = parsedLangs.length > 0 ? parsedLangs : ['ar', 'en'];
+      }
+      if (bioTextarea) {
+        doc.bio_en = bioTextarea.value.trim();
+      }
 
-    // Save in cache & localStorage
-    if (window.ClinicCache) {
-      window.ClinicCache.set('doctors_all', { total: allDoctors.length, doctors: allDoctors });
+      // Realistic lazy loading delay
+      await new Promise(r => setTimeout(r, 700));
+
+      // Persist via PATCH /api/v1/doctors/{id}
+      if (window.ClinicApi && typeof window.ClinicApi.updateDoctor === 'function') {
+        await window.ClinicApi.updateDoctor(doc.id, {
+          name_en: doc.name_en,
+          specialty_id: doc.specialty_id,
+          bio_en: doc.bio_en,
+          languages: doc.languages,
+          avatar_url: doc.avatar_url || null
+        });
+      }
+
+      // Save in cache & localStorage
+      if (window.ClinicCache) {
+        window.ClinicCache.set('doctors_all', { total: allDoctors.length, doctors: allDoctors });
+      }
+
+      showToast(`Doctor profile for ${doc.name_en} saved to Supabase!`, 'success');
+
+      // Update left table row immediately
+      const filtered = getFilteredAndSortedDoctors();
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = Math.min(startIdx + pageSize, filtered.length);
+      renderDoctorsTable(filtered.slice(startIdx, endIdx));
+
+      renderSidePanel();
+    } catch (err) {
+      console.error('[Doctors] Failed to update doctor profile:', err);
+      showToast(`Failed to update Supabase: ${err.message || 'Unknown error'}`, 'error');
+    } finally {
+      setTimeout(() => {
+        isDoctorDetailsSaving = false;
+        const currentBtn = document.getElementById('btnConfirmDoctorDetails');
+        if (currentBtn) {
+          currentBtn.disabled = false;
+          currentBtn.innerHTML = originalBtnHtml;
+          currentBtn.style.opacity = '1';
+          currentBtn.style.cursor = 'pointer';
+        }
+      }, 1000);
     }
-
-    // Persist via PATCH /api/v1/doctors/{id}
-    if (window.ClinicApi && typeof window.ClinicApi.updateDoctor === 'function') {
-      window.ClinicApi.updateDoctor(doc.id, {
-        name_en: doc.name_en,
-        specialty_id: doc.specialty_id,
-        bio_en: doc.bio_en,
-        languages: doc.languages
-      }).catch(err => console.warn('[Doctors] updateDoctor non-fatal fallback:', err));
-    }
-
-    showToast(`Doctor profile for ${doc.name_en} updated successfully!`, 'success');
-
-    // Update left table row immediately
-    const filtered = getFilteredAndSortedDoctors();
-    const startIdx = (currentPage - 1) * pageSize;
-    const endIdx = Math.min(startIdx + pageSize, filtered.length);
-    renderDoctorsTable(filtered.slice(startIdx, endIdx));
-
-    renderSidePanel();
   };
 
   /* =============================================================================
@@ -1306,16 +1391,38 @@
   };
 
   /* =============================================================================
-     12. DOCTOR AVATAR PICTURE UPLOAD CONTROLLER (Matches User Screenshot)
+     12. DOCTOR AVATAR PICTURE UPLOAD CONTROLLER & INTERACTIVE CROPPER
      ============================================================================= */
-  let pendingAvatarDataUrl = null;
+  let isAvatarSaving = false;
+  let cropperState = {
+    image: null,
+    imgNaturalWidth: 0,
+    imgNaturalHeight: 0,
+    scale: 1,
+    minScale: 0.2,
+    maxScale: 3.5,
+    panX: 0,
+    panY: 0,
+    isDragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    viewportW: 360,
+    viewportH: 250,
+    cropBoxW: 180,
+    cropBoxH: 220
+  };
 
   window.openAvatarUploadModal = function () {
     const backdrop = document.getElementById('avatarModalBackdrop');
     const body = document.getElementById('avatarModalBody');
     if (!backdrop || !body) return;
 
-    pendingAvatarDataUrl = null;
+    cropperState.image = null;
+    cropperState.panX = 0;
+    cropperState.panY = 0;
+    cropperState.scale = 1;
+    cropperState.isDragging = false;
+
     const fileInput = document.getElementById('doctorAvatarFileInput');
     if (fileInput) fileInput.value = '';
 
@@ -1331,7 +1438,12 @@
       backdrop.style.display = 'none';
       backdrop.classList.remove('active', 'open');
     }
-    pendingAvatarDataUrl = null;
+    cropperState.image = null;
+    cropperState.isDragging = false;
+    window.removeEventListener('mousemove', onCropDragMove);
+    window.removeEventListener('mouseup', endCropDrag);
+    window.removeEventListener('touchmove', onCropDragMove);
+    window.removeEventListener('touchend', endCropDrag);
   };
 
   function renderAvatarDropzoneState() {
@@ -1356,15 +1468,33 @@
     const body = document.getElementById('avatarModalBody');
     if (!body) return;
 
+    const minPct = Math.round(cropperState.minScale * 100);
+    const maxPct = Math.round(cropperState.maxScale * 100);
+    const curPct = Math.round(cropperState.scale * 100);
+
     body.innerHTML = `
       <div class="avatar-crop-container">
-        <img src="${imgSrc}" class="avatar-crop-image" alt="Profile crop preview">
-        <div class="avatar-crop-grid-overlay">
-          <div></div><div></div><div></div>
-          <div></div><div></div><div></div>
-          <div></div><div></div><div></div>
+        <div class="avatar-crop-viewport" id="avatarCropViewport"
+             onmousedown="startCropDrag(event)"
+             ontouchstart="startCropDrag(event)"
+             onwheel="handleCropWheel(event)">
+          <img id="avatarCropInteractiveImg" class="avatar-crop-interactive-img" src="${imgSrc}"
+               style="transform: translate(${cropperState.panX}px, ${cropperState.panY}px) scale(${cropperState.scale});"
+               draggable="false" alt="Profile crop">
+          <div class="avatar-crop-grid-overlay">
+            <div></div><div></div><div></div>
+            <div></div><div></div><div></div>
+            <div></div><div></div><div></div>
+          </div>
+          <div class="avatar-crop-label">Crop Image</div>
         </div>
-        <div class="avatar-crop-label">Crop Image</div>
+      </div>
+      <div class="crop-zoom-control">
+        <button type="button" class="crop-zoom-btn" onclick="stepCropZoom(-0.15)" title="Zoom Out">−</button>
+        <input type="range" class="crop-zoom-slider" id="cropZoomSlider"
+               min="${minPct}" max="${maxPct}" value="${curPct}"
+               oninput="handleCropZoomSlider(this.value)">
+        <button type="button" class="crop-zoom-btn" onclick="stepCropZoom(0.15)" title="Zoom In">+</button>
       </div>
       <div style="text-align: center; margin-top: 8px;">
         <button type="button" onclick="document.getElementById('doctorAvatarFileInput').click()" style="background: none; border: none; color: #2563EB; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;">Choose different picture</button>
@@ -1407,74 +1537,135 @@
       return;
     }
 
-    try {
-      // 1. Convert to WebP format on HTML5 Canvas (high quality, small footprint)
-      const webpResult = await convertImageToWebP(file, 0.85);
-      pendingAvatarDataUrl = webpResult.dataUrl;
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const img = new Image();
+      img.onload = function () {
+        cropperState.image = img;
+        cropperState.imgNaturalWidth = img.naturalWidth;
+        cropperState.imgNaturalHeight = img.naturalHeight;
 
-      const kbOrig = Math.round(webpResult.originalSizeBytes / 1024);
-      const kbWebp = Math.round(webpResult.sizeBytes / 1024);
-      console.log(`[Avatar WebP] Converted from ${kbOrig} KB to ${kbWebp} KB WebP.`);
+        // Auto-scale to fill crop viewfinder
+        const scaleW = cropperState.cropBoxW / cropperState.imgNaturalWidth;
+        const scaleH = cropperState.cropBoxH / cropperState.imgNaturalHeight;
+        const fitScale = Math.max(scaleW, scaleH);
+        cropperState.minScale = Math.max(0.1, fitScale * 0.7);
+        cropperState.maxScale = Math.max(3.5, fitScale * 4);
+        cropperState.scale = Math.max(fitScale, 0.5);
+        cropperState.panX = 0;
+        cropperState.panY = 0;
 
-      renderAvatarCropState(pendingAvatarDataUrl);
-    } catch (err) {
-      console.warn('[Avatar] WebP canvas conversion fallback to standard reader:', err);
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        pendingAvatarDataUrl = event.target.result;
-        renderAvatarCropState(pendingAvatarDataUrl);
+        renderAvatarCropState(event.target.result);
       };
-      reader.readAsDataURL(file);
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Drag & Pan handlers
+  window.startCropDrag = function (e) {
+    if (!cropperState.image) return;
+    cropperState.isDragging = true;
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    cropperState.dragStartX = clientX - cropperState.panX;
+    cropperState.dragStartY = clientY - cropperState.panY;
+
+    const vp = document.getElementById('avatarCropViewport');
+    if (vp) vp.classList.add('is-dragging');
+
+    window.addEventListener('mousemove', onCropDragMove);
+    window.addEventListener('mouseup', endCropDrag);
+    window.addEventListener('touchmove', onCropDragMove, { passive: false });
+    window.addEventListener('touchend', endCropDrag);
+  };
+
+  function onCropDragMove(e) {
+    if (!cropperState.isDragging) return;
+    if (e.cancelable) e.preventDefault();
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    cropperState.panX = clientX - cropperState.dragStartX;
+    cropperState.panY = clientY - cropperState.dragStartY;
+    applyCropTransform();
+  }
+
+  function endCropDrag() {
+    cropperState.isDragging = false;
+    const vp = document.getElementById('avatarCropViewport');
+    if (vp) vp.classList.remove('is-dragging');
+
+    window.removeEventListener('mousemove', onCropDragMove);
+    window.removeEventListener('mouseup', endCropDrag);
+    window.removeEventListener('touchmove', onCropDragMove);
+    window.removeEventListener('touchend', endCropDrag);
+  }
+
+  function applyCropTransform() {
+    const imgEl = document.getElementById('avatarCropInteractiveImg');
+    if (imgEl) {
+      imgEl.style.transform = `translate(${cropperState.panX}px, ${cropperState.panY}px) scale(${cropperState.scale})`;
     }
   }
 
-  function convertImageToWebP(file, quality = 0.85) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const img = new Image();
-        img.onload = function () {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 800; // Optimal sharp resolution for circular profile pictures
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
+  window.handleCropZoomSlider = function (val) {
+    cropperState.scale = parseFloat(val) / 100;
+    applyCropTransform();
+  };
 
-          // Export as WebP Data URL
-          const webpDataUrl = canvas.toDataURL('image/webp', quality);
-          canvas.toBlob((blob) => {
-            resolve({
-              dataUrl: webpDataUrl,
-              blob: blob,
-              sizeBytes: blob ? blob.size : webpDataUrl.length,
-              originalSizeBytes: file.size,
-              mimeType: 'image/webp'
-            });
-          }, 'image/webp', quality);
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  window.stepCropZoom = function (delta) {
+    const newScale = Math.max(cropperState.minScale, Math.min(cropperState.maxScale, cropperState.scale + delta));
+    cropperState.scale = newScale;
+    const slider = document.getElementById('cropZoomSlider');
+    if (slider) slider.value = Math.round(newScale * 100);
+    applyCropTransform();
+  };
+
+  window.handleCropWheel = function (e) {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.1 : -0.1;
+    stepCropZoom(delta);
+  };
+
+  function generateCroppedWebP(quality = 0.90) {
+    return new Promise((resolve, reject) => {
+      const img = cropperState.image;
+      if (!img) return reject(new Error('No image loaded'));
+
+      const canvas = document.createElement('canvas');
+      const targetW = 400;
+      const targetH = 480;
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+
+      const vpCenterX = cropperState.viewportW / 2;
+      const vpCenterY = cropperState.viewportH / 2;
+
+      const unscaledOffsetX = -cropperState.panX / cropperState.scale;
+      const unscaledOffsetY = -cropperState.panY / cropperState.scale;
+
+      const imgCenterX = cropperState.imgNaturalWidth / 2 + unscaledOffsetX;
+      const imgCenterY = cropperState.imgNaturalHeight / 2 + unscaledOffsetY;
+
+      const cropSourceW = cropperState.cropBoxW / cropperState.scale;
+      const cropSourceH = cropperState.cropBoxH / cropperState.scale;
+
+      const srcX = imgCenterX - cropSourceW / 2;
+      const srcY = imgCenterY - cropSourceH / 2;
+
+      ctx.drawImage(img, srcX, srcY, cropSourceW, cropSourceH, 0, 0, targetW, targetH);
+
+      const dataUrl = canvas.toDataURL('image/webp', quality);
+      canvas.toBlob(blob => {
+        resolve({ blob, dataUrl });
+      }, 'image/webp', quality);
     });
   }
 
-  window.confirmAvatarUpload = function () {
-    if (!pendingAvatarDataUrl) {
-      // If user clicks confirm without an image, open file picker
+  window.confirmAvatarUpload = async function () {
+    if (isAvatarSaving) return;
+    if (!cropperState.image) {
       document.getElementById('doctorAvatarFileInput')?.click();
       return;
     }
@@ -1482,25 +1673,64 @@
     const doc = allDoctors.find(d => d.id === selectedDoctorId);
     if (!doc) return;
 
-    doc.avatar_url = pendingAvatarDataUrl;
+    const btn = document.getElementById('btnConfirmAvatarUpload');
+    const originalBtnText = btn ? btn.innerHTML : 'Confirm';
+    isAvatarSaving = true;
 
-    // Persistent browser object storage (localStorage)
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-spinner"></span> Saving to Supabase...';
+      btn.style.opacity = '0.75';
+      btn.style.cursor = 'not-allowed';
+    }
+
     try {
-      localStorage.setItem(`shiffaa_doctor_avatar_${doc.id}`, pendingAvatarDataUrl);
-    } catch (_) {}
+      // 1. Generate WebP cropped image
+      const webpResult = await generateCroppedWebP(0.90);
 
-    if (window.ClinicCache) {
-      window.ClinicCache.set('doctors_all', { total: allDoctors.length, doctors: allDoctors });
+      // 2. Realistic lazy loading delay
+      await new Promise(r => setTimeout(r, 700));
+
+      // 3. Upload to Supabase Storage bucket doctor_pfp & update doctor
+      let finalAvatarUrl = null;
+      if (window.ClinicApi && typeof window.ClinicApi.uploadDoctorAvatar === 'function') {
+        const uploadRes = await window.ClinicApi.uploadDoctorAvatar(doc.id, webpResult.blob, webpResult.dataUrl);
+        if (uploadRes && uploadRes.avatar_url) {
+          finalAvatarUrl = uploadRes.avatar_url;
+        }
+      }
+
+      if (!finalAvatarUrl) {
+        finalAvatarUrl = webpResult.dataUrl;
+      }
+
+      doc.avatar_url = finalAvatarUrl;
+      try {
+        localStorage.setItem(`shiffaa_doctor_avatar_${doc.id}`, finalAvatarUrl);
+      } catch (_) {}
+
+      if (window.ClinicCache) {
+        window.ClinicCache.set('doctors_all', { total: allDoctors.length, doctors: allDoctors });
+      }
+
+      showToast(`Doctor profile picture saved to Supabase Storage for ${doc.name_en}!`, 'success');
+      closeAvatarUploadModal();
+      renderSidePanel();
+      const filtered = getFilteredAndSortedDoctors();
+      const startIdx = (currentPage - 1) * pageSize;
+      renderDoctorsTable(filtered.slice(startIdx, startIdx + pageSize));
+    } catch (err) {
+      console.error('[Avatar] Upload error:', err);
+      showToast(`Failed to save avatar to Supabase: ${err.message || 'Storage error'}`, 'error');
+    } finally {
+      isAvatarSaving = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnText;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      }
     }
-
-    // Call updateDoctor API if reachable
-    if (window.ClinicApi && typeof window.ClinicApi.updateDoctor === 'function') {
-      window.ClinicApi.updateDoctor(doc.id, { avatar_url: doc.avatar_url }).catch(() => {});
-    }
-
-    showToast(`Profile picture converted to WebP and saved for ${doc.name_en}!`, 'success');
-    closeAvatarUploadModal();
-    renderSidePanel();
   };
 
 })();
