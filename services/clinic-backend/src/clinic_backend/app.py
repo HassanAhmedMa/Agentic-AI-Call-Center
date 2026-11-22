@@ -142,6 +142,7 @@ def create_app(
             or path.startswith("/api/v1/appointments/")
             or path == "/api/v1/ws/broadcast"
             or (path == "/api/v1/doctors" and request.method == "POST")
+            or (path.startswith("/api/v1/doctors/") and request.method in {"POST", "PATCH", "DELETE"})
         )
         if privileged and request.method != "OPTIONS":
             expected = settings.admin_api_token
@@ -586,10 +587,29 @@ def create_app(
         except Exception:
             raise APIError(400, "INVALID_BASE64", "Failed to decode base64 image.")
 
+        anon_key = (
+            settings.supabase_public_key.get_secret_value()
+            if settings.supabase_public_key
+            else os.environ.get("SUPABASE_PUBLIC_KEY", "")
+        )
+        service_key = (
+            settings.supabase_service_role_key.get_secret_value()
+            if settings.supabase_service_role_key
+            else os.environ.get("SUPABASE_SERVICE_ROLE_KEY", anon_key)
+        )
+        internal_storage = (
+            settings.supabase_storage_url
+            or os.environ.get("SUPABASE_STORAGE_URL", "http://supabase-storage:5000")
+        ).rstrip("/")
+        public_origin = (
+            settings.supabase_url
+            or os.environ.get("SUPABASE_URL", "https://api.193-122-68-159.sslip.io")
+        ).rstrip("/")
+
         file_name = f"doctor_{doctor_id}_{int(py_time.time())}.webp"
-        storage_url = f"http://supabase-storage:5000/object/doctor_pfp/{file_name}"
-        anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkxODQ0NDU4LCJleHAiOjE5NDk1MjQ0NTh9.RZ8tQC3CdlWU_bZOzxrt83ePIszO4jiCfSqTi_96ZNA"
-        service_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTE4NDQ0NTgsImV4cCI6MTk0OTUyNDQ1OH0.IYKVhjTFoAt4Tu1Uk-USc5Lr1tskvDAVn7oCYZ5ZBD4"
+        storage_url = f"{internal_storage}/object/doctor_pfp/{file_name}"
+        public_storage_url = f"{public_origin}/storage/v1/object/doctor_pfp/{file_name}"
+        public_url = f"{public_origin}/storage/v1/object/public/doctor_pfp/{file_name}"
 
         uploaded = False
         try:
@@ -610,7 +630,6 @@ def create_app(
 
         if not uploaded:
             try:
-                public_storage_url = f"https://api.193-122-68-159.sslip.io/storage/v1/object/doctor_pfp/{file_name}"
                 req_ext = urllib.request.Request(
                     public_storage_url,
                     data=image_bytes,
@@ -626,8 +645,6 @@ def create_app(
             except Exception as e2:
                 logger.error("Fallback upload to external storage also failed: %s", e2)
                 raise APIError(500, "STORAGE_UPLOAD_FAILED", "Failed to upload avatar to storage.")
-
-        public_url = f"https://api.193-122-68-159.sslip.io/storage/v1/object/public/doctor_pfp/{file_name}"
 
         async with sessions() as session:
             doc = await session.get(Doctor, doctor_id)

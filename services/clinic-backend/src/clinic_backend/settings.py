@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     identity_provider: Literal["clinic", "supabase"] = "clinic"
     supabase_url: str = ""
     supabase_public_key: SecretStr | None = None
+    supabase_service_role_key: SecretStr | None = None
+    supabase_storage_url: str = ""
     supabase_issuer: str = ""
     supabase_otp_length: int = Field(default=6, ge=6, le=10)
     supabase_otp_ttl_seconds: int = Field(default=3600, ge=60, le=86400)
